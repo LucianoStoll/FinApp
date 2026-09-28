@@ -33,6 +33,8 @@ class DashboardPage extends StatelessWidget {
                 ),
                 SizedBox(height: 16),
                 _AccountsButton(),
+                SizedBox(height: 8),
+                _CategoriesButton(),
               ],
             ),
           ),
@@ -50,5 +52,16 @@ class _AccountsButton extends StatelessWidget {
         onPressed: () => context.goNamed(AppRoutes.accounts),
         icon: const Icon(Icons.account_balance_wallet_outlined),
         label: const Text('Minhas contas'),
+      );
+}
+
+class _CategoriesButton extends StatelessWidget {
+  const _CategoriesButton();
+
+  @override
+  Widget build(BuildContext context) => OutlinedButton.icon(
+        onPressed: () => context.goNamed(AppRoutes.categories),
+        icon: const Icon(Icons.category_outlined),
+        label: const Text('Categorias'),
       );
 }

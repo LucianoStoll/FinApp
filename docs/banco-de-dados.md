@@ -90,7 +90,7 @@ versão publicada.
   `device_id` e `sync_version` preparam sincronização, sem habilitá-la.
 - Chaves estrangeiras são ativadas em toda abertura. Exclusão lógica usa
   `deleted_at`; referências históricas usam `ON DELETE RESTRICT`.
-- `schemaVersion` é 2. Novas versões entram como passos sequenciais em
+- `schemaVersion` é 3. Novas versões entram como passos sequenciais em
   `onUpgrade`; o schema da v1 permanece imutável. Uma versão sem migration
   explícita falha, preservando o banco anterior.
 
@@ -123,3 +123,14 @@ despesas efetivadas, usando valor realizado e ignorando lançamentos pendentes,
 removidos ou marcados para não afetar saldo. Transferências efetivadas reduzem
 a origem e aumentam o destino. O campo `include_in_analytics` é independente
 do saldo e prepara os relatórios posteriores.
+
+### v3 — categorias e subcategorias
+
+A migration v2→v3 acrescenta `icon_key` e `color_argb` à tabela existente,
+sem reescrever categorias ou vínculos. Subcategorias têm apenas um nível:
+`parent_id` aponta para categoria principal do mesmo tipo. Os gatilhos do
+SQLite rejeitam vínculos inválidos e novos lançamentos em categoria arquivada,
+excluída, de tipo diferente ou com principal arquivada. Lançamentos antigos
+mantêm `category_id` e continuam no histórico. Arquivar uma categoria principal
+arquiva suas subcategorias ativas em transação; reativá-la não reativa
+automaticamente as filhas.

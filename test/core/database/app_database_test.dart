@@ -10,7 +10,7 @@ void main() {
     addTearDown(db.close);
 
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 2);
+    expect(version.read<int>('user_version'), 3);
 
     final tables = await db.customSelect(
       "SELECT name FROM sqlite_master WHERE type = 'table'",
