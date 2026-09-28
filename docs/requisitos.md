@@ -2,7 +2,9 @@
 
 ## 1. Objetivo
 
-Aplicativo multiplataforma para **Android e Windows** destinado ao controle financeiro pessoal. O sistema deve funcionar offline, armazenar os dados localmente, priorizar a privacidade do usuário e possuir foco em educação financeira. O projeto será disponibilizado como código aberto.
+Aplicativo multiplataforma para **Android e Windows** destinado ao controle financeiro pessoal, com foco em educação financeira, privacidade e código aberto.
+
+O FinApp adotará arquitetura **offline-first**: todas as funções essenciais utilizam armazenamento local e continuam disponíveis sem internet. A arquitetura deve estar preparada para sincronização opcional e escalável entre dispositivos em versões futuras, inicialmente utilizando Google Drive.
 
 ## 2. Stakeholders
 
@@ -14,103 +16,83 @@ Aplicativo multiplataforma para **Android e Windows** destinado ao controle fina
 ## 3. Requisitos Funcionais
 
 ### RF01 — Contas
-
-O sistema deve permitir:
-
-- criar contas;
-- editar contas;
-- excluir contas;
-- representar diferentes tipos, como carteira e conta bancária;
-- definir saldo inicial.
+Criar, editar e excluir/arquivar contas, representar tipos como carteira e banco e definir saldo inicial.
 
 ### RF02 — Categorias
-
-O sistema deve permitir criar, editar e excluir categorias de receitas e despesas. Categorias poderão possuir subcategorias.
+Criar, editar e excluir/arquivar categorias de receitas e despesas, incluindo subcategorias.
 
 ### RF03 — Receitas
-
-O usuário deve poder cadastrar uma receita contendo:
-
-- descrição;
-- valor;
-- data;
-- conta;
-- categoria;
-- subcategoria.
+Cadastrar receita com descrição, valor, data, conta, categoria e subcategoria.
 
 ### RF04 — Despesas
-
-O usuário deve poder cadastrar uma despesa contendo:
-
-- descrição;
-- valor;
-- data;
-- conta;
-- categoria;
-- subcategoria.
+Cadastrar despesa com descrição, valor, data, conta, categoria e subcategoria.
 
 ### RF05 — Transações
-
-O sistema deve:
-
-- listar as transações;
-- permitir ordenação por data;
-- permitir filtro por mês e ano.
+Listar transações, ordenar por data e filtrar por mês/ano.
 
 ### RF06 — Saldo automático
-
-O sistema deve calcular automaticamente o saldo considerando o saldo inicial das contas e as movimentações cadastradas.
+Calcular automaticamente os saldos considerando saldo inicial, receitas e despesas válidas.
 
 ### RF07 — Dashboard
-
-O dashboard deve apresentar, no mínimo:
-
-- saldo atual;
-- total de receitas do mês;
-- total de despesas do mês.
+Mostrar saldo atual, total de receitas do mês e total de despesas do mês.
 
 ### RF08 — Funcionamento offline
+Todas as funcionalidades financeiras essenciais devem funcionar sem conexão com a internet.
 
-As funcionalidades essenciais do aplicativo devem funcionar sem conexão com a internet.
+### RF09 — Preparação para sincronização
+Os dados sincronizáveis devem possuir identificadores e metadados suficientes para que alterações criadas em dispositivos diferentes possam ser reconciliadas futuramente.
+
+### RF10 — Sincronização futura opcional
+Em versão posterior, o usuário poderá habilitar sincronização entre dispositivos. A primeira integração planejada será Google Drive. A ausência, falha ou desconexão do serviço remoto não deve impedir o uso local.
 
 ## 4. Requisitos Não Funcionais
 
 ### RNF01 — Usabilidade
-
-A interface deve ser simples, clara e intuitiva.
+Interface simples, clara e intuitiva.
 
 ### RNF02 — Desempenho
-
-As operações locais e mudanças de tela devem apresentar resposta rápida em condições normais de uso.
+Operações locais e mudanças de tela devem apresentar resposta rápida em condições normais de uso.
 
 ### RNF03 — Multiplataforma
-
-A primeira versão deve oferecer suporte a Android e Windows utilizando Flutter.
+Suporte inicial a Android e Windows utilizando Flutter.
 
 ### RNF04 — Persistência local
-
-Os dados financeiros devem ser armazenados em banco de dados local SQLite.
+SQLite será a fonte local dos dados, integrado ao Dart/Flutter por meio do Drift.
 
 ### RNF05 — Código aberto
-
-O código-fonte deve ser versionado e disponibilizado por meio do GitHub conforme a evolução do projeto.
+Código-fonte versionado no GitHub.
 
 ### RNF06 — Privacidade
+Dados permanecem localmente no MVP. Qualquer sincronização futura será opcional e explicitamente habilitada pelo usuário.
 
-Os dados do MVP devem permanecer armazenados localmente no dispositivo, salvo futura funcionalidade explicitamente acionada pelo usuário, como backup ou sincronização.
+### RNF07 — Independência de provedor
+O domínio e a persistência local não devem depender diretamente do Google Drive. A sincronização deve utilizar uma abstração que permita outros provedores futuramente.
 
-## 5. Escopo inicial
+### RNF08 — Integridade financeira
+Valores monetários devem utilizar representação persistente adequada para evitar erros de precisão. A estratégia inicial será armazenar valores em centavos como inteiros.
 
-O MVP concentra-se no controle financeiro pessoal local. Login, nuvem e sincronização não são dependências para seu funcionamento.
+### RNF09 — Identificadores globais
+Entidades sincronizáveis devem utilizar UUIDs, evitando colisões quando múltiplos dispositivos criarem registros offline.
+
+### RNF10 — Exclusões sincronizáveis
+Exclusões de registros sincronizáveis devem ser representáveis por exclusão lógica/tombstone até que possam ser propagadas com segurança.
+
+## 5. Escopo do MVP
+
+O MVP continua sendo totalmente local. Google Drive, login Google e Sync Engine **não são necessários para a primeira versão funcional**.
+
+Entretanto, o schema do banco, os IDs e as fronteiras arquiteturais serão preparados desde o início para evitar uma migração estrutural grande quando a sincronização for implementada.
 
 ## 6. Funcionalidades futuras
 
-- backup na nuvem;
-- login de usuário;
-- sincronização entre dispositivos;
-- exportação de relatórios em PDF;
+- Sync Engine;
+- sincronização Google Drive;
+- detecção/resolução de conflitos;
+- backup criptografado;
+- outros provedores de sincronização;
+- exportação de relatórios PDF;
 - metas financeiras;
 - gráficos e análises financeiras;
 - recursos de educação financeira;
 - exportação de dados;
-- categorização assistida/automática em versões posteriores.
+- categorização assistida/automática.
