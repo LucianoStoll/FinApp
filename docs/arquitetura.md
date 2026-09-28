@@ -2,15 +2,22 @@
 
 ## Objetivo
 
-O FinApp adotará uma arquitetura em camadas inspirada em Clean Architecture, simplificada para manter o projeto compreensível e adequado ao tamanho inicial da aplicação.
+O FinApp adotará uma arquitetura em camadas inspirada em Clean Architecture e orientada a **offline-first**. O MVP funcionará integralmente com SQLite local, mas as interfaces serão definidas para permitir sincronização futura sem reescrever domínio, telas ou repositories.
 
-## Estrutura
+## Estrutura inicial
 
 ```text
 lib/
 ├── data/
 │   ├── database/
-│   └── repositories/
+│   │   ├── tables/
+│   │   └── daos/
+│   ├── repositories/
+│   └── sync/
+│       ├── sync_engine.dart          # futuro
+│       ├── sync_provider.dart        # contrato do provedor remoto
+│       ├── conflict_resolver.dart    # futuro
+│       └── google_drive/             # implementação futura
 ├── domain/
 │   └── models/
 ├── presentation/
@@ -19,86 +26,9 @@ lib/
 └── main.dart
 ```
 
-## Camada `data`
+Os arquivos de sincronização podem ser introduzidos gradualmente. O ponto importante no MVP é manter as fronteiras que permitirão adicioná-los depois.
 
-Responsável pela persistência e obtenção dos dados.
-
-### `data/database/`
-
-Deverá concentrar a infraestrutura do banco local, incluindo:
-
-- configuração do Drift/SQLite;
-- definição das tabelas;
-- DAOs;
-- consultas locais;
-- migrations do banco quando necessárias.
-
-### `data/repositories/`
-
-Os repositories funcionam como a interface utilizada pelo restante da aplicação para consultar e alterar dados. Dessa forma, a apresentação não precisa executar SQL nem conhecer detalhes internos do banco.
-
-Repositories iniciais previstos:
-
-```text
-account_repository.dart
-category_repository.dart
-transaction_repository.dart
-```
-
-## Camada `domain`
-
-Contém os conceitos centrais do negócio e deve evitar dependência direta da interface gráfica.
-
-### `domain/models/`
-
-Modelos iniciais:
-
-```text
-account_model.dart
-category_model.dart
-transaction_model.dart
-```
-
-Responsabilidades típicas:
-
-- `Account`: representar uma conta financeira e seu saldo inicial;
-- `Category`: representar categorias/subcategorias e seu tipo;
-- `Transaction`: representar receitas e despesas.
-
-## Camada `presentation`
-
-Responsável pela experiência do usuário e interface Flutter.
-
-### `presentation/screens/`
-
-Telas inicialmente previstas:
-
-```text
-dashboard/
-transactions/
-accounts/
-categories/
-settings/
-```
-
-### `presentation/widgets/`
-
-Componentes reutilizáveis, por exemplo:
-
-```text
-balance_card.dart
-transaction_tile.dart
-```
-
-Um widget deve ser extraído para essa área quando fizer sentido reutilizá-lo ou quando sua separação tornar as telas mais simples.
-
-## `main.dart`
-
-É o ponto de entrada da aplicação. Deve permanecer pequeno e concentrar principalmente a inicialização do Flutter, configuração global e montagem do widget raiz.
-
-## Fluxo esperado
-
-Exemplo de cadastro de uma despesa:
+## Fluxo offline atual
 
 ```text
 Tela Flutter
@@ -110,19 +40,115 @@ DAO / Drift
 SQLite
 ```
 
-Na leitura dos dados, o caminho ocorre no sentido inverso até que a interface seja atualizada.
+Salvar no SQLite significa sucesso para o usuário. A interface nunca deverá aguardar um serviço remoto para concluir uma operação financeira local.
 
-## Princípios adotados
+## Fluxo futuro com sincronização
 
-1. A UI não deve executar SQL diretamente.
-2. Regras e modelos de negócio não devem depender desnecessariamente de widgets Flutter.
-3. A persistência deve ficar isolada na camada `data`.
-4. Componentes visuais reutilizáveis devem ser separados das telas.
-5. A arquitetura poderá evoluir conforme a complexidade real do projeto exigir.
+```text
+                    FinApp
+                      │
+                 Repository
+                      │
+                Drift / SQLite
+                      │
+                 Sync Engine
+                      │
+                SyncProvider
+                      │
+               Google Drive
+```
 
-## Possíveis extensões
+O Sync Engine lê alterações locais, troca dados com um `SyncProvider`, resolve/identifica conflitos e aplica alterações remotas ao banco local.
 
-Quando necessário, poderão ser adicionados sem reestruturar todo o projeto:
+## Camada `data/database`
+
+Responsável por Drift/SQLite, tabelas, DAOs, consultas e migrations. As tabelas serão criadas desde o início com UUIDs e metadados necessários à sincronização futura.
+
+## Camada `data/repositories`
+
+É a interface de persistência utilizada pelo restante do app. Telas não executam SQL nem acessam Google Drive diretamente.
+
+Repositories iniciais:
+
+```text
+account_repository.dart
+category_repository.dart
+transaction_repository.dart
+```
+
+## Camada `data/sync`
+
+Será responsável exclusivamente pela sincronização.
+
+### `SyncProvider`
+
+Contrato abstrato para o armazenamento remoto. A lógica central não deve depender de uma implementação específica.
+
+Conceitualmente:
+
+```text
+SyncProvider
+    ├── GoogleDriveSyncProvider
+    ├── OneDriveSyncProvider (possível futuro)
+    └── WebDavSyncProvider (possível futuro)
+```
+
+### `SyncEngine`
+
+Responsável por coordenar:
+
+- alterações locais pendentes;
+- download de alterações remotas;
+- aplicação local;
+- upload;
+- versões de sincronização;
+- estado da última sincronização.
+
+### `ConflictResolver`
+
+Isola a política para alterações concorrentes. Inicialmente poderá ser simples e evoluir posteriormente.
+
+## Camada `domain`
+
+Contém os conceitos centrais do negócio e não deve depender de Flutter, SQLite ou Google Drive.
+
+Modelos iniciais:
+
+```text
+account_model.dart
+category_model.dart
+transaction_model.dart
+```
+
+## Camada `presentation`
+
+Contém telas e widgets. Futuramente poderá exibir estado da sincronização, por exemplo:
+
+```text
+Sincronizado
+3 alterações pendentes
+Última sincronização: ...
+Erro de sincronização
+```
+
+Esses estados não devem impedir o usuário de continuar utilizando o app.
+
+## Regras arquiteturais
+
+1. Local-first: SQLite é a fonte imediata do aplicativo.
+2. Salvar localmente nunca depende da nuvem.
+3. A UI não acessa banco ou Drive diretamente.
+4. O domínio não conhece Google Drive.
+5. O provedor remoto é substituível.
+6. IDs devem ser globais (UUID).
+7. Exclusões sincronizáveis usam tombstones (`deletedAt`).
+8. Valores monetários devem evitar ponto flutuante como representação persistente principal.
+9. Migrations do banco devem ser versionadas.
+10. Sincronização deve ser adicionada somente após o núcleo offline estar estável.
+
+## Evolução opcional
+
+Conforme o projeto crescer, poderão ser adicionados:
 
 ```text
 lib/
@@ -134,4 +160,4 @@ lib/
     └── providers/
 ```
 
-`core/` deve ser criado somente quando existirem responsabilidades globais suficientes para justificá-lo. `providers/` poderá concentrar gerenciamento de estado caso Riverpod ou solução equivalente seja adotada.
+Gerenciamento de estado (por exemplo Riverpod) pode ser incorporado sem alterar o princípio offline-first.
