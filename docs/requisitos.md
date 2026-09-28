@@ -1,98 +1,89 @@
-# Levantamento de Requisitos — FinApp
+# Requisitos — FinApp
 
-## 1. Objetivo
+## 1. Visão
 
-Aplicativo multiplataforma para **Android e Windows** destinado ao controle financeiro pessoal, com foco em educação financeira, privacidade e código aberto.
+Aplicativo pessoal de finanças para Android e Windows, offline-first, open-source e orientado a educação financeira. O produto deve começar simples, mas seu modelo deve comportar evolução para cartões, orçamento, metas, patrimônio, dívidas, investimentos, importação, backup e sincronização.
 
-O FinApp adotará arquitetura **offline-first**: todas as funções essenciais utilizam armazenamento local e continuam disponíveis sem internet. A arquitetura deve estar preparada para sincronização opcional e escalável entre dispositivos em versões futuras, inicialmente utilizando Google Drive.
+## 2. MVP obrigatório
 
-## 2. Stakeholders
+### RF-MVP-01 — Contas
+Criar, editar, arquivar, reativar e consultar contas. Conta arquivada não aceita novos lançamentos, mas preserva histórico e pode ser configurada para aparecer ou não em totais/gráficos.
 
-- Usuário final
-- Desenvolvedor
-- Instituição de ensino / TCC
-- Comunidade open-source
+### RF-MVP-02 — Categorias
+Categorias e subcategorias editáveis, arquiváveis e reativáveis, com ícone/cor, histórico preservado e ordenação manual, alfabética, favoritas ou por uso.
 
-## 3. Requisitos Funcionais
+### RF-MVP-03 — Receitas e despesas
+Cadastrar, editar, excluir logicamente e listar lançamentos. O modelo deve comportar competência, vencimento e efetivação, status Pendente/Efetivada/Atrasada e flags independentes para ignorar saldo ou análises.
 
-### RF01 — Contas
-Criar, editar e excluir/arquivar contas, representar tipos como carteira e banco e definir saldo inicial.
+### RF-MVP-04 — Transferências
+Transferência é operação vinculada entre contas e não é receita/despesa. O modelo deve permitir taxas e evolução futura para moedas diferentes, agendamento e estado em trânsito.
 
-### RF02 — Categorias
-Criar, editar e excluir/arquivar categorias de receitas e despesas, incluindo subcategorias.
+### RF-MVP-05 — Saldos
+Exibir saldo atual baseado em movimentos efetivados e saldo projetado incluindo compromissos pendentes/futuros conforme regras.
 
-### RF03 — Receitas
-Cadastrar receita com descrição, valor, data, conta, categoria e subcategoria.
+### RF-MVP-06 — Dashboard
+Resumo básico de saldos, receitas, despesas e movimentações recentes.
 
-### RF04 — Despesas
-Cadastrar despesa com descrição, valor, data, conta, categoria e subcategoria.
+### RF-MVP-07 — Offline
+Todas as funções do MVP funcionam sem internet.
 
-### RF05 — Transações
-Listar transações, ordenar por data e filtrar por mês/ano.
+## 3. Requisitos transversais já definidos
 
-### RF06 — Saldo automático
-Calcular automaticamente os saldos considerando saldo inicial, receitas e despesas válidas.
+- valores monetários persistidos sem ponto flutuante como representação principal;
+- UUIDs;
+- timestamps consistentes;
+- histórico/auditoria para alterações relevantes;
+- exclusão lógica/tombstone para dados sincronizáveis;
+- lixeira; limpeza automática opcional;
+- validações em tempo real classificadas em Erro/Aviso/Sugestão;
+- operações demoradas assíncronas, com progresso e cancelamento quando seguro;
+- ajuda contextual e documentação integrada;
+- PT-BR inicialmente, mas idioma, moeda base e formatação regional independentes;
+- tema claro, escuro e seguir sistema;
+- acessibilidade básica: leitor de tela, contraste e texto escalável;
+- Android e Windows com layouts adaptativos;
+- atalhos configuráveis no Windows;
+- central de notificações internas;
+- telemetria e crash reports opcionais e separados;
+- consentimento granular para qualquer recurso online.
 
-### RF07 — Dashboard
-Mostrar saldo atual, total de receitas do mês e total de despesas do mês.
+## 4. Funcionalidades pós-MVP consolidadas
 
-### RF08 — Funcionamento offline
-Todas as funcionalidades financeiras essenciais devem funcionar sem conexão com a internet.
+### Transações avançadas
+Recorrências; modelos inteligentes/autocomplete; previsto x realizado; liquidações parciais; taxas/juros/descontos estruturados; rateio por valor ou percentual mantendo uma única transação principal; reembolsos vinculados; anexos; edição em lote; desfazer/refazer; descrições importadas bruta + normalizada.
 
-### RF09 — Preparação para sincronização
-Os dados sincronizáveis devem possuir identificadores e metadados suficientes para que alterações criadas em dispositivos diferentes possam ser reconciliadas futuramente.
+### Cartões
+Faturas como entidades; fechamento variável; compra/processamento/fatura real; parcelamento; limite individual por cartão e opcional; histórico de limite; saldo credor; pagamentos/antecipações parciais; estornos; compras internacionais; competência x caixa; cartão arquivado com histórico.
 
-### RF10 — Sincronização futura opcional
-Em versão posterior, o usuário poderá habilitar sincronização entre dispositivos. A primeira integração planejada será Google Drive. A ausência, falha ou desconexão do serviço remoto não deve impedir o uso local.
+### Planejamento
+Orçamentos fixos, percentuais, acumulativos e metas de redução; referência por competência ou vencimento; carry-over configurável; versionamento; múltiplos orçamentos com prioridade/exclusividade. Metas e objetivos encadeados; prioridades e sugestões de distribuição; reserva de emergência por meses/valor e grupo de contas.
 
-## 4. Requisitos Não Funcionais
+### Educação financeira
+Classificação Essencial/Não essencial; renda recorrente/variável/média; taxa de poupança; saúde financeira por dimensões e nota opcional; metodologia transparente; perfil financeiro evolutivo; recomendações e simulações.
 
-### RNF01 — Usabilidade
-Interface simples, clara e intuitiva.
+### Patrimônio e dívidas
+Patrimônio líquido; bens com valor de compra/atual e histórico; regra opcional de valorização/depreciação percentual; empréstimos/financiamentos com principal, juros e encargos; renegociação; amortização extraordinária; empréstimos informais vinculados a pessoas; cheque especial como passivo quando utilizado.
 
-### RNF02 — Desempenho
-Operações locais e mudanças de tela devem apresentar resposta rápida em condições normais de uso.
+### Multimoeda e investimentos
+Contas em moedas diferentes; moeda base; conversões e histórico cambial; transferências cambiais; última cotação disponível offline. Investimentos em módulo próprio, preparado para provedores de cotação via abstração.
 
-### RNF03 — Multiplataforma
-Suporte inicial a Android e Windows utilizando Flutter.
+### Importação/exportação
+CSV/Excel com mapeamento guiado; PDF; preparação para OFX; detecção/conciliação futura; categorias externas ignoradas em favor das regras internas. Exportação completa em pacote portátil/versionado com integridade; importação com validação e backup prévio.
 
-### RNF04 — Persistência local
-SQLite será a fonte local dos dados, integrado ao Dart/Flutter por meio do Drift.
+### Backup e sync
+Backup local diário, 3 versões por padrão; restauração com validação e backup prévio. Futuro SyncProvider desacoplado, começando por Google Drive/OAuth; sincronização somente com app aberto, ao abrir e após alterações relevantes; botão manual; Last Write Wins com conflito registrado; status detalhado; anexos em modo Automático/Somente Wi-Fi/Manual.
 
-### RNF05 — Código aberto
-Código-fonte versionado no GitHub.
+## 5. Requisitos não funcionais
 
-### RNF06 — Privacidade
-Dados permanecem localmente no MVP. Qualquer sincronização futura será opcional e explicitamente habilitada pelo usuário.
+- desempenho: cache, recálculo incremental e agregações/snapshots;
+- migrations versionadas, backup antes de mudanças importantes e rollback seguro;
+- logs locais por nível, rotação e modo diagnóstico;
+- pacote de diagnóstico sem dados financeiros sensíveis por padrão;
+- segurança opcional: bloqueio/PIN/biometria e criptografia local independentes;
+- código modular e documentado;
+- `dart format` e `flutter analyze` no CI;
+- testes manuais no início; evolução posterior para testes automatizados dos fluxos críticos.
 
-### RNF07 — Independência de provedor
-O domínio e a persistência local não devem depender diretamente do Google Drive. A sincronização deve utilizar uma abstração que permita outros provedores futuramente.
+## 6. Fora do MVP
 
-### RNF08 — Integridade financeira
-Valores monetários devem utilizar representação persistente adequada para evitar erros de precisão. A estratégia inicial será armazenar valores em centavos como inteiros.
-
-### RNF09 — Identificadores globais
-Entidades sincronizáveis devem utilizar UUIDs, evitando colisões quando múltiplos dispositivos criarem registros offline.
-
-### RNF10 — Exclusões sincronizáveis
-Exclusões de registros sincronizáveis devem ser representáveis por exclusão lógica/tombstone até que possam ser propagadas com segurança.
-
-## 5. Escopo do MVP
-
-O MVP continua sendo totalmente local. Google Drive, login Google e Sync Engine **não são necessários para a primeira versão funcional**.
-
-Entretanto, o schema do banco, os IDs e as fronteiras arquiteturais serão preparados desde o início para evitar uma migração estrutural grande quando a sincronização for implementada.
-
-## 6. Funcionalidades futuras
-
-- Sync Engine;
-- sincronização Google Drive;
-- detecção/resolução de conflitos;
-- backup criptografado;
-- outros provedores de sincronização;
-- exportação de relatórios PDF;
-- metas financeiras;
-- gráficos e análises financeiras;
-- recursos de educação financeira;
-- exportação de dados;
-- categorização assistida/automática.
+Cartões, orçamento, metas, sync, investimentos, patrimônio, empréstimos, importação avançada, anexos e demais módulos descritos acima são requisitos planejados, não critérios de conclusão do primeiro MVP.
