@@ -1,0 +1,116 @@
+import 'package:drift/drift.dart';
+
+import '../../../core/database/app_database.dart';
+import '../../../core/database/entity_metadata.dart';
+import '../domain/account.dart';
+import '../domain/accounts_repository.dart';
+
+class SqliteAccountsRepository implements AccountsRepository {
+  const SqliteAccountsRepository(this._db);
+
+  final AppDatabase _db;
+
+  @override
+  Future<List<Account>> list() async {
+    final rows = await _db.customSelect('''
+      SELECT a.*,
+        a.initial_balance_minor +
+        COALESCE((SELECT SUM(CASE WHEN t.type = 'income'
+                        THEN t.actual_amount_minor ELSE -t.actual_amount_minor END)
+                  FROM transactions t
+                  WHERE t.account_id = a.id AND t.effective_at IS NOT NULL
+                    AND t.actual_amount_minor IS NOT NULL
+                    AND t.ignore_balance = 0 AND t.deleted_at IS NULL), 0) +
+        COALESCE((SELECT SUM(CASE WHEN f.destination_account_id = a.id
+                        THEN f.amount_minor ELSE -f.amount_minor END)
+                  FROM transfers f
+                  WHERE (f.source_account_id = a.id OR f.destination_account_id = a.id)
+                    AND f.effective_at IS NOT NULL AND f.deleted_at IS NULL), 0)
+        AS current_balance_minor
+      FROM accounts a
+      WHERE a.deleted_at IS NULL
+      ORDER BY a.is_archived, lower(a.name), a.id
+    ''').get();
+    return rows.map(_mapAccount).toList();
+  }
+
+  @override
+  Future<Account> create(AccountDraft draft) async {
+    _validate(draft);
+    final id = EntityMetadata.newId();
+    final now = EntityMetadata.nowUtcMillis();
+    await _db.customStatement('''
+      INSERT INTO accounts
+        (id, name, type, currency_code, initial_balance_minor,
+         include_in_analytics, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', [id, draft.name.trim(), draft.type.name, draft.currencyCode.toUpperCase(),
+      draft.initialBalanceMinor, draft.includeInAnalytics ? 1 : 0, now, now]);
+    return _find(id);
+  }
+
+  @override
+  Future<Account> update(String id, AccountDraft draft) async {
+    _validate(draft);
+    final current = await _find(id);
+    if (current.currencyCode != draft.currencyCode.toUpperCase()) {
+      final references = await _db.customSelect('''
+        SELECT
+          (SELECT COUNT(*) FROM transactions WHERE account_id = ? AND deleted_at IS NULL) +
+          (SELECT COUNT(*) FROM transfers WHERE
+             (source_account_id = ? OR destination_account_id = ?) AND deleted_at IS NULL)
+          AS total
+      ''', variables: [Variable.withString(id), Variable.withString(id),
+        Variable.withString(id)]).getSingle();
+      if (references.read<int>('total') > 0) {
+        throw StateError('Não é possível trocar a moeda de uma conta com lançamentos.');
+      }
+    }
+    await _db.customStatement('''
+      UPDATE accounts SET name = ?, type = ?, currency_code = ?,
+        initial_balance_minor = ?, include_in_analytics = ?, updated_at = ?,
+        sync_version = sync_version + 1
+      WHERE id = ? AND deleted_at IS NULL
+    ''', [draft.name.trim(), draft.type.name, draft.currencyCode.toUpperCase(),
+      draft.initialBalanceMinor, draft.includeInAnalytics ? 1 : 0,
+      EntityMetadata.nowUtcMillis(), id]);
+    return _find(id);
+  }
+
+  @override
+  Future<Account> setArchived(String id, {required bool archived}) async {
+    await _find(id);
+    await _db.customStatement('''
+      UPDATE accounts SET is_archived = ?, updated_at = ?,
+        sync_version = sync_version + 1
+      WHERE id = ? AND deleted_at IS NULL
+    ''', [archived ? 1 : 0, EntityMetadata.nowUtcMillis(), id]);
+    return _find(id);
+  }
+
+  Future<Account> _find(String id) async {
+    final accounts = await list();
+    for (final account in accounts) {
+      if (account.id == id) return account;
+    }
+    throw StateError('Conta não encontrada.');
+  }
+
+  Account _mapAccount(QueryRow row) => Account(
+        id: row.read<String>('id'),
+        name: row.read<String>('name'),
+        type: AccountType.values.byName(row.read<String>('type')),
+        currencyCode: row.read<String>('currency_code'),
+        initialBalanceMinor: row.read<int>('initial_balance_minor'),
+        currentBalanceMinor: row.read<int>('current_balance_minor'),
+        isArchived: row.read<int>('is_archived') == 1,
+        includeInAnalytics: row.read<int>('include_in_analytics') == 1,
+      );
+
+  void _validate(AccountDraft draft) {
+    if (draft.name.trim().isEmpty) throw const FormatException('Informe o nome da conta.');
+    if (!RegExp(r'^[A-Za-z]{3}$').hasMatch(draft.currencyCode)) {
+      throw const FormatException('A moeda deve ter três letras (ex.: BRL).');
+    }
+  }
+}

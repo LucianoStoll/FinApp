@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/routing/app_router.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -28,6 +31,8 @@ class DashboardPage extends StatelessWidget {
                   'v0.1.0-alpha · offline-first',
                   textAlign: TextAlign.center,
                 ),
+                SizedBox(height: 16),
+                _AccountsButton(),
               ],
             ),
           ),
@@ -35,4 +40,15 @@ class DashboardPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AccountsButton extends StatelessWidget {
+  const _AccountsButton();
+
+  @override
+  Widget build(BuildContext context) => FilledButton.icon(
+        onPressed: () => context.goNamed(AppRoutes.accounts),
+        icon: const Icon(Icons.account_balance_wallet_outlined),
+        label: const Text('Minhas contas'),
+      );
 }

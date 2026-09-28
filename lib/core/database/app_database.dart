@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'schema_v1.dart';
+import 'schema_v2.dart';
 
 /// Banco local do MVP. As migrations SQL ficam estáveis por versão; as DAOs
 /// tipadas serão adicionadas pelas features sem alterar o schema publicado.
@@ -22,7 +23,7 @@ class AppDatabase extends GeneratedDatabase {
       );
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   Iterable<TableInfo<Table, dynamic>> get allTables => const [];
@@ -33,13 +34,19 @@ class AppDatabase extends GeneratedDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (_) async {
-          for (final statement in schemaV1) {
+          for (final statement in [...schemaV1, ...schemaV2]) {
             await customStatement(statement);
           }
         },
         onUpgrade: (m, from, to) async {
-          // Adicione um passo explícito por versão ao evoluir o schema.
-          throw StateError('Migration v$from → v$to não implementada');
+          for (var version = from + 1; version <= to; version++) {
+            if (version != 2) {
+              throw StateError('Migration v$version não implementada');
+            }
+            for (final statement in schemaV2) {
+              await customStatement(statement);
+            }
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');

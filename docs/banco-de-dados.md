@@ -90,7 +90,7 @@ versão publicada.
   `device_id` e `sync_version` preparam sincronização, sem habilitá-la.
 - Chaves estrangeiras são ativadas em toda abertura. Exclusão lógica usa
   `deleted_at`; referências históricas usam `ON DELETE RESTRICT`.
-- `schemaVersion` é 1. Novas versões entram como passos sequenciais em
+- `schemaVersion` é 2. Novas versões entram como passos sequenciais em
   `onUpgrade`; o schema da v1 permanece imutável. Uma versão sem migration
   explícita falha, preservando o banco anterior.
 
@@ -109,3 +109,17 @@ Validação local: `flutter pub get`, `dart format lib test`, `flutter analyze`
 e `flutter test test/core/database/app_database_test.dart`. O `pubspec.lock`
 deve ser atualizado pelo `flutter pub get` na máquina de desenvolvimento ao
 adicionar as dependências desta issue.
+
+### v2 — contas financeiras
+
+A migration v1→v2 adiciona gatilhos que rejeitam novos lançamentos e
+transferências quando a conta está arquivada ou excluída. Transferências
+entre moedas diferentes também são rejeitadas enquanto não houver conversão
+implementada. A migration é aditiva e preserva os dados existentes; o teste
+automatizado abre uma base v1 real, migra para v2 e confere o saldo.
+
+O saldo atual de uma conta é o saldo inicial mais receitas efetivadas menos
+despesas efetivadas, usando valor realizado e ignorando lançamentos pendentes,
+removidos ou marcados para não afetar saldo. Transferências efetivadas reduzem
+a origem e aumentam o destino. O campo `include_in_analytics` é independente
+do saldo e prepara os relatórios posteriores.
