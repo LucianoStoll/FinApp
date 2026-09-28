@@ -1,120 +1,124 @@
 # Roadmap — FinApp
 
-## Fase 0 — Fundação
+## Marco 0 — Planejamento e fundação
+- [x] Objetivo e escopo
+- [x] Questionário de produto/implementação
+- [x] Estratégia offline-first
+- [x] Arquitetura alvo
+- [x] MVP definido
+- [ ] Reestruturar projeto Flutter por features
+- [ ] Configurar BLoC/Cubit, go_router e get_it
+- [ ] Configurar Drift/SQLite e UUID
+- [ ] Configurar CI: format + flutter analyze
+- [ ] Definir tratamento central de erros/logs
 
-- [x] Definir objetivo inicial
-- [x] Levantar requisitos do MVP
-- [x] Definir arquitetura inicial
-- [x] Criar repositório GitHub
-- [x] Documentar projeto
-- [x] Definir estratégia offline-first
-- [x] Definir preparação para sincronização futura
-- [ ] Criar/configurar projeto Flutter local
-- [ ] Preparar estrutura `data/domain/presentation`
-- [ ] Configurar dependências iniciais
+## Marco 1 — MVP v0.1.0-alpha
+Critério: app útil offline sem cartões, orçamento, metas ou nuvem.
 
-## Fase 1 — Persistência preparada para Sync
+### Contas
+- [ ] CRUD
+- [ ] tipos de conta
+- [ ] saldo inicial
+- [ ] arquivar/reativar
+- [ ] visibilidade em totais/gráficos
 
-- [ ] Configurar SQLite/Drift
-- [ ] Definir geração de UUID
-- [ ] Definir `deviceId` persistente por instalação
-- [ ] Criar modelo de Conta
-- [ ] Criar modelo de Categoria
-- [ ] Criar modelo de Transação
-- [ ] Adicionar `createdAt`, `updatedAt`, `deletedAt`, `deviceId` e `syncVersion`
-- [ ] Armazenar valores monetários em centavos
-- [ ] Criar tabelas
-- [ ] Criar DAOs
-- [ ] Criar repositories
-- [ ] Implementar migrations
-- [ ] Testar criação simultânea de registros com UUIDs
+### Categorias
+- [ ] categorias/subcategorias
+- [ ] ícone/cor
+- [ ] arquivar/reativar
+- [ ] ordenação básica
 
-## Fase 2 — Contas e categorias
+### Transações
+- [ ] receita
+- [ ] despesa
+- [ ] edição/exclusão lógica
+- [ ] listagem/filtros essenciais
+- [ ] datas e status essenciais
+- [ ] saldo atual/projetado
 
-- [ ] Listar contas
-- [ ] Criar conta
-- [ ] Editar conta
-- [ ] Implementar exclusão lógica/arquivamento
-- [ ] Criar categorias
-- [ ] Editar categorias
-- [ ] Implementar exclusão lógica/arquivamento
-- [ ] Implementar subcategorias
+### Transferências
+- [ ] transferência vinculada entre contas
+- [ ] não duplicar receita/despesa
 
-## Fase 3 — Transações
+### Dashboard
+- [ ] saldos
+- [ ] receitas/despesas
+- [ ] movimentações recentes
 
-- [ ] Cadastrar receita
-- [ ] Cadastrar despesa
-- [ ] Editar transação
-- [ ] Implementar exclusão lógica
-- [ ] Listar transações
-- [ ] Ordenar por data
-- [ ] Filtrar por mês/ano
+### Qualidade
+- [ ] Android
+- [ ] Windows
+- [ ] funcionamento 100% offline
+- [ ] migrations seguras
+- [ ] testes manuais do MVP
 
-## Fase 4 — Dashboard
+## Marco 2 — Transações avançadas
+- recorrências e séries;
+- autocomplete/modelos;
+- previsto x realizado;
+- liquidações parciais;
+- rateio;
+- reembolsos/pessoas;
+- tags/estabelecimentos;
+- edição em lote e undo;
+- anexos/lixeira.
 
-- [ ] Calcular saldo das contas
-- [ ] Calcular saldo total
-- [ ] Exibir receitas do mês
-- [ ] Exibir despesas do mês
-- [ ] Exibir transações recentes
-- [ ] Validar atualização automática
+## Marco 3 — Cartões e compromissos
+- cartões e limites;
+- faturas;
+- parcelamentos;
+- antecipações;
+- saldo credor;
+- compras internacionais;
+- competência x caixa;
+- agendamentos e projeções.
 
-## Fase 5 — Qualidade do MVP offline
+## Marco 4 — Planejamento
+- orçamentos avançados/versionados;
+- metas e objetivos encadeados;
+- reserva de emergência;
+- renda/taxa de poupança;
+- alertas;
+- saúde financeira e educação financeira.
 
-- [ ] Revisar experiência Android
-- [ ] Revisar experiência Windows
-- [ ] Testar funcionamento totalmente offline
-- [ ] Testar cálculos financeiros
-- [ ] Testar repositories
-- [ ] Testar migrations
-- [ ] Revisar desempenho
-- [ ] Revisar documentação
+## Marco 5 — Relatórios e interoperabilidade
+- relatórios/gráficos configuráveis;
+- relatórios salvos;
+- filtros globais;
+- CSV/Excel;
+- PDF;
+- OFX futuro;
+- conciliação;
+- pacote completo de exportação/importação.
 
-## Fase 6 — Educação financeira
+## Marco 6 — Patrimônio e dívidas
+- patrimônio líquido;
+- bens;
+- empréstimos/financiamentos;
+- amortização/renegociação;
+- cheque especial;
+- investimentos;
+- multimoeda/cotações.
 
-- [ ] Resumo de gastos por categoria
-- [ ] Comparação entre períodos
-- [ ] Indicadores de comprometimento de renda
-- [ ] Alertas configuráveis
-- [ ] Conteúdo/dicas de educação financeira
+## Marco 7 — Backup e sincronização
+- backup local diário (3 versões);
+- SyncProvider;
+- Sync Engine;
+- Google Drive OAuth;
+- Last Write Wins + histórico de conflito;
+- sync com app aberto;
+- status/histórico de sync;
+- anexos configuráveis;
+- migração futura entre provedores.
 
-## Fase 7 — Sync Engine
+## Marco 8 — Qualidade e publicação
+- testes automatizados gradualmente;
+- builds/release pipeline;
+- changelog e tags SemVer;
+- alpha → beta → 1.0;
+- decidir licença open-source;
+- revisão de privacidade, acessibilidade e documentação.
 
-Somente iniciar após o núcleo offline estar estável.
+## Princípio
 
-- [ ] Definir contrato `SyncProvider`
-- [ ] Implementar fila/identificação de alterações pendentes
-- [ ] Criar Sync Engine independente de provedor
-- [ ] Implementar manifest/versionamento remoto
-- [ ] Implementar download e aplicação de mudanças
-- [ ] Implementar upload de mudanças
-- [ ] Implementar tombstones remotos
-- [ ] Definir política inicial de conflitos
-- [ ] Registrar última sincronização e erros
-- [ ] Criar testes com dois bancos/dispositivos simulados
-
-## Fase 8 — Google Drive Sync
-
-- [ ] Configurar projeto Google/OAuth
-- [ ] Implementar autenticação
-- [ ] Solicitar somente permissões necessárias
-- [ ] Implementar `GoogleDriveSyncProvider`
-- [ ] Utilizar armazenamento de dados específico do app
-- [ ] Sincronização manual (`Sincronizar agora`)
-- [ ] Sincronização ao iniciar/retomar quando apropriado
-- [ ] Exibir alterações pendentes e última sincronização
-- [ ] Testar Android ↔ Windows
-- [ ] Testar operação offline prolongada e reconciliação
-
-## Fase 9 — Expansão
-
-- [ ] Metas financeiras
-- [ ] Relatórios PDF
-- [ ] Exportação de dados
-- [ ] Backup criptografado
-- [ ] Outros provedores de sync
-- [ ] Estratégias avançadas de conflitos
-
-## Princípio do roadmap
-
-O FinApp deve permanecer utilizável mesmo sem internet, sem conta Google e sem serviço remoto. A sincronização complementa o banco local; ela nunca substitui o núcleo offline.
+Funcionalidades pós-MVP não devem atrasar o núcleo. A arquitetura deve suportá-las, mas cada marco precisa produzir software utilizável.
