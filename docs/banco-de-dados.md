@@ -71,3 +71,41 @@ Conteúdo em armazenamento interno; banco guarda metadados como ID, entidade, no
 ## Sync
 
 Metadados suportam Last Write Wins com registro de conflito. SyncProvider é infraestrutura, não domínio. Tombstones permanecem até descarte seguro.
+
+## Implementação v1 (Issue #18)
+
+O arquivo `lib/core/database/schema_v1.dart` contém o schema inicial imutável:
+`accounts`, `categories`, `transactions` e `transfers`. A classe
+`AppDatabase` abre `finapp.sqlite` no diretório de suporte do aplicativo,
+usa Drift sobre SQLite em isolate de fundo e é registrada em `get_it` antes
+que a interface seja exibida. O schema v1 usa SQL explícito por meio de Drift;
+as DAOs tipadas das próximas issues podem ser adicionadas sem alterar esta
+versão publicada.
+
+- IDs são UUID v4 gerados por `EntityMetadata.newId()`; a geração é feita na
+  aplicação, inclusive em operações offline.
+- Valores são `INTEGER` em unidades mínimas (`*_minor`). Para BRL, 12345
+  representa R$ 123,45. Não grave `double` nem valor formatado.
+- `created_at`, `updated_at` e `deleted_at` são epoch em milissegundos UTC;
+  `device_id` e `sync_version` preparam sincronização, sem habilitá-la.
+- Chaves estrangeiras são ativadas em toda abertura. Exclusão lógica usa
+  `deleted_at`; referências históricas usam `ON DELETE RESTRICT`.
+- `schemaVersion` é 1. Novas versões entram como passos sequenciais em
+  `onUpgrade`; o schema da v1 permanece imutável. Uma versão sem migration
+  explícita falha, preservando o banco anterior.
+
+### Procedimento para uma migration futura
+
+Antes de uma migration que altera ou remove dados, criar uma cópia consistente
+com `VACUUM INTO` em arquivo separado, verificar espaço e manter esse backup
+até a validação. Adicionar um case sequencial em `onUpgrade`, executar as
+mudanças em transação, validar `PRAGMA foreign_key_check` e testar abertura
+nova, atualização a partir de versões anteriores e falha com rollback. Não
+usar migration destrutiva. Se a validação falhar, manter o arquivo de backup
+para restauração explícita; não sobrescrever automaticamente dados do usuário.
+A versão 1 cria uma base nova, então ainda não há dados anteriores para copiar.
+
+Validação local: `flutter pub get`, `dart format lib test`, `flutter analyze`
+e `flutter test test/core/database/app_database_test.dart`. O `pubspec.lock`
+deve ser atualizado pelo `flutter pub get` na máquina de desenvolvimento ao
+adicionar as dependências desta issue.
