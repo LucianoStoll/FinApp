@@ -1,89 +1,119 @@
-# Requisitos — FinApp
+# Especificação de Requisitos — FinApp
 
-## 1. Visão
+## Visão e MVP
 
-Aplicativo pessoal de finanças para Android e Windows, offline-first, open-source e orientado a educação financeira. O produto deve começar simples, mas seu modelo deve comportar evolução para cartões, orçamento, metas, patrimônio, dívidas, investimentos, importação, backup e sincronização.
+FinApp é um gerenciador financeiro pessoal para Android e Windows, open-source, offline-first e orientado à educação financeira. SQLite/Drift local é a fonte de verdade operacional; recursos online são opcionais.
 
-## 2. MVP obrigatório
+O primeiro MVP (v0.1.0-alpha) é enxuto: contas, categorias/subcategorias, receitas, despesas, transferências, saldo atual/projetado, dashboard básico e funcionamento totalmente offline.
 
-### RF-MVP-01 — Contas
-Criar, editar, arquivar, reativar e consultar contas. Conta arquivada não aceita novos lançamentos, mas preserva histórico e pode ser configurada para aparecer ou não em totais/gráficos.
+## Núcleo financeiro
 
-### RF-MVP-02 — Categorias
-Categorias e subcategorias editáveis, arquiváveis e reativáveis, com ícone/cor, histórico preservado e ordenação manual, alfabética, favoritas ou por uso.
+Transações suportarão progressivamente descrição, valor previsto/realizado, recorrência, competência, vencimento, efetivação, conta, categoria/subcategoria e flags independentes para ignorar em saldo e em análises. Estados principais: Pendente, Efetivada e Atrasada (preferencialmente derivada).
 
-### RF-MVP-03 — Receitas e despesas
-Cadastrar, editar, excluir logicamente e listar lançamentos. O modelo deve comportar competência, vencimento e efetivação, status Pendente/Efetivada/Atrasada e flags independentes para ignorar saldo ou análises.
+Saldo atual considera efetivações; saldo projetado incorpora pendências/futuros. Previsto e realizado são preservados e comparáveis.
 
-### RF-MVP-04 — Transferências
-Transferência é operação vinculada entre contas e não é receita/despesa. O modelo deve permitir taxas e evolução futura para moedas diferentes, agendamento e estado em trânsito.
+Obrigações podem ter liquidações parciais com juros, multa, desconto e acréscimos. A mesma abstração atende contas a pagar/receber e antecipações de fatura.
 
-### RF-MVP-05 — Saldos
-Exibir saldo atual baseado em movimentos efetivados e saldo projetado incluindo compromissos pendentes/futuros conforme regras.
+Uma transação pode ser rateada internamente por valor ou percentual entre categorias sem duplicar a movimentação. Reembolsos ficam vinculados à despesa e à pessoa, podendo ser parciais/totais e múltiplos.
 
-### RF-MVP-06 — Dashboard
-Resumo básico de saldos, receitas, despesas e movimentações recentes.
+Transferências são operações vinculadas entre contas, não receita/despesa. Evoluem para tarifas, moedas distintas, câmbio/spread, datas de saída/entrada, estados Pendente/Agendada/Em trânsito/Concluída/Cancelada e recorrência.
 
-### RF-MVP-07 — Offline
-Todas as funções do MVP funcionam sem internet.
+## Contas
 
-## 3. Requisitos transversais já definidos
+Tipos padrão e personalizáveis. Dinheiro/carteira é uma conta comum; saque é transferência e só há despesa quando o dinheiro é gasto.
 
-- valores monetários persistidos sem ponto flutuante como representação principal;
-- UUIDs;
-- timestamps consistentes;
-- histórico/auditoria para alterações relevantes;
-- exclusão lógica/tombstone para dados sincronizáveis;
-- lixeira; limpeza automática opcional;
-- validações em tempo real classificadas em Erro/Aviso/Sugestão;
-- operações demoradas assíncronas, com progresso e cancelamento quando seguro;
-- ajuda contextual e documentação integrada;
-- PT-BR inicialmente, mas idioma, moeda base e formatação regional independentes;
-- tema claro, escuro e seguir sistema;
-- acessibilidade básica: leitor de tela, contraste e texto escalável;
-- Android e Windows com layouts adaptativos;
-- atalhos configuráveis no Windows;
-- central de notificações internas;
-- telemetria e crash reports opcionais e separados;
-- consentimento granular para qualquer recurso online.
+Contas podem ser arquivadas/inativadas, reativadas e configuradas quanto à visibilidade em saldos/gráficos. Podem ficar negativas e ter cheque especial separado do saldo; limite não é patrimônio e uso é passivo.
 
-## 4. Funcionalidades pós-MVP consolidadas
+Contas podem pertencer a grupos personalizados (liquidez, reserva, investimentos, dia a dia).
 
-### Transações avançadas
-Recorrências; modelos inteligentes/autocomplete; previsto x realizado; liquidações parciais; taxas/juros/descontos estruturados; rateio por valor ou percentual mantendo uma única transação principal; reembolsos vinculados; anexos; edição em lote; desfazer/refazer; descrições importadas bruta + normalizada.
+## Categorias, tags, estabelecimentos e pessoas
 
-### Cartões
-Faturas como entidades; fechamento variável; compra/processamento/fatura real; parcelamento; limite individual por cartão e opcional; histórico de limite; saldo credor; pagamentos/antecipações parciais; estornos; compras internacionais; competência x caixa; cartão arquivado com histórico.
+Categorias/subcategorias possuem ícone, cor, aliases, nome curto/completo e ordenação manual, alfabética, favoritas e frequência. Registros usados são arquivados, não apagados do histórico, e podem ser migrados/reativados.
 
-### Planejamento
-Orçamentos fixos, percentuais, acumulativos e metas de redução; referência por competência ou vencimento; carry-over configurável; versionamento; múltiplos orçamentos com prioridade/exclusividade. Metas e objetivos encadeados; prioridades e sugestões de distribuição; reserva de emergência por meses/valor e grupo de contas.
+Tags são livres e independentes, mas seguem o mesmo ciclo de arquivamento/reativação/mesclagem.
 
-### Educação financeira
-Classificação Essencial/Não essencial; renda recorrente/variável/média; taxa de poupança; saúde financeira por dimensões e nota opcional; metodologia transparente; perfil financeiro evolutivo; recomendações e simulações.
+Estabelecimentos e pessoas podem ser arquivados, mesclados e manter aliases, preservando vínculos. Pessoas concentram histórico de empréstimos, reembolsos e valores a pagar/receber.
 
-### Patrimônio e dívidas
-Patrimônio líquido; bens com valor de compra/atual e histórico; regra opcional de valorização/depreciação percentual; empréstimos/financiamentos com principal, juros e encargos; renegociação; amortização extraordinária; empréstimos informais vinculados a pessoas; cheque especial como passivo quando utilizado.
+## Cartões
 
-### Multimoeda e investimentos
-Contas em moedas diferentes; moeda base; conversões e histórico cambial; transferências cambiais; última cotação disponível offline. Investimentos em módulo próprio, preparado para provedores de cotação via abstração.
+Módulo futuro completo: limite independente por cartão, controle de limite opcional, fechamento/vencimento, parcelas, faturas, pagamentos/antecipações, estornos, saldo credor, adicionais e importação.
 
-### Importação/exportação
-CSV/Excel com mapeamento guiado; PDF; preparação para OFX; detecção/conciliação futura; categorias externas ignoradas em favor das regras internas. Exportação completa em pacote portátil/versionado com integridade; importação com validação e backup prévio.
+Fatura é entidade própria. Compra parcelada compromete o valor total e libera limite conforme liquidações. Pagamento de fatura é liquidação/fluxo de caixa, não nova despesa. Relatórios podem alternar competência e caixa.
 
-### Backup e sync
-Backup local diário, 3 versões por padrão; restauração com validação e backup prévio. Futuro SyncProvider desacoplado, começando por Google Drive/OAuth; sincronização somente com app aberto, ao abrir e após alterações relevantes; botão manual; Last Write Wins com conflito registrado; status detalhado; anexos em modo Automático/Somente Wi-Fi/Manual.
+Compras internacionais preservam moeda/valor original, câmbio estimado/realizado, taxas, spread e valor final.
 
-## 5. Requisitos não funcionais
+## Planejamento
 
-- desempenho: cache, recálculo incremental e agregações/snapshots;
-- migrations versionadas, backup antes de mudanças importantes e rollback seguro;
-- logs locais por nível, rotação e modo diagnóstico;
-- pacote de diagnóstico sem dados financeiros sensíveis por padrão;
-- segurança opcional: bloqueio/PIN/biometria e criptografia local independentes;
-- código modular e documentado;
-- `dart format` e `flutter analyze` no CI;
-- testes manuais no início; evolução posterior para testes automatizados dos fluxos críticos.
+Recorrências permitem editar ocorrência, ocorrência e seguintes ou série inteira. Parcelamentos têm compromisso pai e parcelas individuais.
 
-## 6. Fora do MVP
+Orçamentos podem ser gerais, por categoria/subcategoria, fixos, percentuais da renda, acumulativos ou metas de redução; cada um escolhe competência ou vencimento. Regras de acúmulo e versões possuem vigência. Uma transação pode participar de múltiplos orçamentos sem duplicar valores.
 
-Cartões, orçamento, metas, sync, investimentos, patrimônio, empréstimos, importação avançada, anexos e demais módulos descritos acima são requisitos planejados, não critérios de conclusão do primeiro MVP.
+Reserva de emergência é módulo específico: alvo em valor/meses, despesas consideradas e grupo de contas/ativos que compõem a reserva. Essencial/Não essencial pode vir da categoria e ser sobrescrito na transação.
+
+Metas evoluem para objetivos e planos encadeados. O app pode sugerir distribuição entre objetivos com base em prazo, juros, risco e importância; usuário confirma.
+
+## Renda, saúde financeira e educação
+
+Receitas podem ser classificadas como renda recorrente/variável; médias usam período configurável. Taxa de poupança distingue sobra de caixa de aportes efetivos.
+
+Saúde financeira terá painel por áreas e nota geral opcional. Metodologia e pesos são transparentes e podem variar conforme perfil financeiro. Mudanças de perfil sugeridas pelo app exigem confirmação.
+
+Análises educativas começam locais e transparentes; IA futura é opcional e não recebe dados financeiros sem consentimento explícito.
+
+## Dívidas e patrimônio
+
+Empréstimos/financiamentos suportam principal, juros, tarifas, seguros, impostos, parcelas, saldo devedor, renegociação vinculada e amortização extraordinária com simulações.
+
+Bens guardam aquisição, valor atual, documentos, dívidas vinculadas e histórico; podem usar regra percentual estimada de valorização/depreciação, com valor manual prevalecendo.
+
+Patrimônio líquido acompanha ativos menos passivos. Investimentos são módulo futuro separado, preparado para PriceProvider, cotações, múltiplas moedas e cache offline.
+
+## Moedas e encargos
+
+Cada conta pode ter moeda própria e o perfil uma moeda base. Conversões preservam valores originais e equivalentes. Encargos são componentes estruturados: IOF, juros, tarifa, spread, multa, desconto etc.
+
+## Importação, exportação e conciliação
+
+CSV e Excel para importação/exportação, PDF para relatórios e importação guiada; OFX/extratos/faturas são evolução futura.
+
+Categorias externas importadas são ignoradas. Descrição bruta é preservada e uma versão normalizada serve à exibição, busca e regras.
+
+Conciliação compara saldo real e app. Pacote completo de exportação é portátil/versionado e inclui banco, anexos e configurações. Importação valida integridade/compatibilidade, cria backup e substitui explicitamente a base.
+
+## Produtividade
+
+Regras automáticas valem para novos lançamentos/importações; em conflito, a última criada vence. Alteração manual afeta apenas a transação.
+
+Ações rápidas, autocompletar e modelos inteligentes reutilizam histórico e contexto. Busca global, edição em lote, desfazer/refazer, lixeira, favoritos, relatórios salvos e filtros globais fazem parte da evolução.
+
+## UX
+
+UI adaptativa Android/Windows. Tema claro/escuro/sistema. Acessibilidade básica: leitor de tela, contraste e texto escalável. Sem localização em lançamentos.
+
+Onboarding contínuo e Ajuda contextual com tooltips, busca, guias e futuro assistente baseado na documentação. Windows terá atalhos configuráveis.
+
+Validações distinguem Erro, Aviso e Sugestão. Operações longas são assíncronas, com progresso e cancelamento quando seguro. Há central interna de notificações.
+
+## Perfis, privacidade e segurança
+
+Múltiplos perfis futuros serão independentes, privados e em bases separadas; todas as configurações pertencem ao perfil. Idioma, moeda base e formatação regional são independentes.
+
+PIN/senha, biometria Android e criptografia local são opcionais e independentes. Telemetria separa falhas e métricas de uso, ambas opt-in. Recursos online exigem consentimento granular em central de privacidade.
+
+## Backup, anexos e sync
+
+Anexos são armazenados internamente com metadados/hash; limite inicial de 20 MB por arquivo.
+
+Backup automático local diário mantém 3 versões. Restauração cria backup atual e valida integridade/compatibilidade.
+
+Sync futuro ocorre apenas com app aberto: ao abrir, após alterações importantes e por comando manual. Provedor é desacoplado (Google Drive primeiro provável; OneDrive/WebDAV/servidor próprio futuros). Autenticação é no provedor.
+
+Conflitos usam Last Write Wins com histórico. Anexos: Automático/Somente Wi-Fi/Manual. Base vazia em novo dispositivo baixa a remota; se já houver base local independente, não há mesclagem automática.
+
+## Requisitos técnicos
+
+Flutter/Dart, Drift/SQLite, UUID, BLoC/Cubit, go_router, get_it, arquitetura por feature com data/domain/presentation + core, migrations com backup/validação/rollback, tratamento central de erros e cache/agregações para desempenho.
+
+CI inicial: formatação + flutter analyze. MVP começa com testes manuais; testes automatizados dos fluxos críticos entram depois.
+
+Git: Conventional Commits, branches padronizadas, PR checklist, vínculo com issues. Releases seguem Semantic Versioning com alpha/beta, tags e changelog. Licença será decidida próximo da publicação.
