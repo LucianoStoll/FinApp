@@ -4,10 +4,21 @@
 
 O primeiro marco é um MVP pequeno e utilizável. Recursos avançados já têm requisitos definidos, mas entram incrementalmente.
 
+## Controle de versões e branches
+
+Cada ciclo de desenvolvimento deve possuir uma branch principal com o **nome exato da versão**, por exemplo `v0.1.0-alpha`, `v0.2.0-alpha` ou `v0.5.0-beta`.
+
+Todas as issues previstas para aquela versão devem ser implementadas e validadas nessa branch. Evitar branches paralelas desnecessárias; quando uma branch auxiliar for indispensável, ela deve retornar para a branch da versão, nunca diretamente para `main`.
+
+A branch `main` representa somente versões concluídas/estáveis dentro do marco planejado. **A Pull Request da branch da versão para `main` só deve ser aberta quando todo o escopo daquela versão estiver concluído e validado.** Depois do merge, a versão recebe tag/release/changelog e inicia-se uma nova branch com o nome da próxima versão.
+
+Antes de qualquer implementação, verificar qual é a branch de versão ativa e manter controle das branches existentes para evitar trabalho divergente ou abandonado.
+
 ## Fase 0 — Fundação
 - [x] Visão, questionário e escopo
 - [x] Offline-first e preparação para sync
 - [x] Stack e arquitetura alvo
+- [x] Criar branch de versão `v0.1.0-alpha`
 - [ ] Reorganizar Flutter em core + features
 - [ ] Configurar Drift, BLoC/Cubit, go_router e get_it
 - [ ] Ambientes dev/test/prod
