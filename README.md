@@ -1,63 +1,60 @@
 # FinApp
 
-Aplicativo multiplataforma de controle financeiro pessoal em **Dart + Flutter**, para **Android e Windows**, com arquitetura **offline-first**, foco em privacidade, educação financeira e evolução incremental.
+Gerenciador financeiro pessoal multiplataforma em **Dart + Flutter**, com arquitetura **offline-first**, privacidade local e evolução planejada para sincronização opcional.
 
-> Projeto em desenvolvimento e planejado como base para TCC.
+> Projeto open-source em desenvolvimento e base de TCC.
 
-## Objetivo
+## Plataformas
 
-O FinApp deve permitir que o usuário controle sua vida financeira sem depender de internet. O banco local é a fonte imediata dos dados; recursos online serão opcionais.
+Android e Windows.
 
 ## MVP — v0.1.0-alpha
 
-O primeiro MVP será deliberadamente enxuto:
+O primeiro MVP será propositalmente enxuto: contas, categorias/subcategorias, receitas, despesas, transferências, saldo atual/projetado, dashboard básico, SQLite/Drift e funcionamento 100% offline.
 
-- contas financeiras;
-- categorias e subcategorias;
-- receitas e despesas;
-- transferências entre contas;
-- saldo atual e projetado;
-- histórico/listagem de transações;
-- dashboard básico;
-- persistência local com SQLite/Drift;
-- funcionamento offline em Android e Windows.
+Os módulos avançados já possuem especificação, mas serão implementados incrementalmente.
 
-A arquitetura será preparada para as funcionalidades futuras, mas elas não bloqueiam a entrega do MVP.
+## Arquitetura
 
-## Decisões técnicas
+Organização por feature, com camadas data/domain/presentation e core compartilhado.
 
-- Flutter + Dart
-- SQLite + Drift
-- arquitetura híbrida por **feature**, com camadas `data/domain/presentation`
-- `core/` somente para recursos realmente compartilhados
-- BLoC/Cubit
-- go_router
-- get_it com ambientes `dev/test/prod`
-- UUIDs para entidades sincronizáveis
-- dinheiro persistido em unidades mínimas inteiras (centavos quando aplicável)
-- migrations versionadas com backup e recuperação
-- GitHub Actions inicialmente com análise e formatação
-- Semantic Versioning, alpha/beta, tags e changelog
+    lib/
+    ├── core/
+    ├── features/
+    │   ├── accounts/
+    │   ├── categories/
+    │   ├── transactions/
+    │   ├── transfers/
+    │   └── dashboard/
+    └── main.dart
+
+Stack planejada: Flutter, Drift/SQLite, BLoC/Cubit, go_router e get_it.
 
 ## Princípios
 
-1. Offline-first.
-2. Salvar localmente nunca depende da nuvem.
-3. Recursos complexos entram incrementalmente.
-4. Histórico financeiro não deve ser destruído por arquivamentos/renomeações.
-5. Operações que não representam renda/despesa, como transferências e pagamento de fatura, não devem duplicar resultados.
-6. Privacidade e integrações online são opt-in.
-7. O modelo deve permitir evolução sem reescrever o núcleo.
+- salvar localmente nunca depende da nuvem;
+- UUIDs e metadados preparados para sync futuro;
+- dinheiro persistido em unidades mínimas inteiras;
+- migrations versionadas e seguras;
+- domínio separado da UI/infraestrutura;
+- serviços externos opcionais e desacoplados;
+- UI adaptativa Android/Windows.
+
+## Evolução
+
+A especificação cobre cartões/faturas, recorrências, parcelamentos, rateios, reembolsos, orçamentos, metas, reserva, dívidas, patrimônio, investimentos, multimoeda, importação/exportação, relatórios, backup, anexos e sincronização por provedores.
 
 ## Documentação
 
-- [Requisitos e especificação funcional](docs/requisitos.md)
+- [Especificação de requisitos](docs/requisitos.md)
 - [Arquitetura](docs/arquitetura.md)
 - [Banco de dados](docs/banco-de-dados.md)
 - [Roadmap](docs/roadmap.md)
-- [Decisões do produto](docs/especificacao-produto.md)
-- [Guidelines de desenvolvimento](docs/guidelines-desenvolvimento.md)
+
+## Desenvolvimento
+
+Conventional Commits, branches padronizadas, PRs com checklist e Semantic Versioning. CI inicial: formatação + flutter analyze. Testes automatizados serão ampliados após o MVP.
 
 ## Status
 
-🛠️ Planejamento consolidado; próximo marco: fundação técnica e MVP offline.
+Planejamento consolidado. Próximo marco: fundação técnica e MVP offline.
