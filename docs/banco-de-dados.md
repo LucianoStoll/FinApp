@@ -2,145 +2,123 @@
 
 ## Estratégia
 
-O FinApp será **offline-first**. O banco local **SQLite**, acessado por meio do **Drift**, será a fonte primária para leitura e escrita no dispositivo. Nenhuma operação financeira essencial deverá depender de internet.
+SQLite + Drift, offline-first. O schema começa pequeno para o MVP, mas utiliza decisões que evitam bloqueios futuros.
 
-A modelagem do MVP já será preparada para uma futura sincronização entre Android e Windows, inicialmente planejada por meio do Google Drive, sem tornar a nuvem obrigatória.
+## Campos comuns
 
-## Princípios
+Entidades sincronizáveis devem suportar, conforme aplicável:
 
-1. Toda alteração é salva primeiro no SQLite local.
-2. Sincronização é opcional e posterior ao salvamento local.
-3. Ausência de internet nunca impede o uso normal do app.
-4. Registros devem possuir identificadores globais para evitar colisões entre dispositivos.
-5. Alterações e exclusões precisam ser rastreáveis para sincronização futura.
-6. O domínio não deve depender diretamente do Google Drive, permitindo outros provedores futuramente.
-
-## Identificadores
-
-As entidades sincronizáveis utilizarão **UUID** como identificador principal em vez de IDs inteiros autoincrementais.
-
-Exemplo:
-
-```text
-550e8400-e29b-41d4-a716-446655440000
-```
-
-Assim, Android e Windows podem criar registros offline sem risco prático de gerar o mesmo identificador.
-
-## Campos comuns de sincronização
-
-As entidades sincronizáveis deverão possuir, conforme aplicável:
-
-| Campo | Finalidade |
+| Campo | Uso |
 |---|---|
-| id | UUID global do registro |
-| createdAt | Data/hora de criação |
-| updatedAt | Última alteração |
-| deletedAt | Exclusão lógica (tombstone), quando aplicável |
-| deviceId | Dispositivo que originou a última alteração |
-| syncVersion | Versão/revisão usada pelo mecanismo de sincronização |
+| id | UUID global |
+| createdAt | criação |
+| updatedAt | última alteração |
+| deletedAt | tombstone/exclusão lógica |
+| deviceId | origem da alteração |
+| syncVersion | revisão para sync |
 
-Datas usadas para sincronização devem ser persistidas de forma consistente, preferencialmente normalizadas em UTC.
-
-## Conta (`accounts`)
-
-| Campo | Tipo conceitual | Descrição |
-|---|---|---|
-| id | UUID | Identificador global |
-| name | texto | Nome da conta |
-| type | enum/texto | Carteira, banco etc. |
-| initialBalanceCents | inteiro | Saldo inicial em centavos |
-| createdAt | data/hora | Criação |
-| updatedAt | data/hora | Última alteração |
-| deletedAt | data/hora opcional | Exclusão lógica |
-| deviceId | UUID/texto | Origem da alteração |
-| syncVersion | inteiro | Revisão de sincronização |
-
-## Categoria (`categories`)
-
-| Campo | Tipo conceitual | Descrição |
-|---|---|---|
-| id | UUID | Identificador global |
-| name | texto | Nome da categoria |
-| type | enum | Receita ou despesa |
-| parentId | UUID opcional | Categoria pai para subcategorias |
-| createdAt | data/hora | Criação |
-| updatedAt | data/hora | Última alteração |
-| deletedAt | data/hora opcional | Exclusão lógica |
-| deviceId | UUID/texto | Origem da alteração |
-| syncVersion | inteiro | Revisão de sincronização |
-
-## Transação (`transactions`)
-
-| Campo | Tipo conceitual | Descrição |
-|---|---|---|
-| id | UUID | Identificador global |
-| description | texto | Descrição da movimentação |
-| amountCents | inteiro | Valor em centavos |
-| date | data/hora | Data da movimentação |
-| type | enum | Receita ou despesa |
-| accountId | UUID | Conta relacionada |
-| categoryId | UUID | Categoria/subcategoria relacionada |
-| createdAt | data/hora | Criação |
-| updatedAt | data/hora | Última alteração |
-| deletedAt | data/hora opcional | Exclusão lógica |
-| deviceId | UUID/texto | Origem da alteração |
-| syncVersion | inteiro | Revisão de sincronização |
-
-## Relacionamentos
-
-```text
-Account 1 ───── N Transaction
-Category 1 ──── N Transaction
-Category 1 ──── N Category
-              (subcategorias)
-```
+Timestamps de sincronização devem ser normalizados consistentemente.
 
 ## Valores monetários
 
-Valores financeiros serão armazenados preferencialmente em **centavos como inteiro**, evitando problemas de precisão de ponto flutuante.
+Não persistir dinheiro como `double`. Usar unidade mínima inteira associada à moeda. Para BRL:
 
 ```text
 R$ 125,90 → 12590
 ```
 
-## Saldo
+O desenho deve comportar moedas cuja unidade mínima não siga exatamente duas casas.
 
-```text
-saldo atual = saldo inicial + receitas - despesas
-```
+## MVP
 
-O saldo será derivado dos dados financeiros válidos, desconsiderando registros marcados como excluídos.
+### accounts
+Conceitualmente:
+- id;
+- name;
+- type;
+- currencyCode;
+- initialBalanceMinor;
+- archivedAt/status;
+- configuração de visibilidade em totais/análises;
+- metadados comuns.
 
-## Exclusão lógica
+Conta em espécie é uma conta normal com tipo/dados cadastrais diferentes. Conta arquivada não recebe novos lançamentos e pode ser reativada.
 
-Entidades sincronizáveis não devem ser removidas fisicamente imediatamente. Ao excluir um registro:
+### categories
+- id;
+- name;
+- shortName opcional;
+- parentId opcional;
+- icon/color;
+- aliases;
+- archivedAt/status;
+- metadados comuns.
 
-```text
-deletedAt = instante da exclusão
-updatedAt = instante da exclusão
-```
+Categorias com histórico são arquivadas, não destruídas. Subcategorias preservam vínculo/histórico.
 
-Esse tombstone permite que outro dispositivo descubra que o registro foi removido. Uma política futura poderá eliminar tombstones antigos somente quando for seguro.
+### transactions
+O MVP implementa somente o necessário, mas o modelo deve evoluir para:
+- descrição;
+- valor;
+- tipo;
+- accountId;
+- categoryId/subcategoryId;
+- competenceDate;
+- dueDate;
+- effectiveDate;
+- status;
+- ignoreBalance;
+- ignoreAnalytics;
+- valor previsto x realizado;
+- metadados comuns.
 
-## Preparação para conflitos
+`Atrasada` pode ser derivada de vencimento + ausência de efetivação, evitando estado redundante quando adequado.
 
-`updatedAt`, `deviceId` e `syncVersion` fornecem metadados para o mecanismo de sincronização. A primeira estratégia poderá utilizar Last Write Wins, mas a arquitetura não deve impedir a adoção posterior de detecção/resolução explícita de conflitos.
+### transfers
+Transferência deve possuir identidade própria e movimentos vinculados, evitando contabilização como receita/despesa. Taxas são despesas separáveis.
 
-## Sincronização futura
+## Evoluções previstas do modelo
 
-O Google Drive será inicialmente considerado como provedor remoto, usando armazenamento específico do aplicativo. Entretanto, SQLite/Drift e os repositories não devem conhecer diretamente a API do Drive.
+- recurrence/series;
+- installments;
+- settlements/liquidações parciais;
+- cards/invoices/card purchases;
+- splits/rateios;
+- reimbursements;
+- people;
+- tags;
+- merchants;
+- budgets e versões;
+- goals/plans;
+- assets;
+- debts/loans;
+- investments/quotes;
+- attachments;
+- audit log;
+- operation history/undo;
+- trash;
+- sync state.
 
-```text
-SQLite/Drift
-     ↕
-Repositories
-     ↕
-Sync Engine
-     ↕
-Sync Provider
-     ↕
-Google Drive (inicialmente)
-```
+## Rateio
 
-Essa abstração permitirá adicionar outros provedores no futuro sem alterar o banco ou as regras principais do aplicativo.
+Uma transação principal pode possuir N divisões internas por valor ou percentual. A soma das divisões deve fechar o valor aplicável. O rateio não duplica a transação no saldo.
+
+## Liquidações
+
+Uma obrigação pode possuir várias liquidações, cada uma com data, valor, juros, multa, desconto e acréscimos. O modelo preserva valor original, total liquidado e saldo restante. A mesma abstração pode atender contas a pagar/receber e antecipações/pagamentos de fatura.
+
+## Cartões
+
+Fatura é entidade própria. Compras são despesas; pagamento de fatura é liquidação/transferência financeira e não uma segunda despesa. Limite e saldo credor são conceitos separados. Parcelamento compromete o valor total do limite e libera conforme regras de pagamento.
+
+## Lixeira e exclusão
+
+Exclusão de registros sincronizáveis usa tombstone. A lixeira pode reter itens indefinidamente por padrão e ter limpeza automática opcional. Exclusão definitiva exige confirmação.
+
+## Anexos
+
+Conteúdo fica na área interna do FinApp; banco armazena metadados, vínculo, tamanho, tipo e hash. Limite inicial por arquivo: **20 MB**. Hash permite integridade/deduplicação futura.
+
+## Backup
+
+Backup local automático diário; manter **3 versões** recentes por padrão. Restauração valida integridade/compatibilidade e cria backup do estado atual antes de substituir a base.
