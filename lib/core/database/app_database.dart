@@ -32,23 +32,14 @@ class AppDatabase extends GeneratedDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) async {
+        onCreate: (_) async {
           for (final statement in schemaV1) {
-            await m.issueCustomQuery(statement);
+            await customStatement(statement);
           }
         },
         onUpgrade: (m, from, to) async {
-          if (from > to) {
-            throw StateError('Banco v$from é mais novo que o aplicativo v$to');
-          }
-          // Cada nova versão deve acrescentar um case, sem editar schemaV1.
-          // Drift atualiza user_version somente após a migration bem-sucedida.
-          for (var version = from + 1; version <= to; version++) {
-            switch (version) {
-              default:
-                throw StateError('Migration v$version não implementada');
-            }
-          }
+          // Adicione um passo explícito por versão ao evoluir o schema.
+          throw StateError('Migration v$from → v$to não implementada');
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
