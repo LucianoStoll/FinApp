@@ -1,88 +1,146 @@
 # Banco de Dados — FinApp
 
-## Tecnologia
+## Estratégia
 
-O MVP utilizará banco local **SQLite**. A integração com Dart/Flutter está planejada por meio do **Drift**, permitindo consultas tipadas e uma camada organizada de persistência.
+O FinApp será **offline-first**. O banco local **SQLite**, acessado por meio do **Drift**, será a fonte primária para leitura e escrita no dispositivo. Nenhuma operação financeira essencial deverá depender de internet.
 
-> Este documento representa a modelagem inicial. O schema definitivo será versionado conforme a implementação.
+A modelagem do MVP já será preparada para uma futura sincronização entre Android e Windows, inicialmente planejada por meio do Google Drive, sem tornar a nuvem obrigatória.
 
-## Entidades principais
+## Princípios
 
-### Conta (`accounts`)
+1. Toda alteração é salva primeiro no SQLite local.
+2. Sincronização é opcional e posterior ao salvamento local.
+3. Ausência de internet nunca impede o uso normal do app.
+4. Registros devem possuir identificadores globais para evitar colisões entre dispositivos.
+5. Alterações e exclusões precisam ser rastreáveis para sincronização futura.
+6. O domínio não deve depender diretamente do Google Drive, permitindo outros provedores futuramente.
 
-Campos iniciais sugeridos:
+## Identificadores
+
+As entidades sincronizáveis utilizarão **UUID** como identificador principal em vez de IDs inteiros autoincrementais.
+
+Exemplo:
+
+```text
+550e8400-e29b-41d4-a716-446655440000
+```
+
+Assim, Android e Windows podem criar registros offline sem risco prático de gerar o mesmo identificador.
+
+## Campos comuns de sincronização
+
+As entidades sincronizáveis deverão possuir, conforme aplicável:
+
+| Campo | Finalidade |
+|---|---|
+| id | UUID global do registro |
+| createdAt | Data/hora de criação |
+| updatedAt | Última alteração |
+| deletedAt | Exclusão lógica (tombstone), quando aplicável |
+| deviceId | Dispositivo que originou a última alteração |
+| syncVersion | Versão/revisão usada pelo mecanismo de sincronização |
+
+Datas usadas para sincronização devem ser persistidas de forma consistente, preferencialmente normalizadas em UTC.
+
+## Conta (`accounts`)
 
 | Campo | Tipo conceitual | Descrição |
 |---|---|---|
-| id | inteiro | Identificador único |
+| id | UUID | Identificador global |
 | name | texto | Nome da conta |
-| type | texto/enum | Carteira, banco etc. |
-| initialBalance | decimal | Saldo existente antes das transações registradas |
-| createdAt | data/hora | Data de criação |
+| type | enum/texto | Carteira, banco etc. |
+| initialBalanceCents | inteiro | Saldo inicial em centavos |
+| createdAt | data/hora | Criação |
+| updatedAt | data/hora | Última alteração |
+| deletedAt | data/hora opcional | Exclusão lógica |
+| deviceId | UUID/texto | Origem da alteração |
+| syncVersion | inteiro | Revisão de sincronização |
 
-### Categoria (`categories`)
+## Categoria (`categories`)
 
 | Campo | Tipo conceitual | Descrição |
 |---|---|---|
-| id | inteiro | Identificador único |
+| id | UUID | Identificador global |
 | name | texto | Nome da categoria |
 | type | enum | Receita ou despesa |
-| parentId | inteiro opcional | Categoria pai quando representar uma subcategoria |
+| parentId | UUID opcional | Categoria pai para subcategorias |
+| createdAt | data/hora | Criação |
+| updatedAt | data/hora | Última alteração |
+| deletedAt | data/hora opcional | Exclusão lógica |
+| deviceId | UUID/texto | Origem da alteração |
+| syncVersion | inteiro | Revisão de sincronização |
 
-Usar uma referência `parentId` permite tratar categorias e subcategorias com a mesma estrutura em vez de armazenar a subcategoria como texto livre.
-
-### Transação (`transactions`)
+## Transação (`transactions`)
 
 | Campo | Tipo conceitual | Descrição |
 |---|---|---|
-| id | inteiro | Identificador único |
+| id | UUID | Identificador global |
 | description | texto | Descrição da movimentação |
-| amount | decimal | Valor da movimentação |
+| amountCents | inteiro | Valor em centavos |
 | date | data/hora | Data da movimentação |
 | type | enum | Receita ou despesa |
-| accountId | inteiro | Conta relacionada |
-| categoryId | inteiro | Categoria/subcategoria relacionada |
-| createdAt | data/hora | Data de criação do registro |
+| accountId | UUID | Conta relacionada |
+| categoryId | UUID | Categoria/subcategoria relacionada |
+| createdAt | data/hora | Criação |
+| updatedAt | data/hora | Última alteração |
+| deletedAt | data/hora opcional | Exclusão lógica |
+| deviceId | UUID/texto | Origem da alteração |
+| syncVersion | inteiro | Revisão de sincronização |
 
 ## Relacionamentos
 
 ```text
 Account 1 ───── N Transaction
-
 Category 1 ──── N Transaction
-
 Category 1 ──── N Category
               (subcategorias)
 ```
 
-Uma conta pode possuir várias transações. Uma categoria pode ser utilizada por várias transações e, quando aplicável, possuir subcategorias.
+## Valores monetários
+
+Valores financeiros serão armazenados preferencialmente em **centavos como inteiro**, evitando problemas de precisão de ponto flutuante.
+
+```text
+R$ 125,90 → 12590
+```
 
 ## Saldo
-
-O saldo de uma conta não precisa ser mantido como um valor manual independente. Conceitualmente:
 
 ```text
 saldo atual = saldo inicial + receitas - despesas
 ```
 
-O saldo total apresentado no dashboard corresponde à soma dos saldos das contas consideradas no cálculo.
+O saldo será derivado dos dados financeiros válidos, desconsiderando registros marcados como excluídos.
 
-## Valores monetários
+## Exclusão lógica
 
-Durante a implementação deverá ser definida uma representação segura para valores financeiros. Deve-se evitar depender de comparações de ponto flutuante sem considerar suas limitações. Uma opção é persistir valores na menor unidade monetária (centavos) como inteiro e convertê-los apenas para apresentação.
-
-Exemplo:
+Entidades sincronizáveis não devem ser removidas fisicamente imediatamente. Ao excluir um registro:
 
 ```text
-R$ 125,90 → 12590 centavos
+deletedAt = instante da exclusão
+updatedAt = instante da exclusão
 ```
 
-## Integridade
+Esse tombstone permite que outro dispositivo descubra que o registro foi removido. Uma política futura poderá eliminar tombstones antigos somente quando for seguro.
 
-A implementação deve definir explicitamente o comportamento ao excluir contas ou categorias que possuam transações. Não é recomendável apagar silenciosamente o histórico financeiro. Alternativas incluem impedir a exclusão ou utilizar arquivamento lógico.
+## Preparação para conflitos
 
-## Privacidade e offline-first
+`updatedAt`, `deviceId` e `syncVersion` fornecem metadados para o mecanismo de sincronização. A primeira estratégia poderá utilizar Last Write Wins, mas a arquitetura não deve impedir a adoção posterior de detecção/resolução explícita de conflitos.
 
-No MVP, o SQLite será a fonte local dos dados. O aplicativo não dependerá de API remota para registrar ou consultar as informações financeiras essenciais.
+## Sincronização futura
 
-Backup e sincronização serão funcionalidades posteriores e não devem comprometer o funcionamento offline.
+O Google Drive será inicialmente considerado como provedor remoto, usando armazenamento específico do aplicativo. Entretanto, SQLite/Drift e os repositories não devem conhecer diretamente a API do Drive.
+
+```text
+SQLite/Drift
+     ↕
+Repositories
+     ↕
+Sync Engine
+     ↕
+Sync Provider
+     ↕
+Google Drive (inicialmente)
+```
+
+Essa abstração permitirá adicionar outros provedores no futuro sem alterar o banco ou as regras principais do aplicativo.
