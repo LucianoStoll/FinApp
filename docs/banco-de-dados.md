@@ -2,123 +2,72 @@
 
 ## Estratégia
 
-SQLite + Drift, offline-first. O schema começa pequeno para o MVP, mas utiliza decisões que evitam bloqueios futuros.
+SQLite + Drift, offline-first. A base local é a fonte de verdade operacional. O schema nasce preparado para evolução e sincronização futura.
 
-## Campos comuns
+## Convenções
 
-Entidades sincronizáveis devem suportar, conforme aplicável:
+Entidades sincronizáveis usam UUID e, conforme aplicável, createdAt, updatedAt, deletedAt, deviceId e syncVersion. Timestamps técnicos ficam em UTC. Dinheiro usa inteiros na unidade mínima da moeda, nunca double como representação persistente principal.
 
-| Campo | Uso |
-|---|---|
-| id | UUID global |
-| createdAt | criação |
-| updatedAt | última alteração |
-| deletedAt | tombstone/exclusão lógica |
-| deviceId | origem da alteração |
-| syncVersion | revisão para sync |
-
-Timestamps de sincronização devem ser normalizados consistentemente.
-
-## Valores monetários
-
-Não persistir dinheiro como `double`. Usar unidade mínima inteira associada à moeda. Para BRL:
-
-```text
-R$ 125,90 → 12590
-```
-
-O desenho deve comportar moedas cuja unidade mínima não siga exatamente duas casas.
-
-## MVP
+## Núcleo do MVP
 
 ### accounts
-Conceitualmente:
-- id;
-- name;
-- type;
-- currencyCode;
-- initialBalanceMinor;
-- archivedAt/status;
-- configuração de visibilidade em totais/análises;
-- metadados comuns.
-
-Conta em espécie é uma conta normal com tipo/dados cadastrais diferentes. Conta arquivada não recebe novos lançamentos e pode ser reativada.
+ID, nome, tipo, moeda, saldo inicial, dados opcionais conforme tipo, ícone/cor, estado ativo/arquivado, visibilidade em análises, cheque especial opcional e metadados. Dinheiro/carteira é apenas um tipo de conta.
 
 ### categories
-- id;
-- name;
-- shortName opcional;
-- parentId opcional;
-- icon/color;
-- aliases;
-- archivedAt/status;
-- metadados comuns.
-
-Categorias com histórico são arquivadas, não destruídas. Subcategorias preservam vínculo/histórico.
+ID, nome curto/completo, tipo, parentId, ícone, cor, aliases, arquivamento e metadados.
 
 ### transactions
-O MVP implementa somente o necessário, mas o modelo deve evoluir para:
-- descrição;
-- valor;
-- tipo;
-- accountId;
-- categoryId/subcategoryId;
-- competenceDate;
-- dueDate;
-- effectiveDate;
-- status;
-- ignoreBalance;
-- ignoreAnalytics;
-- valor previsto x realizado;
-- metadados comuns.
-
-`Atrasada` pode ser derivada de vencimento + ausência de efetivação, evitando estado redundante quando adequado.
+ID, descrição, descrição bruta opcional, tipo, valor previsto, valor realizado opcional, competência, vencimento, efetivação, conta, categoria/subcategoria, flags ignoreBalance/ignoreAnalytics e metadados. Atraso deve ser derivado quando possível.
 
 ### transfers
-Transferência deve possuir identidade própria e movimentos vinculados, evitando contabilização como receita/despesa. Taxas são despesas separáveis.
+Entidade/operação própria ligando origem e destino. Começa simples no MVP e evolui para tarifas, moedas distintas, estados e datas diferentes.
 
-## Evoluções previstas do modelo
+## Saldos
 
-- recurrence/series;
-- installments;
-- settlements/liquidações parciais;
-- cards/invoices/card purchases;
-- splits/rateios;
-- reimbursements;
-- people;
-- tags;
-- merchants;
-- budgets e versões;
-- goals/plans;
-- assets;
-- debts/loans;
-- investments/quotes;
-- attachments;
-- audit log;
-- operation history/undo;
-- trash;
-- sync state.
+Saldo atual = saldo inicial + movimentos efetivados que afetam saldo.
 
-## Rateio
+Saldo projetado = saldo atual + movimentos futuros/pendentes considerados.
 
-Uma transação principal pode possuir N divisões internas por valor ou percentual. A soma das divisões deve fechar o valor aplicável. O rateio não duplica a transação no saldo.
+Transferência move patrimônio entre contas e não é receita/despesa.
 
-## Liquidações
+## Evoluções previstas
 
-Uma obrigação pode possuir várias liquidações, cada uma com data, valor, juros, multa, desconto e acréscimos. O modelo preserva valor original, total liquidado e saldo restante. A mesma abstração pode atender contas a pagar/receber e antecipações/pagamentos de fatura.
+Adicionar por migrations, não antecipar todas no MVP: rateios, liquidações, reembolsos, recorrências, parcelamentos, cartões/faturas, orçamentos/versionamento, metas/planos, pessoas, estabelecimentos, tags N:N, dívidas, amortizações, renegociações, bens/avaliações, investimentos/cotações, anexos, auditoria, notificações, relatórios salvos, filtros e change log de sync.
+
+## Rateio e liquidações
+
+Uma transação permanece única; allocations distribuem seu valor entre categorias/subcategorias sem duplicar despesa.
+
+Uma obrigação pode possuir várias liquidações. Cada liquidação pode decompor principal, juros, multa, tarifa, desconto e outros componentes.
+
+## Reembolsos
+
+Reembolso é vinculado à despesa original e à pessoa, com valor esperado/recebido e datas. Relatórios podem exibir bruto e líquido sem apagar o fluxo real.
 
 ## Cartões
 
-Fatura é entidade própria. Compras são despesas; pagamento de fatura é liquidação/transferência financeira e não uma segunda despesa. Limite e saldo credor são conceitos separados. Parcelamento compromete o valor total do limite e libera conforme regras de pagamento.
+Card e CardInvoice são entidades próprias. Pagamento de fatura é liquidação/fluxo de caixa, não nova despesa. Limite é independente por cartão. Saldo credor é separado de limite.
 
-## Lixeira e exclusão
+## Multimoeda
 
-Exclusão de registros sincronizáveis usa tombstone. A lixeira pode reter itens indefinidamente por padrão e ter limpeza automática opcional. Exclusão definitiva exige confirmação.
+Conta possui moeda; perfil possui moeda base. Conversões preservam valor/moeda original, cotação e convertido. Taxas são estruturadas. Cotações externas são cacheáveis.
 
-## Anexos
+## Exclusão e lixeira
 
-Conteúdo fica na área interna do FinApp; banco armazena metadados, vínculo, tamanho, tipo e hash. Limite inicial por arquivo: **20 MB**. Hash permite integridade/deduplicação futura.
+Soft delete/tombstone suporta lixeira e sync. Entidades históricas como categorias usadas são arquivadas. Limpeza automática da lixeira é opcional.
+
+## Migrations
+
+Fluxo: backup → migration → validação → confirmação; em falha, rollback/restauração segura.
 
 ## Backup
 
-Backup local automático diário; manter **3 versões** recentes por padrão. Restauração valida integridade/compatibilidade e cria backup do estado atual antes de substituir a base.
+Backup automático local diário, mantendo 3 versões recentes. Restauração valida integridade/compatibilidade e cria backup do estado atual.
+
+## Anexos
+
+Conteúdo em armazenamento interno; banco guarda metadados como ID, entidade, nome original, MIME/type, tamanho, hash e chave/caminho. Limite inicial de 20 MB. Hash prepara integridade/deduplicação.
+
+## Sync
+
+Metadados suportam Last Write Wins com registro de conflito. SyncProvider é infraestrutura, não domínio. Tombstones permanecem até descarte seguro.
