@@ -29,10 +29,9 @@ criar a chave e avisar, reativaremos a etapa Android no workflow e validaremos
 os APKs consecutivos. O procedimento abaixo descreve o comportamento após a
 reativação.
 
-A Action
-decodifica a chave apenas no runner e a usa para assinar o APK release. Quando
-os Secrets ainda não existem, a Action publica somente o artefato
-`somia-debug-not-updateable`; ele não é o APK de atualização.
+Após a reativação, a Action decodificará a chave apenas no runner e a usará
+para assinar o APK release. O artefato antigo `somia-debug-not-updateable`
+não é um APK de atualização.
 
 O APK de atualização estará em **Actions → Flutter CI → Artifacts →
 `somia-signed-apk`**. O `versionCode` é o número crescente da execução do
