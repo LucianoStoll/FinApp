@@ -71,7 +71,8 @@ class _TransactionsStub implements TransactionsRepository {
   Future<FinancialTransaction> update(String id, TransactionDraft draft) =>
     throw UnimplementedError();
   @override
-  Future<void> setEffective(String id, {required bool effective}) =>
+  Future<void> setEffective(String id, {required bool effective,
+    DateTime? effectiveDate}) =>
     throw UnimplementedError();
   @override
   Future<void> delete(String id) => throw UnimplementedError();

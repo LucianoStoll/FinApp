@@ -23,11 +23,13 @@ class SqliteDashboardRepository implements DashboardRepository {
       SELECT a.currency_code, t.type, SUM(t.actual_amount_minor) AS amount_minor
       FROM transactions t JOIN accounts a ON a.id = t.account_id
       WHERE t.deleted_at IS NULL AND t.effective_at IS NOT NULL
+        AND t.effective_at < ?
         AND t.actual_amount_minor IS NOT NULL AND t.ignore_analytics = 0
         AND a.deleted_at IS NULL AND a.include_in_analytics = 1
         AND t.competence_at >= ? AND t.competence_at < ?
       GROUP BY a.currency_code, t.type
-    ''', variables: [Variable.withInt(start), Variable.withInt(end)]).get();
+    ''', variables: [Variable.withInt(end), Variable.withInt(start),
+      Variable.withInt(end)]).get();
     for (final row in period) {
       final currency = row.read<String>('currency_code');
       final previous = totals[currency] ?? (0, 0);
@@ -43,13 +45,15 @@ class SqliteDashboardRepository implements DashboardRepository {
       LEFT JOIN categories c ON c.id = t.category_id
       LEFT JOIN categories parent ON parent.id = c.parent_id
       WHERE t.deleted_at IS NULL AND t.type = 'expense'
-        AND t.effective_at IS NOT NULL AND t.actual_amount_minor IS NOT NULL
+        AND t.effective_at IS NOT NULL AND t.effective_at < ?
+        AND t.actual_amount_minor IS NOT NULL
         AND t.ignore_analytics = 0 AND a.deleted_at IS NULL
         AND a.include_in_analytics = 1
         AND t.competence_at >= ? AND t.competence_at < ?
       GROUP BY a.currency_code, COALESCE(parent.name, c.name, 'Sem categoria')
       ORDER BY amount_minor DESC, category_name
-    ''', variables: [Variable.withInt(start), Variable.withInt(end)]).get();
+    ''', variables: [Variable.withInt(end), Variable.withInt(start),
+      Variable.withInt(end)]).get();
     final categoryTotals = <String, List<DashboardCategoryExpense>>{};
     for (final row in categoryRows) {
       categoryTotals.putIfAbsent(row.read<String>('currency_code'), () => [])
@@ -64,11 +68,13 @@ class SqliteDashboardRepository implements DashboardRepository {
         t.type, SUM(t.actual_amount_minor) AS amount_minor
       FROM transactions t JOIN accounts a ON a.id = t.account_id
       WHERE t.deleted_at IS NULL AND t.effective_at IS NOT NULL
+        AND t.effective_at < ?
         AND t.actual_amount_minor IS NOT NULL AND t.ignore_analytics = 0
         AND a.deleted_at IS NULL AND a.include_in_analytics = 1
         AND t.competence_at >= ? AND t.competence_at < ?
       GROUP BY a.currency_code, month_key, t.type
-    ''', variables: [Variable.withInt(historyStart), Variable.withInt(end)]).get();
+    ''', variables: [Variable.withInt(end), Variable.withInt(historyStart),
+      Variable.withInt(end)]).get();
     final monthly = <String, Map<String, (int, int)>>{};
     for (final row in historyRows) {
       final code = row.read<String>('currency_code');
@@ -134,13 +140,13 @@ class SqliteDashboardRepository implements DashboardRepository {
         SELECT t.id, t.type, t.description, a.name AS account_label,
           a.currency_code,
           COALESCE(t.actual_amount_minor, t.planned_amount_minor) AS amount_minor,
-          t.competence_at AS event_at, t.effective_at, t.created_at
+          t.due_at AS event_at, t.effective_at, t.created_at
         FROM transactions t JOIN accounts a ON a.id = t.account_id
         WHERE t.deleted_at IS NULL AND a.deleted_at IS NULL
         UNION ALL
         SELECT f.id, 'transfer' AS type, 'Transferência' AS description,
           source.name || ' → ' || destination.name AS account_label,
-          source.currency_code, f.amount_minor, f.planned_at AS event_at,
+          source.currency_code, f.amount_minor, f.due_at AS event_at,
           f.effective_at, f.created_at
         FROM transfers f
         JOIN accounts source ON source.id = f.source_account_id
@@ -157,7 +163,9 @@ class SqliteDashboardRepository implements DashboardRepository {
       currencyCode: row.read<String>('currency_code'),
       amountMinor: row.read<int>('amount_minor'),
       date: DateTime.fromMillisecondsSinceEpoch(row.read<int>('event_at'), isUtc: true),
-      isEffective: row.readNullable<int>('effective_at') != null,
+      isEffective: row.readNullable<int>('effective_at') != null &&
+        row.read<int>('effective_at') < DateTime.utc(DateTime.now().year,
+          DateTime.now().month, DateTime.now().day + 1).millisecondsSinceEpoch,
     )).toList();
     return DashboardSummary(month: DateTime(month.year, month.month),
       currencies: summaries, recent: recent);

@@ -50,4 +50,11 @@ class TransfersCubit extends Cubit<TransfersState> {
     await _transfers.delete(id);
     if (!isClosed) await load();
   }
+
+  Future<void> setEffective(String id, {required bool effective,
+      DateTime? effectiveDate}) async {
+    await _transfers.setEffective(id, effective: effective,
+      effectiveDate: effectiveDate);
+    if (!isClosed) await load();
+  }
 }

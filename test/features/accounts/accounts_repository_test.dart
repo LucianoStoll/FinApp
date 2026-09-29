@@ -93,7 +93,7 @@ void main() {
     expect((await repo.list()).single.isArchived, false);
   });
 
-  test('migra v1 para v4 sem perder contas existentes', () async {
+  test('migra v1 para v5 sem perder contas existentes', () async {
     final directory = await Directory.systemTemp.createTemp('finapp-migration-');
     addTearDown(() => directory.delete(recursive: true));
     final file = File('${directory.path}/finapp.sqlite');
@@ -107,7 +107,7 @@ void main() {
     final db = AppDatabase(NativeDatabase(file));
     addTearDown(db.close);
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 4);
+    expect(version.read<int>('user_version'), 5);
     final accounts = await SqliteAccountsRepository(db).list();
     expect(accounts.single.currentBalanceMinor, 730);
   });

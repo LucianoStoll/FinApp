@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/routing/somia_shell.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/effectuation_date_dialog.dart';
 import '../../accounts/domain/account.dart';
 import '../../accounts/domain/accounts_repository.dart';
 import '../../accounts/domain/money_minor.dart';
@@ -50,6 +51,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
   String? _categoryId;
   String? _subcategoryId;
   TransactionStatus _status = TransactionStatus.all;
+  TransactionDateField _dateField = TransactionDateField.due;
   DateTimeRange? _range;
 
   @override
@@ -66,6 +68,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
         type: _type, accountId: _accountId,
         categoryId: _subcategoryId ?? _categoryId,
         status: _status, from: _range?.start, to: _range?.end,
+        dateField: _dateField,
       ));
 
   Future<void> _pickRange() async {
@@ -133,17 +136,26 @@ class _TransactionsViewState extends State<_TransactionsView> {
 
   Future<void> _setEffective(FinancialTransaction item, bool effective) async {
     if (_changingStatus.contains(item.id)) return;
+    final chosen = effective
+      ? await chooseEffectuationDate(context, item.dueDate ?? item.date) : null;
+    if (effective && chosen == null || !mounted) return;
     setState(() => _changingStatus.add(item.id));
     final cubit = context.read<TransactionsCubit>();
     try {
-      await cubit.setEffective(item.id, effective: effective);
+      await cubit.setEffective(item.id, effective: effective,
+        effectiveDate: chosen);
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(effective ? 'Lançamento efetivado.' : 'Lançamento voltou a pendente.'),
-        action: SnackBarAction(label: 'Desfazer', onPressed: () async {
+        content: Text(effective
+          ? (chosen!.isAfter(DateUtils.dateOnly(DateTime.now()))
+            ? 'Lançamento agendado.' : 'Lançamento efetivado.')
+          : 'Lançamento voltou a pendente.'),
+        action: item.effectiveDate != null && effective ? null
+          : SnackBarAction(label: 'Desfazer', onPressed: () async {
           try {
-            await cubit.setEffective(item.id, effective: !effective);
+            await cubit.setEffective(item.id, effective: !effective,
+              effectiveDate: item.effectiveDate);
           } catch (error) {
             if (mounted) _showError(error);
           }
@@ -271,6 +283,20 @@ class _TransactionsViewState extends State<_TransactionsView> {
                 if (status != null) { setState(() => _status = status); _apply(); }
               },
             )),
+            SizedBox(width: 220, child: DropdownButton<TransactionDateField>(
+              isExpanded: true, value: _dateField,
+              items: const [
+                DropdownMenuItem(value: TransactionDateField.posted,
+                  child: Text('Filtrar lançamento')),
+                DropdownMenuItem(value: TransactionDateField.due,
+                  child: Text('Filtrar vencimento')),
+                DropdownMenuItem(value: TransactionDateField.effective,
+                  child: Text('Filtrar efetivação')),
+              ],
+              onChanged: (field) {
+                if (field != null) { setState(() => _dateField = field); _apply(); }
+              },
+            )),
             OutlinedButton.icon(
               onPressed: _pickRange, icon: const Icon(Icons.date_range),
               label: Text(_range == null ? 'Período'
@@ -296,9 +322,14 @@ class _TransactionsViewState extends State<_TransactionsView> {
           title: Text(item.description, maxLines: 2,
             overflow: TextOverflow.ellipsis),
           subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('${_dateLabel(item.date)} · ${item.accountName}'
+            Text('Lançamento ${_dateLabel(item.date)} · '
+              'Vencimento ${_dateLabel(item.dueDate ?? item.date)} · '
+              '${item.effectiveDate == null ? 'Pendente' :
+                item.isEffective ? 'Efetivada ${_dateLabel(item.effectiveDate!)}'
+                  : 'Agendada ${_dateLabel(item.effectiveDate!)}'}'
+              ' · ${item.accountName}'
               '${item.categoryName == null ? '' : ' · ${item.categoryName}'}'
-              '${item.isEffective ? '' : ' · Pendente'}'),
+            ),
             if (!item.isEffective)
               TextButton.icon(
                 onPressed: _changingStatus.contains(item.id)
@@ -356,6 +387,8 @@ class _TransactionDialogState extends State<_TransactionDialog> {
   late final TextEditingController _amount;
   late TransactionType _type;
   late DateTime _date;
+  late DateTime _dueDate;
+  DateTime? _effectiveDate;
   late bool _isEffective;
   String? _accountId;
   String? _categoryId;
@@ -369,7 +402,9 @@ class _TransactionDialogState extends State<_TransactionDialog> {
     _amount = TextEditingController(text: MoneyMinor.plain(item?.amountMinor ?? 0));
     _type = item?.type ?? widget.initialType;
     _date = item?.date ?? DateTime.now();
-    _isEffective = item?.isEffective ?? true;
+    _dueDate = item?.dueDate ?? _date;
+    _effectiveDate = item?.effectiveDate;
+    _isEffective = item == null || item.effectiveDate != null;
     _accountId = item?.accountId ?? _availableAccounts.firstOrNull?.id;
     final selected = widget.categories.where((category) =>
         category.id == item?.categoryId).firstOrNull;
@@ -387,17 +422,31 @@ class _TransactionDialogState extends State<_TransactionDialog> {
     super.dispose();
   }
 
-  Future<void> _pickDate() async {
+  Future<void> _pickDate(String field) async {
     final picked = await showDatePicker(context: context,
-      initialDate: _date, firstDate: DateTime(2000), lastDate: DateTime(2100));
-    if (picked != null && mounted) setState(() => _date = picked);
+      initialDate: field == 'posted' ? _date : field == 'due' ? _dueDate
+        : _effectiveDate ?? DateTime.now(),
+      firstDate: DateTime(2000), lastDate: DateTime(2100));
+    if (picked != null && mounted) setState(() {
+      if (field == 'posted') { _date = picked; }
+      else if (field == 'due') { _dueDate = picked; }
+      else { _effectiveDate = picked; }
+    });
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    var effective = _isEffective ? _effectiveDate ?? DateTime.now() : null;
+    if (_isEffective && widget.item?.effectiveDate == null &&
+        DateUtils.dateOnly(_dueDate).isAfter(DateUtils.dateOnly(DateTime.now()))) {
+      effective = await chooseEffectuationDate(context, _dueDate);
+      if (effective == null || !mounted) return;
+    }
+    if (!mounted) return;
     Navigator.pop(context, TransactionDraft(
       description: _description.text.trim(), type: _type,
       amountMinor: MoneyMinor.parse(_amount.text), date: _date,
+      dueDate: _dueDate, effectiveDate: effective,
       isEffective: _isEffective, accountId: _accountId!,
       categoryId: _subcategoryId ?? _categoryId,
     ));
@@ -486,15 +535,27 @@ class _TransactionDialogState extends State<_TransactionDialog> {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Data'), subtitle: Text(_dateLabel(_date)),
-              trailing: const Icon(Icons.calendar_today), onTap: _pickDate,
+              title: const Text('Data de lançamento'),
+              subtitle: Text(_dateLabel(_date)),
+              trailing: const Icon(Icons.calendar_today),
+              onTap: () => _pickDate('posted'),
+            ),
+            ListTile(contentPadding: EdgeInsets.zero,
+              title: const Text('Vencimento'), subtitle: Text(_dateLabel(_dueDate)),
+              trailing: const Icon(Icons.calendar_today),
+              onTap: () => _pickDate('due'),
             ),
             SwitchListTile(
-              title: const Text('Efetivada'),
-              subtitle: const Text('Pendentes não alteram o saldo atual'),
+              title: const Text('Informar efetivação'),
+              subtitle: const Text('A data determina quando entra no saldo atual'),
               value: _isEffective,
               onChanged: (value) => setState(() => _isEffective = value),
             ),
+            if (_isEffective) ListTile(contentPadding: EdgeInsets.zero,
+              title: const Text('Data de efetivação'),
+              subtitle: Text(_dateLabel(_effectiveDate ?? DateTime.now())),
+              trailing: const Icon(Icons.calendar_today),
+              onTap: () => _pickDate('effective')),
           ]),
         )),
       ),

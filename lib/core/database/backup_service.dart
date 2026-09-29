@@ -32,7 +32,7 @@ abstract final class BackupService {
       throw const FormatException('O arquivo não é um banco SQLite válido.');
     }
     final schemaVersion = ByteData.sublistView(bytes).getUint32(60, Endian.big);
-    if (schemaVersion < 1 || schemaVersion > 4) {
+    if (schemaVersion < 1 || schemaVersion > 5) {
       throw const FormatException('Versão do backup incompatível com este aplicativo.');
     }
     await directory.create(recursive: true);

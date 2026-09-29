@@ -11,7 +11,7 @@ class SqliteTransactionsRepository implements TransactionsRepository {
 
   static const _select = '''
     SELECT t.id, t.description, t.type, t.planned_amount_minor,
-      t.competence_at, t.effective_at, t.account_id, t.category_id,
+      t.posted_at, t.due_at, t.effective_at, t.account_id, t.category_id,
       a.name AS account_name, a.currency_code,
       c.name AS category_name
     FROM transactions t
@@ -25,6 +25,7 @@ class SqliteTransactionsRepository implements TransactionsRepository {
   ]) async {
     final where = <String>['t.deleted_at IS NULL'];
     final variables = <Variable>[];
+    final todayEnd = _dayMillis(DateTime.now().add(const Duration(days: 1)));
     if (filter.type != null) {
       where.add('t.type = ?');
       variables.add(Variable.withString(filter.type!.name));
@@ -40,24 +41,31 @@ class SqliteTransactionsRepository implements TransactionsRepository {
     }
     switch (filter.status) {
       case TransactionStatus.effective:
-        where.add('t.effective_at IS NOT NULL');
+        where.add('t.effective_at IS NOT NULL AND t.effective_at < ?');
+        variables.add(Variable.withInt(todayEnd));
       case TransactionStatus.pending:
-        where.add('t.effective_at IS NULL');
+        where.add('(t.effective_at IS NULL OR t.effective_at >= ?)');
+        variables.add(Variable.withInt(todayEnd));
       case TransactionStatus.all:
         break;
     }
+    final dateColumn = switch (filter.dateField) {
+      TransactionDateField.posted => 't.posted_at',
+      TransactionDateField.due => 't.due_at',
+      TransactionDateField.effective => 't.effective_at',
+    };
     if (filter.from != null) {
-      where.add('t.competence_at >= ?');
+      where.add('$dateColumn >= ?');
       variables.add(Variable.withInt(_dayMillis(filter.from!)));
     }
     if (filter.to != null) {
-      where.add('t.competence_at < ?');
+      where.add('$dateColumn < ?');
       final day = DateTime.utc(filter.to!.year, filter.to!.month, filter.to!.day + 1);
       variables.add(Variable.withInt(day.millisecondsSinceEpoch));
     }
     final rows = await _db.customSelect('''
       $_select WHERE ${where.join(' AND ')}
-      ORDER BY t.competence_at DESC, t.created_at DESC, t.id DESC
+      ORDER BY t.due_at DESC, t.created_at DESC, t.id DESC
     ''', variables: variables).get();
     return rows.map(_map).toList();
   }
@@ -69,15 +77,18 @@ class SqliteTransactionsRepository implements TransactionsRepository {
     final id = EntityMetadata.newId();
     final now = EntityMetadata.nowUtcMillis();
     final day = _dayMillis(draft.date);
+    final due = _dayMillis(draft.dueDate ?? draft.date);
+    final effective = draft.isEffective
+      ? _dayMillis(draft.effectiveDate ?? draft.date) : null;
     await _db.customStatement('''
       INSERT INTO transactions
         (id, description, type, planned_amount_minor, actual_amount_minor,
-         competence_at, effective_at, account_id, category_id,
+         competence_at, posted_at, due_at, effective_at, account_id, category_id,
          created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', [id, draft.description.trim(), draft.type.name, draft.amountMinor,
-      draft.isEffective ? draft.amountMinor : null, day,
-      draft.isEffective ? day : null, draft.accountId, draft.categoryId,
+      draft.isEffective ? draft.amountMinor : null, day, day, due,
+      effective, draft.accountId, draft.categoryId,
       now, now]);
     return _find(id);
   }
@@ -97,14 +108,17 @@ class SqliteTransactionsRepository implements TransactionsRepository {
     // valor de um lançamento histórico; mudar o vínculo exige entidade ativa.
     final fields = <String>[
       'description = ?', 'planned_amount_minor = ?', 'actual_amount_minor = ?',
-      'competence_at = ?', 'effective_at = ?', 'updated_at = ?',
+      'competence_at = ?', 'posted_at = ?', 'due_at = ?',
+      'effective_at = ?', 'updated_at = ?',
       'sync_version = sync_version + 1',
     ];
     final day = _dayMillis(draft.date);
     final args = <Object?>[
       draft.description.trim(), draft.amountMinor,
-      draft.isEffective ? draft.amountMinor : null, day,
-      draft.isEffective ? day : null, EntityMetadata.nowUtcMillis(),
+      draft.isEffective ? draft.amountMinor : null, day, day,
+      _dayMillis(draft.dueDate ?? draft.date),
+      draft.isEffective ? _dayMillis(draft.effectiveDate ?? draft.date) : null,
+      EntityMetadata.nowUtcMillis(),
     ];
     if (accountChanged) {
       fields.add('account_id = ?');
@@ -138,18 +152,23 @@ class SqliteTransactionsRepository implements TransactionsRepository {
   }
 
   @override
-  Future<void> setEffective(String id, {required bool effective}) async {
-    // Mantém a data de competência, o valor e os vínculos do lançamento.
-    // O corte por competência continua coerente com a edição pelo formulário.
+  Future<void> setEffective(String id, {required bool effective,
+      DateTime? effectiveDate}) async {
+    final chosen = _dayMillis(effectiveDate ?? DateTime.now());
+    final todayEnd = _dayMillis(DateTime.now().add(const Duration(days: 1)));
     final changed = await _db.customUpdate('''
       UPDATE transactions
-      SET effective_at = ${effective ? 'competence_at' : 'NULL'},
+      SET effective_at = ${effective ? '?' : 'NULL'},
         actual_amount_minor = ${effective ? 'planned_amount_minor' : 'NULL'},
         updated_at = ?, sync_version = sync_version + 1
       WHERE id = ? AND deleted_at IS NULL
-        AND effective_at IS ${effective ? 'NULL' : 'NOT NULL'}
-    ''', variables: [Variable.withInt(EntityMetadata.nowUtcMillis()),
-      Variable.withString(id)]);
+        AND ${effective ? '(effective_at IS NULL OR effective_at >= ?)'
+          : 'effective_at IS NOT NULL'}
+    ''', variables: [
+      if (effective) Variable.withInt(chosen),
+      Variable.withInt(EntityMetadata.nowUtcMillis()), Variable.withString(id),
+      if (effective) Variable.withInt(todayEnd),
+    ]);
     if (changed != 1) {
       throw StateError('O lançamento já mudou de estado. Atualize a lista.');
     }
@@ -208,9 +227,16 @@ class SqliteTransactionsRepository implements TransactionsRepository {
         type: TransactionType.values.byName(row.read<String>('type')),
         amountMinor: row.read<int>('planned_amount_minor'),
         date: DateTime.fromMillisecondsSinceEpoch(
-          row.read<int>('competence_at'), isUtc: true,
+          row.read<int>('posted_at'), isUtc: true,
         ),
-        isEffective: row.readNullable<int>('effective_at') != null,
+        dueDate: DateTime.fromMillisecondsSinceEpoch(
+          row.read<int>('due_at'), isUtc: true),
+        effectiveDate: row.readNullable<int>('effective_at') == null ? null
+          : DateTime.fromMillisecondsSinceEpoch(
+            row.read<int>('effective_at'), isUtc: true),
+        isEffective: row.readNullable<int>('effective_at') != null &&
+          row.read<int>('effective_at') <
+            _dayMillis(DateTime.now().add(const Duration(days: 1))),
         accountId: row.read<String>('account_id'),
         accountName: row.read<String>('account_name'),
         categoryId: row.readNullable<String>('category_id'),

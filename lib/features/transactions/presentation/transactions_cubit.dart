@@ -71,8 +71,10 @@ class TransactionsCubit extends Cubit<TransactionsState> {
     }
   }
 
-  Future<void> setEffective(String id, {required bool effective}) async {
-    await _transactions.setEffective(id, effective: effective);
+  Future<void> setEffective(String id, {required bool effective,
+      DateTime? effectiveDate}) async {
+    await _transactions.setEffective(id, effective: effective,
+      effectiveDate: effectiveDate);
     if (!isClosed) await load();
   }
 }

@@ -8,6 +8,8 @@ class Transfer {
     required this.currencyCode,
     required this.amountMinor,
     required this.date,
+    this.dueDate,
+    this.effectiveDate,
     required this.isEffective,
   });
 
@@ -19,6 +21,8 @@ class Transfer {
   final String currencyCode;
   final int amountMinor;
   final DateTime date;
+  final DateTime? dueDate;
+  final DateTime? effectiveDate;
   final bool isEffective;
 }
 
@@ -28,6 +32,8 @@ class TransferDraft {
     required this.destinationAccountId,
     required this.amountMinor,
     required this.date,
+    this.dueDate,
+    this.effectiveDate,
     required this.isEffective,
   });
 
@@ -35,5 +41,7 @@ class TransferDraft {
   final String destinationAccountId;
   final int amountMinor;
   final DateTime date;
+  final DateTime? dueDate;
+  final DateTime? effectiveDate;
   final bool isEffective;
 }

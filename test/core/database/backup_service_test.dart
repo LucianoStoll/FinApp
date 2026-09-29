@@ -66,7 +66,7 @@ void main() {
     final restored = AppDatabase(NativeDatabase(currentFile));
     addTearDown(restored.close);
     expect((await restored.customSelect('PRAGMA user_version').getSingle())
-      .read<int>('user_version'), 4);
+      .read<int>('user_version'), 5);
     for (final entry in {'accounts': 2, 'categories': 1,
       'transactions': 1, 'transfers': 1}.entries) {
       expect((await restored.customSelect('SELECT COUNT(*) AS n FROM ${entry.key}')

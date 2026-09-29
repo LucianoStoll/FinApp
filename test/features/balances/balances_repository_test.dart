@@ -10,6 +10,77 @@ import 'package:finapp/features/transfers/domain/transfer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('três datas controlam saldo realizado, projeção e ambas as contas', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final accounts = SqliteAccountsRepository(db);
+    final a = await accounts.create(const AccountDraft(name: 'Origem',
+      type: AccountType.checking, currencyCode: 'BRL',
+      initialBalanceMinor: 10000, includeInAnalytics: true));
+    final b = await accounts.create(const AccountDraft(name: 'Destino',
+      type: AccountType.checking, currencyCode: 'BRL',
+      initialBalanceMinor: 0, includeInAnalytics: true));
+    final transactions = SqliteTransactionsRepository(db);
+    final transfers = SqliteTransfersRepository(db);
+    final expense = await transactions.create(TransactionDraft(
+      description: 'Conta futura', type: TransactionType.expense,
+      amountMinor: 2000, date: DateTime.utc(2026, 9, 1),
+      dueDate: DateTime.utc(2026, 10, 10),
+      effectiveDate: DateTime.utc(2026, 11, 1),
+      isEffective: true, accountId: a.id));
+    final transfer = await transfers.create(TransferDraft(
+      sourceAccountId: a.id, destinationAccountId: b.id,
+      amountMinor: 1000, date: DateTime.utc(2026, 9, 2),
+      dueDate: DateTime.utc(2026, 10, 15),
+      effectiveDate: DateTime.utc(2026, 11, 5), isEffective: true));
+    await transactions.create(TransactionDraft(description: 'Outra pendência',
+      type: TransactionType.expense, amountMinor: 500,
+      date: DateTime.utc(2026, 9, 3),
+      dueDate: DateTime.utc(2026, 10, 20),
+      isEffective: false, accountId: a.id));
+
+    final repo = SqliteBalancesRepository(db);
+    final september = await repo.calculate(asOf: DateTime.utc(2026, 9, 30),
+      through: DateTime.utc(2026, 9, 30));
+    expect(september.accounts.firstWhere((x) => x.accountId == a.id)
+      .projectedMinor, 10000);
+    final october = await repo.calculate(asOf: DateTime.utc(2026, 10, 31),
+      through: DateTime.utc(2026, 10, 31));
+    expect(october.accounts.firstWhere((x) => x.accountId == a.id)
+      .currentMinor, 10000);
+    expect(october.accounts.firstWhere((x) => x.accountId == a.id)
+      .projectedMinor, 6500);
+    expect(october.accounts.firstWhere((x) => x.accountId == b.id)
+      .projectedMinor, 1000);
+    final november = await repo.calculate(asOf: DateTime.utc(2026, 11, 30),
+      through: DateTime.utc(2026, 11, 30));
+    expect(november.accounts.firstWhere((x) => x.accountId == a.id)
+      .currentMinor, 7000);
+    expect(november.accounts.firstWhere((x) => x.accountId == b.id)
+      .currentMinor, 1000);
+    expect(november.accounts.firstWhere((x) => x.accountId == a.id)
+      .projectedMinor, 6500);
+
+    // A opção "Contabilizar hoje" antecipa o corte; a outra mantém o prazo.
+    await transactions.setEffective(expense.id, effective: true,
+      effectiveDate: DateTime.utc(2026, 9, 29));
+    await transfers.setEffective(transfer.id, effective: true,
+      effectiveDate: DateTime.utc(2026, 10, 15));
+    final updated = await repo.calculate(asOf: DateTime.utc(2026, 9, 30),
+      through: DateTime.utc(2026, 9, 30));
+    expect(updated.accounts.firstWhere((x) => x.accountId == a.id)
+      .currentMinor, 8000);
+    expect(updated.accounts.firstWhere((x) => x.accountId == b.id)
+      .currentMinor, 0);
+    final txByDue = await transactions.list(TransactionFilter(
+      from: DateTime.utc(2026, 10, 10), to: DateTime.utc(2026, 10, 10)));
+    expect(txByDue.single.id, expense.id);
+    final txByPosted = await transactions.list(TransactionFilter(
+      dateField: TransactionDateField.posted,
+      from: DateTime.utc(2026, 9, 1), to: DateTime.utc(2026, 9, 1)));
+    expect(txByPosted.single.id, expense.id);
+  });
+
   test('saldo por conta e consolidado considera efetivos, pendentes e prazo', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);

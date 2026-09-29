@@ -12,7 +12,7 @@ class SqliteTransfersRepository implements TransfersRepository {
 
   static const _select = '''
     SELECT f.id, f.source_account_id, f.destination_account_id,
-      f.amount_minor, f.planned_at, f.effective_at,
+      f.amount_minor, f.posted_at, f.due_at, f.effective_at,
       source.name AS source_name, destination.name AS destination_name,
       source.currency_code AS currency_code
     FROM transfers f
@@ -25,7 +25,7 @@ class SqliteTransfersRepository implements TransfersRepository {
     final rows = await _db.customSelect('''
       $_select WHERE f.deleted_at IS NULL
       ${accountId == null ? '' : 'AND (f.source_account_id = ? OR f.destination_account_id = ?)'}
-      ORDER BY f.planned_at DESC, f.id DESC
+      ORDER BY f.due_at DESC, f.id DESC
     ''', variables: accountId == null ? const [] : [
       Variable.withString(accountId), Variable.withString(accountId),
     ]).get();
@@ -40,11 +40,13 @@ class SqliteTransfersRepository implements TransfersRepository {
     final now = EntityMetadata.nowUtcMillis();
     await _db.customStatement('''
       INSERT INTO transfers (id, source_account_id, destination_account_id,
-        amount_minor, planned_at, effective_at, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        amount_minor, planned_at, posted_at, due_at, effective_at,
+        created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', [id, draft.sourceAccountId, draft.destinationAccountId,
-      draft.amountMinor, _dayMillis(draft.date),
-      draft.isEffective ? _dayMillis(draft.date) : null,
+      draft.amountMinor, _dayMillis(draft.date), _dayMillis(draft.date),
+      _dayMillis(draft.dueDate ?? draft.date),
+      draft.isEffective ? _dayMillis(draft.effectiveDate ?? draft.date) : null,
       now, now]);
     return _find(id);
   });
@@ -58,9 +60,11 @@ class SqliteTransfersRepository implements TransfersRepository {
     await _validateAccounts(draft,
       checkSource: sourceChanged, checkDestination: destinationChanged);
     final fields = <String>['amount_minor = ?', 'planned_at = ?',
-      'effective_at = ?', 'updated_at = ?', 'sync_version = sync_version + 1'];
+      'posted_at = ?', 'due_at = ?', 'effective_at = ?', 'updated_at = ?',
+      'sync_version = sync_version + 1'];
     final values = <Object?>[draft.amountMinor, _dayMillis(draft.date),
-      draft.isEffective ? _dayMillis(draft.date) : null,
+      _dayMillis(draft.date), _dayMillis(draft.dueDate ?? draft.date),
+      draft.isEffective ? _dayMillis(draft.effectiveDate ?? draft.date) : null,
       EntityMetadata.nowUtcMillis()];
     if (sourceChanged) {
       fields.add('source_account_id = ?');
@@ -88,6 +92,26 @@ class SqliteTransfersRepository implements TransfersRepository {
       WHERE id = ? AND deleted_at IS NULL
     ''', [now, now, id]);
   });
+
+  @override
+  Future<void> setEffective(String id, {required bool effective,
+      DateTime? effectiveDate}) async {
+    final todayEnd = _dayMillis(DateTime.now().add(const Duration(days: 1)));
+    final changed = await _db.customUpdate('''
+      UPDATE transfers SET effective_at = ${effective ? '?' : 'NULL'},
+        updated_at = ?, sync_version = sync_version + 1
+      WHERE id = ? AND deleted_at IS NULL
+        AND ${effective ? '(effective_at IS NULL OR effective_at >= ?)'
+          : 'effective_at IS NOT NULL'}
+    ''', variables: [
+      if (effective) Variable.withInt(_dayMillis(effectiveDate ?? DateTime.now())),
+      Variable.withInt(EntityMetadata.nowUtcMillis()), Variable.withString(id),
+      if (effective) Variable.withInt(todayEnd),
+    ]);
+    if (changed != 1) {
+      throw StateError('A transferência já mudou de estado. Atualize a lista.');
+    }
+  }
 
   Future<Transfer> _find(String id) async {
     final rows = await _db.customSelect('''
@@ -145,7 +169,13 @@ class SqliteTransfersRepository implements TransfersRepository {
     destinationAccountName: row.read<String>('destination_name'),
     currencyCode: row.read<String>('currency_code'),
     amountMinor: row.read<int>('amount_minor'),
-    date: DateTime.fromMillisecondsSinceEpoch(row.read<int>('planned_at'), isUtc: true),
-    isEffective: row.readNullable<int>('effective_at') != null,
+    date: DateTime.fromMillisecondsSinceEpoch(row.read<int>('posted_at'), isUtc: true),
+    dueDate: DateTime.fromMillisecondsSinceEpoch(row.read<int>('due_at'), isUtc: true),
+    effectiveDate: row.readNullable<int>('effective_at') == null ? null
+      : DateTime.fromMillisecondsSinceEpoch(
+        row.read<int>('effective_at'), isUtc: true),
+    isEffective: row.readNullable<int>('effective_at') != null &&
+      row.read<int>('effective_at') <
+        _dayMillis(DateTime.now().add(const Duration(days: 1))),
   );
 }

@@ -8,24 +8,22 @@ import '../domain/balances_snapshot.dart';
 /// definição de saldo em toda a aplicação.
 Future<List<QueryRow>> balanceRows(AppDatabase db,
     {DateTime? asOf, DateTime? through}) {
-  final asOfEnd = asOf == null ? null : DateTime.utc(
-    asOf.year, asOf.month, asOf.day + 1).millisecondsSinceEpoch;
+  final cutoff = asOf ?? DateTime.now();
+  final asOfEnd = DateTime.utc(cutoff.year, cutoff.month, cutoff.day + 1)
+    .millisecondsSinceEpoch;
   final end = through == null ? null : DateTime.utc(
     through.year, through.month, through.day + 1).millisecondsSinceEpoch;
-  final txEffectiveUntil = asOfEnd == null ? '' : 'AND t.effective_at < ?';
-  final transferEffectiveUntil = asOfEnd == null ? '' : 'AND f.effective_at < ?';
-  final txPending = asOfEnd == null ? 't.effective_at IS NULL'
-      : '(t.effective_at IS NULL OR t.effective_at >= ?)';
-  final transferPending = asOfEnd == null ? 'f.effective_at IS NULL'
-      : '(f.effective_at IS NULL OR f.effective_at >= ?)';
-  final txUntil = end == null ? '' : 'AND t.competence_at < ?';
-  final transferUntil = end == null ? '' : 'AND f.planned_at < ?';
+  const txEffectiveUntil = 'AND t.effective_at < ?';
+  const transferEffectiveUntil = 'AND f.effective_at < ?';
+  const txPending = '(t.effective_at IS NULL OR t.effective_at >= ?)';
+  const transferPending = '(f.effective_at IS NULL OR f.effective_at >= ?)';
+  final txUntil = end == null ? '' : 'AND t.due_at < ?';
+  final transferUntil = end == null ? '' : 'AND f.due_at < ?';
   final variables = <Variable>[
-    if (asOfEnd != null) Variable.withInt(asOfEnd),
-    if (asOfEnd != null) Variable.withInt(asOfEnd),
-    if (asOfEnd != null) Variable.withInt(asOfEnd),
+    Variable.withInt(asOfEnd), Variable.withInt(asOfEnd),
+    Variable.withInt(asOfEnd),
     if (end != null) Variable.withInt(end),
-    if (asOfEnd != null) Variable.withInt(asOfEnd),
+    Variable.withInt(asOfEnd),
     if (end != null) Variable.withInt(end),
   ];
   return db.customSelect('''

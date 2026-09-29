@@ -134,7 +134,7 @@ void main() {
     final db = AppDatabase(NativeDatabase(file));
     addTearDown(db.close);
     expect((await db.customSelect('PRAGMA user_version').getSingle())
-      .read<int>('user_version'), 4);
+      .read<int>('user_version'), 5);
     final old = (await SqliteTransfersRepository(db).list()).single;
     expect(old.id, 'old');
     expect(old.amountMinor, 500);
