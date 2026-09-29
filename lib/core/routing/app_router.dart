@@ -5,6 +5,8 @@ import '../../features/accounts/presentation/accounts_page.dart';
 import '../../features/categories/presentation/categories_page.dart';
 import '../../features/transactions/presentation/transactions_page.dart';
 import '../../features/transfers/presentation/transfers_page.dart';
+import '../../features/settings/presentation/settings_page.dart';
+import 'somia_shell.dart';
 
 abstract final class AppRoutes {
   static const dashboard = 'dashboard';
@@ -17,20 +19,26 @@ abstract final class AppRoutes {
   static const transactionsPath = '/transactions';
   static const transfers = 'transfers';
   static const transfersPath = '/transfers';
+  static const settings = 'settings';
+  static const settingsPath = '/settings';
 }
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.dashboardPath,
   routes: [
+    ShellRoute(builder: (context, state, child) => SomiaShell(
+      location: state.uri.path, child: child), routes: [
     GoRoute(
       path: AppRoutes.transfersPath,
       name: AppRoutes.transfers,
-      builder: (context, state) => const TransfersPage(),
+      builder: (context, state) => TransfersPage(
+        startCreate: state.uri.queryParameters['create'] == '1'),
     ),
     GoRoute(
       path: AppRoutes.transactionsPath,
       name: AppRoutes.transactions,
-      builder: (context, state) => const TransactionsPage(),
+      builder: (context, state) => TransactionsPage(
+        initialCreateType: state.uri.queryParameters['create']),
     ),
     GoRoute(
       path: AppRoutes.categoriesPath,
@@ -43,9 +51,15 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const AccountsPage(),
     ),
     GoRoute(
+      path: AppRoutes.settingsPath,
+      name: AppRoutes.settings,
+      builder: (context, state) => const SettingsPage(),
+    ),
+    GoRoute(
       path: AppRoutes.dashboardPath,
       name: AppRoutes.dashboard,
       builder: (context, state) => const DashboardPage(),
     ),
+    ]),
   ],
 );
