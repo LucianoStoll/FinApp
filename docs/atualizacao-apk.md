@@ -22,7 +22,14 @@ Em **Settings → Secrets and variables → Actions** do repositório, crie:
 
 No PowerShell, obtenha o primeiro valor com
 `[Convert]::ToBase64String([IO.File]::ReadAllBytes('somia-upload.jks'))`.
-Não publique a chave, a senha nem o Base64 em issues, commits ou logs. A Action
+Não publique a chave, a senha nem o Base64 em issues, commits ou logs.
+
+**Estado atual:** a geração de APK está pausada a pedido do usuário. Depois de
+criar a chave e avisar, reativaremos a etapa Android no workflow e validaremos
+os APKs consecutivos. O procedimento abaixo descreve o comportamento após a
+reativação.
+
+A Action
 decodifica a chave apenas no runner e a usa para assinar o APK release. Quando
 os Secrets ainda não existem, a Action publica somente o artefato
 `somia-debug-not-updateable`; ele não é o APK de atualização.
