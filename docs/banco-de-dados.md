@@ -134,3 +134,17 @@ excluída, de tipo diferente ou com principal arquivada. Lançamentos antigos
 mantêm `category_id` e continuam no histórico. Arquivar uma categoria principal
 arquiva suas subcategorias ativas em transação; reativá-la não reativa
 automaticamente as filhas.
+
+### Issue #21 — receitas e despesas
+
+`transactions` registra o valor previsto em unidades mínimas. Um movimento
+efetivado também registra o valor realizado (igual ao previsto nesta etapa) e
+`effective_at`; um pendente mantém ambos nulos e não afeta o saldo atual.
+`competence_at` representa a data escolhida para o lançamento em UTC (início
+do dia). A exclusão é lógica (`deleted_at`) e remove o movimento dos saldos e
+da lista sem quebrar o histórico de categorias ou contas. Atualizações de
+valor, data e descrição em movimentos históricos podem ser feitas mesmo após
+arquivamento da conta/categoria; mudar vínculos exige destino ativo.
+
+A lista oferece filtros de tipo, conta, categoria, estado e período. A
+persistência e os cálculos continuam locais; sincronização não é necessária.
