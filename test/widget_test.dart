@@ -12,7 +12,7 @@ class _DashboardStub implements DashboardRepository {
   @override
   Future<DashboardSummary> load(DateTime month) async => DashboardSummary(
     month: month,
-    currencies: const [DashboardCurrencySummary(currencyCode: 'BRL',
+    currencies: [DashboardCurrencySummary(currencyCode: 'BRL',
       currentBalanceMinor: 12000, projectedBalanceMinor: 13000,
       incomeMinor: 4000, expenseMinor: 2000,
       expensesByCategory: withDetails ? const [
