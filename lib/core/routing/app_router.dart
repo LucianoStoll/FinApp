@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
@@ -32,12 +33,14 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.transfersPath,
       name: AppRoutes.transfers,
       builder: (context, state) => TransfersPage(
+        key: ValueKey(state.uri.queryParameters['create']),
         startCreate: state.uri.queryParameters['create'] == '1'),
     ),
     GoRoute(
       path: AppRoutes.transactionsPath,
       name: AppRoutes.transactions,
       builder: (context, state) => TransactionsPage(
+        key: ValueKey(state.uri.queryParameters['create']),
         initialCreateType: state.uri.queryParameters['create']),
     ),
     GoRoute(
