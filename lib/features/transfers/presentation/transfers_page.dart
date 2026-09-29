@@ -220,7 +220,7 @@ class _TransferDialogState extends State<_TransferDialog> {
             subtitle: const Text('Pendentes não alteram os saldos atuais'),
             value: _isEffective,
             onChanged: (value) => setState(() => _isEffective = value)),
-        ]))),
+        ])))),
     actions: [
       TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
       FilledButton(onPressed: _submit, child: const Text('Salvar')),

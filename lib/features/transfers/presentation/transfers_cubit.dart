@@ -30,8 +30,10 @@ class TransfersCubit extends Cubit<TransfersState> {
       final accounts = await _accounts.list();
       if (!isClosed) emit(TransfersState(items: items, accounts: accounts));
     } catch (_) {
-      if (!isClosed) emit(TransfersState(items: state.items, accounts: state.accounts,
-        error: 'Não foi possível carregar as transferências.'));
+      if (!isClosed) {
+        emit(TransfersState(items: state.items, accounts: state.accounts,
+          error: 'Não foi possível carregar as transferências.'));
+      }
     }
   }
 
