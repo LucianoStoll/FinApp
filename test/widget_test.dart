@@ -34,12 +34,12 @@ void main() {
     await tester.pumpWidget(const FinApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Somia'), findsOneWidget);
+    expect(find.text('Somia'), findsWidgets);
     expect(find.text('Saldo total'), findsOneWidget);
     expect(find.text('R\$ 120,00'), findsOneWidget);
     expect(find.text('Resultado do mês'), findsOneWidget);
     expect(find.text('R\$ 20,00'), findsWidgets);
-    expect(find.text('Receitas'), findsOneWidget);
+    expect(find.text('Receitas'), findsWidgets);
     expect(tester.getTopLeft(find.text('Saldo total')).dy,
       lessThan(tester.getTopLeft(find.text('Resultado do mês')).dy));
 

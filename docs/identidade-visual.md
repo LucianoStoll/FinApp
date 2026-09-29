@@ -193,7 +193,7 @@ Preparar componentes independentes para facilitar evolução, sem implementar ag
 4. Aplicar a composição aprovada em Resumo, Lançamentos, Contas e formulários.
 5. Conectar o resumo e o gráfico aos dados locais.
 6. Validar Android/Windows, acessibilidade básica e uso offline.
-7. Rodar as verificações do projeto e disponibilizar APK pelo GitHub Actions.
+7. Rodar análise, testes e build Windows pelo GitHub Actions. A geração do APK fica pausada até a chave de assinatura da #31.
 8. Após validação do usuário, concluir a issue e seguir o fluxo de PR para main.
 
 Usar branch identificada pela versão. A entrega desta documentação não significa que a interface já foi implementada ou validada.
@@ -232,5 +232,5 @@ As referências acima não declaram essas issues abertas, fechadas ou implementa
 - [ ] Dashboard permanece fixo nesta versão.
 - [ ] Estados vazios, erros e valores extremos tratados.
 - [ ] Layout funcional em Android e Windows, offline.
-- [ ] Análise/formatação do projeto aprovadas e APK disponível para teste.
+- [ ] Análise, testes e build Windows aprovados; APK somente após retomada da #31.
 - [ ] Validação visual e funcional do usuário antes do encerramento.
