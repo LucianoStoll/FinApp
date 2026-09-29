@@ -1,13 +1,22 @@
 class DashboardCurrencySummary {
   const DashboardCurrencySummary({required this.currencyCode,
     required this.currentBalanceMinor, required this.projectedBalanceMinor,
-    required this.incomeMinor, required this.expenseMinor});
+    required this.incomeMinor, required this.expenseMinor,
+    this.expensesByCategory = const []});
 
   final String currencyCode;
   final int currentBalanceMinor;
   final int projectedBalanceMinor;
   final int incomeMinor;
   final int expenseMinor;
+  final List<DashboardCategoryExpense> expensesByCategory;
+  int get monthlyResultMinor => incomeMinor - expenseMinor;
+}
+
+class DashboardCategoryExpense {
+  const DashboardCategoryExpense(this.name, this.amountMinor);
+  final String name;
+  final int amountMinor;
 }
 
 enum DashboardActivityType { income, expense, transfer }
