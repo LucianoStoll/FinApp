@@ -146,8 +146,9 @@ void main() {
       name: 'Conta', type: AccountType.checking, currencyCode: 'BRL',
       initialBalanceMinor: 10000, includeInAnalytics: true));
     final transactions = SqliteTransactionsRepository(db);
-    final october = DateTime.utc(2026, 10, 15);
-    final december = DateTime.utc(2026, 12, 5);
+    final futureYear = DateTime.now().year + 1;
+    final october = DateTime.utc(futureYear, 10, 15);
+    final december = DateTime.utc(futureYear, 12, 5);
     Future<void> add(TransactionType type, int amount, DateTime date,
         {bool effective = true}) async {
       await transactions.create(TransactionDraft(description: 'Teste', type: type,
@@ -165,8 +166,8 @@ void main() {
     final dec = (await dashboard.load(december)).currencies.single;
     expect(dec.currentBalanceMinor, -9000);
     expect(dec.projectedBalanceMinor, -13000);
-    // A listagem da conta continua exibindo o saldo atual sem corte mensal.
+    // A listagem da conta usa o corte de hoje: datas futuras ainda não entram.
     expect((await SqliteAccountsRepository(db).list()).single.currentBalanceMinor,
-      -9000);
+      10000);
   });
 }
