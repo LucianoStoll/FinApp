@@ -171,7 +171,8 @@ class _DashboardViewState extends State<_DashboardView>
                       Flexible(child: Text(currency.expensesByCategory[i].name,
                         overflow: TextOverflow.ellipsis)),
                       const SizedBox(width: 8),
-                      Text('${currency.expenseMinor == 0 ? 0 :
+                      Text('${MoneyMinor.display(currency.expensesByCategory[i].amountMinor, code)} · '
+                        '${currency.expenseMinor == 0 ? 0 :
                         (currency.expensesByCategory[i].amountMinor * 100 /
                         currency.expenseMinor).round()}%'),
                     ])),
