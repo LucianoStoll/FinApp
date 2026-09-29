@@ -60,6 +60,7 @@ void main() {
       .projectedMinor, 13800);
     expect(all.consolidated.singleWhere((a) => a.currencyCode == 'USD')
       .projectedMinor, 500);
+    expect(byId[dollar.id]!.currentMinor, 500);
     expect((await accounts.list()).firstWhere((a) => a.id == bank.id)
       .projectedBalanceMinor, 10000);
 
