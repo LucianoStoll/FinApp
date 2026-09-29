@@ -2,6 +2,8 @@ import 'package:drift/native.dart';
 import 'package:finapp/core/database/app_database.dart';
 import 'package:finapp/features/accounts/data/sqlite_accounts_repository.dart';
 import 'package:finapp/features/accounts/domain/account.dart';
+import 'package:finapp/features/categories/data/sqlite_categories_repository.dart';
+import 'package:finapp/features/categories/domain/category.dart';
 import 'package:finapp/features/dashboard/data/sqlite_dashboard_repository.dart';
 import 'package:finapp/features/dashboard/domain/entities/dashboard_summary.dart';
 import 'package:finapp/features/transactions/data/sqlite_transactions_repository.dart';
@@ -11,6 +13,41 @@ import 'package:finapp/features/transfers/domain/transfer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('gráfico agrupa subcategorias e ignora pendentes e contas excluídas das análises', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final accounts = SqliteAccountsRepository(db);
+    final bank = await accounts.create(const AccountDraft(name: 'Banco',
+      type: AccountType.checking, currencyCode: 'BRL',
+      initialBalanceMinor: 0, includeInAnalytics: true));
+    final hidden = await accounts.create(const AccountDraft(name: 'Oculta',
+      type: AccountType.cash, currencyCode: 'BRL',
+      initialBalanceMinor: 0, includeInAnalytics: false));
+    final categories = SqliteCategoriesRepository(db);
+    final food = await categories.create(const CategoryDraft(
+      name: 'Alimentação', type: CategoryType.expense));
+    final market = await categories.create(CategoryDraft(
+      name: 'Mercado', type: CategoryType.expense, parentId: food.id));
+    final date = DateTime.utc(2026, 9, 10);
+    final transactions = SqliteTransactionsRepository(db);
+    Future<void> expense(int amount, String accountId,
+        {bool effective = true, String? categoryId}) async {
+      await transactions.create(TransactionDraft(description: 'Compra',
+        type: TransactionType.expense, amountMinor: amount,
+        date: date, isEffective: effective, accountId: accountId,
+        categoryId: categoryId));
+    }
+    await expense(1500, bank.id, categoryId: market.id);
+    await expense(500, bank.id, categoryId: food.id);
+    await expense(700, bank.id, effective: false, categoryId: market.id);
+    await expense(900, hidden.id, categoryId: market.id);
+    final result = (await SqliteDashboardRepository(db).load(date)).currencies.single;
+    expect(result.expenseMinor, 2000);
+    expect(result.expensesByCategory.length, 1);
+    expect(result.expensesByCategory.single.name, 'Alimentação');
+    expect(result.expensesByCategory.single.amountMinor, 2000);
+  });
+
   test('resumo mensal atualiza após operações locais sem reiniciar', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
