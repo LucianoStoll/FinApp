@@ -267,8 +267,7 @@ class _TransferDialogState extends State<_TransferDialog> {
     var effective = _isEffective ? _effectiveDate ?? DateTime.now() : null;
     if (_isEffective &&
         widget.item?.effectiveDate == null &&
-        DateUtils.dateOnly(_dueDate)
-            .isAfter(DateUtils.dateOnly(DateTime.now()))) {
+        !DateUtils.isSameDay(_dueDate, DateTime.now())) {
       effective = await chooseEffectuationDate(context, _dueDate);
       if (effective == null || !mounted) return;
     }

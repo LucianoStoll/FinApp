@@ -81,8 +81,9 @@ class _DashboardViewState extends State<_DashboardView>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed)
+    if (state == AppLifecycleState.resumed) {
       context.read<DashboardCubit>().load();
+    }
   }
 
   @override

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-/// Retorna null se a pessoa cancelar. Uma pendência com vencimento futuro
-/// exige escolher explicitamente a data que movimentará o saldo realizado.
+/// Retorna null se a pessoa cancelar. Vencimentos diferentes de hoje exigem
+/// escolher explicitamente a data que movimentará o saldo realizado.
 Future<DateTime?> chooseEffectuationDate(
     BuildContext context, DateTime dueDate) async {
   final today = DateUtils.dateOnly(DateTime.now());
-  if (!DateUtils.dateOnly(dueDate).isAfter(today)) return today;
+  if (DateUtils.isSameDay(dueDate, today)) return today;
   return showDialog<DateTime>(
       context: context,
       builder: (dialog) => AlertDialog(
-            title: const Text('Efetivar antes do vencimento?'),
+            title: const Text('Quando contabilizar o movimento?'),
             content: Text(
                 'O vencimento é ${dueDate.day.toString().padLeft(2, '0')}/'
                 '${dueDate.month.toString().padLeft(2, '0')}/${dueDate.year}. '

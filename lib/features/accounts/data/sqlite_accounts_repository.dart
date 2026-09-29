@@ -111,8 +111,9 @@ class SqliteAccountsRepository implements AccountsRepository {
       );
 
   void _validate(AccountDraft draft) {
-    if (draft.name.trim().isEmpty)
+    if (draft.name.trim().isEmpty) {
       throw const FormatException('Informe o nome da conta.');
+    }
     if (!RegExp(r'^[A-Za-z]{3}$').hasMatch(draft.currencyCode)) {
       throw const FormatException('A moeda deve ter três letras (ex.: BRL).');
     }

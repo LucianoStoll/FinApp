@@ -107,8 +107,9 @@ class _TransactionsViewState extends State<_TransactionsView> {
     );
     if (!mounted) return;
     if (draft == null) {
-      if (item == null && widget.initialCreateType != null)
+      if (item == null && widget.initialCreateType != null) {
         context.go(_sectionPath);
+      }
       return;
     }
     try {
@@ -586,8 +587,7 @@ class _TransactionDialogState extends State<_TransactionDialog> {
     var effective = _isEffective ? _effectiveDate ?? DateTime.now() : null;
     if (_isEffective &&
         widget.item?.effectiveDate == null &&
-        DateUtils.dateOnly(_dueDate)
-            .isAfter(DateUtils.dateOnly(DateTime.now()))) {
+        !DateUtils.isSameDay(_dueDate, DateTime.now())) {
       effective = await chooseEffectuationDate(context, _dueDate);
       if (effective == null || !mounted) return;
     }
@@ -645,12 +645,13 @@ class _TransactionDialogState extends State<_TransactionDialog> {
                             value: type, child: Text(type.label)))
                         .toList(),
                     onChanged: (type) {
-                      if (type != null)
+                      if (type != null) {
                         setState(() {
                           _type = type;
                           _categoryId = null;
                           _subcategoryId = null;
                         });
+                      }
                     },
                   ),
                 TextFormField(

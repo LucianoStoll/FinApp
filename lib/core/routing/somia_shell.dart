@@ -124,8 +124,9 @@ class _SomiaMenu extends StatelessWidget {
                     onTap: () {
                       final router = GoRouter.of(context);
                       if (isDrawer) Navigator.of(context).pop();
-                      if (location != destination.path)
+                      if (location != destination.path) {
                         router.go(destination.path);
+                      }
                     },
                   )),
           ],

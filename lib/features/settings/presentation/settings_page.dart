@@ -65,8 +65,9 @@ class _SettingsPageState extends State<SettingsPage> {
       final bytes = await file.readAsBytes();
       final directory = await getApplicationSupportDirectory();
       await BackupService.stageRestore(bytes, directory);
-      if (mounted)
+      if (mounted) {
         _message('Backup validado. Feche e abra o Somia para aplicar.');
+      }
     } catch (error) {
       if (mounted) _message('Não foi possível restaurar: $error');
     } finally {

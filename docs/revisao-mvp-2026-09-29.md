@@ -17,9 +17,11 @@ A data de lançamento não substitui `created_at`, que permanece metadado técni
 - saldo realizado/atual usa a data de efetivação;
 - saldo projetado usa vencimentos de movimentos pendentes/futuros;
 - movimento com efetivação futura não afeta o realizado antes dessa data;
-- ao efetivar algo que vence no futuro, perguntar:
-  - **Contabilizar hoje**;
-  - **Contabilizar no vencimento**.
+- ao efetivar algo cujo vencimento está no passado ou no futuro, perguntar:
+  - **Contabilizar hoje** → data de efetivação = hoje;
+  - **Contabilizar no vencimento** → data de efetivação = vencimento, inclusive passado.
+- quando o vencimento é hoje, contabilizar hoje diretamente;
+- cancelar a confirmação mantém o movimento pendente.
 
 Detalhamento: #30.
 

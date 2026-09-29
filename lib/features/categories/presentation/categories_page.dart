@@ -261,11 +261,12 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                         ))
                     .toList(),
                 onChanged: (type) {
-                  if (type != null)
+                  if (type != null) {
                     setState(() {
                       _type = type;
                       _parentId = null;
                     });
+                  }
                 },
               ),
               DropdownButtonFormField<String>(
