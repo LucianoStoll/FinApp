@@ -15,18 +15,27 @@ String _dateLabel(DateTime date) =>
     '${date.month.toString().padLeft(2, '0')}/${date.year}';
 
 class TransfersPage extends StatelessWidget {
-  const TransfersPage({super.key});
+  const TransfersPage({super.key, this.startCreate = false});
+  final bool startCreate;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (_) => TransfersCubit(getIt<TransfersRepository>(),
       getIt<AccountsRepository>()),
-    child: const _TransfersView(),
+    child: _TransfersView(startCreate: startCreate),
   );
 }
 
-class _TransfersView extends StatelessWidget {
-  const _TransfersView();
+class _TransfersView extends StatefulWidget {
+  const _TransfersView({required this.startCreate});
+  final bool startCreate;
+
+  @override
+  State<_TransfersView> createState() => _TransfersViewState();
+}
+
+class _TransfersViewState extends State<_TransfersView> {
+  bool _openedInitial = false;
 
   Future<void> _edit(BuildContext context, [Transfer? item]) async {
     final cubit = context.read<TransfersCubit>();
@@ -77,7 +86,16 @@ class _TransfersView extends StatelessWidget {
       onPressed: () => _edit(context), icon: const Icon(Icons.add),
       label: const Text('Nova transferência'),
     ),
-    body: BlocBuilder<TransfersCubit, TransfersState>(builder: (context, state) {
+    body: BlocConsumer<TransfersCubit, TransfersState>(
+      listener: (context, state) {
+        if (widget.startCreate && !_openedInitial && !state.loading &&
+            state.error == null) {
+          _openedInitial = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _edit(context);
+          });
+        }
+      }, builder: (context, state) {
       if (state.loading && state.accounts.isEmpty) {
         return const Center(child: CircularProgressIndicator());
       }
