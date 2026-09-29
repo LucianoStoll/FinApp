@@ -191,8 +191,9 @@ class _TransactionsViewState extends State<_TransactionsView> {
         ),
       );
 
-  Widget _filters(TransactionsState state) => Padding(
-        padding: const EdgeInsets.all(12),
+  Widget _filters(TransactionsState state) => ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.35),
+        child: SingleChildScrollView(padding: const EdgeInsets.all(12),
         child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             ChoiceChip(label: const Text('Todos'), selected: _type == null,
@@ -200,37 +201,44 @@ class _TransactionsViewState extends State<_TransactionsView> {
             for (final type in TransactionType.values)
               ChoiceChip(label: Text(type.label), selected: _type == type,
                 onSelected: (_) { setState(() { _type = type; _categoryId = null; _subcategoryId = null; }); _apply(); }),
-            DropdownButton<String>(
+            SizedBox(width: 220, child: DropdownButton<String>(
+              isExpanded: true,
               value: _accountId ?? '', hint: const Text('Conta'),
               items: [const DropdownMenuItem(value: '', child: Text('Todas as contas')),
                 for (final account in state.accounts)
-                  DropdownMenuItem(value: account.id, child: Text(account.name))],
+                  DropdownMenuItem(value: account.id, child: Text(account.name,
+                    maxLines: 1, overflow: TextOverflow.ellipsis))],
               onChanged: (id) { setState(() => _accountId = id == '' ? null : id); _apply(); },
-            ),
-            DropdownButton<String>(
+            )),
+            SizedBox(width: 220, child: DropdownButton<String>(
+              isExpanded: true,
               value: _categoryId ?? '', hint: const Text('Categoria'),
               items: [const DropdownMenuItem(value: '', child: Text('Todas as categorias')),
                 for (final category in state.categories.where((c) =>
                     c.parentId == null &&
                     (_type == null || c.type.name == _type!.name)))
-                  DropdownMenuItem(value: category.id, child: Text(category.name))],
+                  DropdownMenuItem(value: category.id, child: Text(category.name,
+                    maxLines: 1, overflow: TextOverflow.ellipsis))],
               onChanged: (id) {
                 setState(() { _categoryId = id == '' ? null : id; _subcategoryId = null; });
                 _apply();
               },
-            ),
-            DropdownButton<String>(
+            )),
+            SizedBox(width: 220, child: DropdownButton<String>(
+              isExpanded: true,
               value: _subcategoryId ?? '', hint: const Text('Subcategoria'),
               items: [const DropdownMenuItem(value: '', child: Text('Todas as subcategorias')),
                 for (final category in state.categories.where((c) =>
                     c.parentId == _categoryId && _categoryId != null))
-                  DropdownMenuItem(value: category.id, child: Text(category.name))],
+                  DropdownMenuItem(value: category.id, child: Text(category.name,
+                    maxLines: 1, overflow: TextOverflow.ellipsis))],
               onChanged: _categoryId == null ? null : (id) {
                 setState(() => _subcategoryId = id == '' ? null : id);
                 _apply();
               },
-            ),
-            DropdownButton<TransactionStatus>(
+            )),
+            SizedBox(width: 220, child: DropdownButton<TransactionStatus>(
+              isExpanded: true,
               value: _status,
               items: const [
                 DropdownMenuItem(value: TransactionStatus.all, child: Text('Todos os estados')),
@@ -240,7 +248,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
               onChanged: (status) {
                 if (status != null) { setState(() => _status = status); _apply(); }
               },
-            ),
+            )),
             OutlinedButton.icon(
               onPressed: _pickRange, icon: const Icon(Icons.date_range),
               label: Text(_range == null ? 'Período'
@@ -251,14 +259,15 @@ class _TransactionsViewState extends State<_TransactionsView> {
               onPressed: () { setState(() => _range = null); _apply(); },
             ),
           ],
-        ),
+        )),
       );
 
   Widget _itemTile(FinancialTransaction item) => Card(
         child: ListTile(
           leading: Icon(item.type == TransactionType.income
               ? Icons.arrow_downward : Icons.arrow_upward),
-          title: Text(item.description),
+          title: Text(item.description, maxLines: 2,
+            overflow: TextOverflow.ellipsis),
           subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('${_dateLabel(item.date)} · ${item.accountName}'
               '${item.categoryName == null ? '' : ' · ${item.categoryName}'}'
@@ -372,6 +381,7 @@ class _TransactionDialogState extends State<_TransactionDialog> {
         child: Form(key: _formKey, child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             DropdownButtonFormField<TransactionType>(
+              isExpanded: true,
               initialValue: _type,
               decoration: const InputDecoration(labelText: 'Tipo'),
               items: TransactionType.values.map((type) => DropdownMenuItem(
@@ -394,16 +404,19 @@ class _TransactionDialogState extends State<_TransactionDialog> {
                 } on FormatException catch (error) { return error.message; }
               }),
             DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: _accountId,
               decoration: const InputDecoration(labelText: 'Conta'),
               items: _availableAccounts.map((account) => DropdownMenuItem(
                 value: account.id,
-                child: Text('${account.name}${account.isArchived ? ' (arquivada)' : ''}'),
+                child: Text('${account.name}${account.isArchived ? ' (arquivada)' : ''}',
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
               )).toList(),
               validator: (value) => value == null ? 'Cadastre uma conta ativa.' : null,
               onChanged: (id) => setState(() => _accountId = id),
             ),
             DropdownButtonFormField<String>(
+              isExpanded: true,
               key: ValueKey('category-${_type.name}'),
               initialValue: _categoryId,
               decoration: const InputDecoration(labelText: 'Categoria'),
@@ -411,13 +424,15 @@ class _TransactionDialogState extends State<_TransactionDialog> {
                 for (final category in roots)
                   DropdownMenuItem(value: category.id,
                     child: Text('${category.name}'
-                        '${category.isArchived ? ' (arquivada)' : ''}'))],
+                        '${category.isArchived ? ' (arquivada)' : ''}',
+                      maxLines: 1, overflow: TextOverflow.ellipsis))],
               onChanged: (id) => setState(() {
                 _categoryId = id == null || id.isEmpty ? null : id;
                 _subcategoryId = null;
               }),
             ),
             DropdownButtonFormField<String>(
+              isExpanded: true,
               key: ValueKey('subcategory-${_type.name}-$_categoryId'),
               initialValue: _subcategoryId,
               decoration: const InputDecoration(labelText: 'Subcategoria'),
@@ -425,7 +440,8 @@ class _TransactionDialogState extends State<_TransactionDialog> {
                 for (final category in children)
                   DropdownMenuItem(value: category.id,
                     child: Text('${category.name}'
-                        '${category.isArchived ? ' (arquivada)' : ''}'))],
+                        '${category.isArchived ? ' (arquivada)' : ''}',
+                      maxLines: 1, overflow: TextOverflow.ellipsis))],
               onChanged: _categoryId == null ? null : (id) => setState(() =>
                   _subcategoryId = id == null || id.isEmpty ? null : id),
             ),
