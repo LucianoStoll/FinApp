@@ -128,12 +128,26 @@ class _DashboardViewState extends State<_DashboardView>
           child: Text(code, style: Theme.of(context).textTheme.titleMedium)),
       Card(child: Padding(padding: const EdgeInsets.all(22),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Saldo total'),
+          const SizedBox(height: 8),
+          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
+            child: Text(MoneyMinor.display(currency.currentBalanceMinor, code),
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                color: scheme.primary, fontWeight: FontWeight.bold))),
+          const SizedBox(height: 10),
+          Text('Saldo projetado: ${MoneyMinor.display(currency.projectedBalanceMinor, code)}'),
+          const SizedBox(height: 4),
+          Text('Até o fim do mês selecionado',
+            style: Theme.of(context).textTheme.bodySmall),
+        ]))),
+      Card(child: Padding(padding: const EdgeInsets.all(22),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Resultado do mês'),
           const SizedBox(height: 8),
           FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
             child: Text(MoneyMinor.display(currency.monthlyResultMinor, code),
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: scheme.primary, fontWeight: FontWeight.bold))),
+                fontWeight: FontWeight.bold))),
           const Divider(height: 32),
           Row(children: [
             Expanded(child: _smallMetric(context, 'Receitas',
@@ -181,14 +195,6 @@ class _DashboardViewState extends State<_DashboardView>
               Expanded(child: legend)]) : Column(children: [
               chart, const SizedBox(height: 12), legend]);
           }),
-        ]))),
-      Card(child: Padding(padding: const EdgeInsets.all(18),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Saldos até o fim do mês', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 12),
-          Text('Saldo total: ${MoneyMinor.display(currency.currentBalanceMinor, code)}'),
-          const SizedBox(height: 5),
-          Text('Saldo projetado: ${MoneyMinor.display(currency.projectedBalanceMinor, code)}'),
         ]))),
     ]);
   }
