@@ -30,30 +30,6 @@ Saldo projetado = saldo atual + movimentos futuros/pendentes considerados.
 
 Transferência move patrimônio entre contas e não é receita/despesa.
 
-## Revisão do MVP — três datas e atualização segura
-
-A revisão de 29/09/2026 torna obrigatórias três datas financeiras para **receitas, despesas e transferências**:
-
-- `launch_at`: data de lançamento escolhida pelo usuário;
-- `due_at`: data de vencimento;
-- `effective_at`: data usada para contabilização no saldo realizado.
-
-`created_at` continua sendo somente metadado técnico de criação e não substitui `launch_at`.
-
-### Regras de cálculo
-
-- saldo realizado/atual considera apenas movimentos cuja `effective_at` esteja dentro do corte consultado;
-- movimento com `effective_at` futura não altera o saldo realizado antes dessa data;
-- saldo projetado considera movimentos pendentes/futuros usando `due_at`;
-- ao efetivar antecipadamente um movimento futuro, a aplicação permite definir `effective_at` como hoje ou como o vencimento;
-- transferências aplicam a mesma regra temporal nas duas contas e continuam fora das receitas/despesas.
-
-### Migration
-
-A alteração deve entrar por migration aditiva, preservando os registros existentes. Não recriar nem apagar o banco para acomodar o novo schema. Campos antigos de data devem ser migrados para defaults compatíveis e documentados, evitando perda ou mudança silenciosa de histórico.
-
-Também faz parte da validação do MVP testar a abertura de uma base criada por uma versão anterior do app, executar a migration e confirmar que contas, categorias, receitas, despesas e transferências continuam disponíveis.
-
 ## Evoluções previstas
 
 Adicionar por migrations, não antecipar todas no MVP: rateios, liquidações, reembolsos, recorrências, parcelamentos, cartões/faturas, orçamentos/versionamento, metas/planos, pessoas, estabelecimentos, tags N:N, dívidas, amortizações, renegociações, bens/avaliações, investimentos/cotações, anexos, auditoria, notificações, relatórios salvos, filtros e change log de sync.
@@ -114,7 +90,7 @@ versão publicada.
   `device_id` e `sync_version` preparam sincronização, sem habilitá-la.
 - Chaves estrangeiras são ativadas em toda abertura. Exclusão lógica usa
   `deleted_at`; referências históricas usam `ON DELETE RESTRICT`.
-- `schemaVersion` é 4. Novas versões entram como passos sequenciais em
+- `schemaVersion` é 5. Novas versões entram como passos sequenciais em
   `onUpgrade`; o schema da v1 permanece imutável. Uma versão sem migration
   explícita falha, preservando o banco anterior.
 
@@ -216,3 +192,26 @@ movimentos efetivados até essa data entram no saldo atual, e a projeção adici
 apenas movimentos planejados até a mesma data que ainda não estavam efetivados
 naquele momento. Um lançamento de dezembro não altera os saldos mostrados em
 outubro. A tela de Contas permanece com a posição atual sem corte mensal.
+
+### Issue #30 — três datas financeiras (v5)
+
+A migration v4→v5 adiciona `posted_at` (data de lançamento) a
+`transactions` e `transfers` e `due_at` a `transfers`. Em `transactions`,
+`due_at` já existia. A migração preenche as datas antigas a partir de
+`competence_at` ou `planned_at`, sem alterar `created_at`, `effective_at`,
+valores nem vínculos. `created_at` continua sendo apenas metadado técnico.
+`competence_at` continua identificando o mês de competência do resultado
+mensal; `planned_at` é preservado para compatibilidade histórica.
+
+No formulário, lançamento, vencimento e efetivação são escolhas distintas.
+Uma pendência não tem `effective_at`; uma data de efetivação futura representa
+um movimento agendado. Ao efetivar antes do vencimento, a interface exige a
+escolha entre contabilizar hoje ou no vencimento. A mesma regra vale para as
+duas pontas de uma transferência.
+
+O saldo realizado considera `effective_at` até o dia consultado (hoje na tela
+de Contas). A projeção acrescenta movimentos ainda não realizados cuja
+`due_at` está dentro do período consultado. O resumo mensal usa o último dia
+do mês como corte e não inclui efetivações posteriores nos totais realizados
+daquele mês. O filtro de período da lista pode usar lançamento, vencimento ou
+efetivação; por padrão usa vencimento.
