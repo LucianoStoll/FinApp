@@ -50,6 +50,12 @@ A especificação cobre cartões/faturas, recorrências, parcelamentos, rateios,
 - [Arquitetura](docs/arquitetura.md)
 - [Banco de dados](docs/banco-de-dados.md)
 - [Roadmap](docs/roadmap.md)
+- [Identidade visual Somia](docs/identidade-visual.md)
+- [Revisão do MVP — 29/09/2026](docs/revisao-mvp-2026-09-29.md)
+
+## Revisão atual do MVP
+
+Antes do fechamento do v0.1.0-alpha, as issues #30, #31 e #32 consolidam: três datas financeiras e novas regras de saldo/efetivação, atualização de APK sem perda de dados e nova navegação mobile por drawer.
 
 ## Desenvolvimento
 
