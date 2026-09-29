@@ -30,5 +30,17 @@ void main() {
     expect(find.text('Receitas'), findsOneWidget);
     expect(tester.getTopLeft(find.text('Saldo total')).dy,
       lessThan(tester.getTopLeft(find.text('Resultado do mês')).dy));
+
+    await tester.tap(find.byTooltip('Próximo mês'));
+    await tester.pumpAndSettle();
+    expect(find.text('Saldo previsto'), findsOneWidget);
+    expect(find.text('R\$ 130,00'), findsOneWidget);
+    expect(find.text('Saldo efetivado: R\$ 120,00'), findsOneWidget);
+    expect(find.text('Saldo total'), findsNothing);
+
+    await tester.tap(find.byTooltip('Mês anterior'));
+    await tester.pumpAndSettle();
+    expect(find.text('Saldo total'), findsOneWidget);
+    expect(find.text('R\$ 120,00'), findsOneWidget);
   });
 }
