@@ -54,11 +54,15 @@ class TransactionsCubit extends Cubit<TransactionsState> {
     } else {
       await _transactions.update(id, draft);
     }
-    if (!isClosed) await load();
+    if (!isClosed) {
+      await load();
+    }
   }
 
   Future<void> delete(String id) async {
     await _transactions.delete(id);
-    if (!isClosed) await load();
+    if (!isClosed) {
+      await load();
+    }
   }
 }
