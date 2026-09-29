@@ -163,3 +163,15 @@ existentes e preenche a data a partir de `effective_at` ou `created_at`. Assim,
 a data selecionada também persiste para uma transferência pendente. Atualizar
 valor ou data de um registro histórico não exige reativar contas arquivadas;
 trocar uma das contas exige uma conta ativa.
+
+### Issue #23 — saldos atual e projetado
+
+Uma consulta compartilhada calcula os saldos por conta. O saldo atual parte do
+saldo inicial, adiciona receitas realizadas, subtrai despesas realizadas e
+aplica transferências efetivadas nas duas contas. Lançamentos excluídos e com
+`ignore_balance = 1` ficam fora do cálculo. O saldo projetado adiciona as
+receitas/despesas pendentes pelo valor previsto e as transferências pendentes;
+é possível limitar essas pendências pela data planejada, inclusive a data
+escolhida. Sem limite, considera todas as pendências. O consolidado inclui
+contas arquivadas com histórico e agrupa por moeda, sem converter ou somar
+moedas diferentes. `include_in_analytics` não altera saldo patrimonial.

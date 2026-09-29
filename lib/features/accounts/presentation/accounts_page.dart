@@ -91,11 +91,38 @@ class _AccountsView extends StatelessWidget {
             if (state.accounts.isEmpty) {
               return const Center(child: Text('Nenhuma conta cadastrada.'));
             }
+            final totals = <String, (int, int)>{};
+            for (final account in state.accounts) {
+              final current = totals[account.currencyCode] ?? (0, 0);
+              totals[account.currencyCode] = (
+                current.$1 + account.currentBalanceMinor,
+                current.$2 + account.projectedBalanceMinor,
+              );
+            }
+            final currencies = totals.keys.toList()..sort();
             return ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-              itemCount: state.accounts.length,
+              itemCount: state.accounts.length + 1,
               itemBuilder: (context, index) {
-                final account = state.accounts[index];
+                if (index == 0) {
+                  return Column(crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+                        child: Text('Saldos consolidados',
+                          style: Theme.of(context).textTheme.titleMedium)),
+                      for (final currency in currencies)
+                        Card(child: ListTile(
+                          title: Text(currency),
+                          subtitle: Text('Atual: ${MoneyMinor.display(totals[currency]!.$1, currency)}'
+                            '\nProjetado (todas as pendências): '
+                            '${MoneyMinor.display(totals[currency]!.$2, currency)}'),
+                          isThreeLine: true,
+                        )),
+                      const SizedBox(height: 8),
+                    ],
+                  );
+                }
+                final account = state.accounts[index - 1];
                 return Card(
                   child: ListTile(
                     title: Text(account.name),
@@ -103,7 +130,8 @@ class _AccountsView extends StatelessWidget {
                       '${account.type.label} · ${account.currencyCode}'
                       '${account.isArchived ? ' · Arquivada' : ''}'
                       '${account.includeInAnalytics ? '' : ' · Fora das análises'}'
-                      '\nSaldo atual: ${MoneyMinor.display(account.currentBalanceMinor, account.currencyCode)}',
+                      '\nAtual: ${MoneyMinor.display(account.currentBalanceMinor, account.currencyCode)}'
+                      '\nProjetado: ${MoneyMinor.display(account.projectedBalanceMinor, account.currencyCode)}',
                     ),
                     trailing: PopupMenuButton<String>(
                       tooltip: 'Ações da conta',

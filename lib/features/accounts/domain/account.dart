@@ -17,6 +17,7 @@ class Account {
     required this.currencyCode,
     required this.initialBalanceMinor,
     required this.currentBalanceMinor,
+    required this.projectedBalanceMinor,
     required this.isArchived,
     required this.includeInAnalytics,
   });
@@ -27,6 +28,7 @@ class Account {
   final String currencyCode;
   final int initialBalanceMinor;
   final int currentBalanceMinor;
+  final int projectedBalanceMinor;
   final bool isArchived;
   final bool includeInAnalytics;
 }

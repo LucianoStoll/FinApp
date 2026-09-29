@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/entity_metadata.dart';
+import '../../balances/data/sqlite_balances_repository.dart';
 import '../domain/account.dart';
 import '../domain/accounts_repository.dart';
 
@@ -12,25 +13,7 @@ class SqliteAccountsRepository implements AccountsRepository {
 
   @override
   Future<List<Account>> list() async {
-    final rows = await _db.customSelect('''
-      SELECT a.*,
-        a.initial_balance_minor +
-        COALESCE((SELECT SUM(CASE WHEN t.type = 'income'
-                        THEN t.actual_amount_minor ELSE -t.actual_amount_minor END)
-                  FROM transactions t
-                  WHERE t.account_id = a.id AND t.effective_at IS NOT NULL
-                    AND t.actual_amount_minor IS NOT NULL
-                    AND t.ignore_balance = 0 AND t.deleted_at IS NULL), 0) +
-        COALESCE((SELECT SUM(CASE WHEN f.destination_account_id = a.id
-                        THEN f.amount_minor ELSE -f.amount_minor END)
-                  FROM transfers f
-                  WHERE (f.source_account_id = a.id OR f.destination_account_id = a.id)
-                    AND f.effective_at IS NOT NULL AND f.deleted_at IS NULL), 0)
-        AS current_balance_minor
-      FROM accounts a
-      WHERE a.deleted_at IS NULL
-      ORDER BY a.is_archived, lower(a.name), a.id
-    ''').get();
+    final rows = await balanceRows(_db);
     return rows.map(_mapAccount).toList();
   }
 
@@ -103,6 +86,8 @@ class SqliteAccountsRepository implements AccountsRepository {
         currencyCode: row.read<String>('currency_code'),
         initialBalanceMinor: row.read<int>('initial_balance_minor'),
         currentBalanceMinor: row.read<int>('current_balance_minor'),
+        projectedBalanceMinor: row.read<int>('current_balance_minor') +
+            row.read<int>('pending_balance_minor'),
         isArchived: row.read<int>('is_archived') == 1,
         includeInAnalytics: row.read<int>('include_in_analytics') == 1,
       );
