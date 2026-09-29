@@ -30,6 +30,30 @@ Saldo projetado = saldo atual + movimentos futuros/pendentes considerados.
 
 Transferência move patrimônio entre contas e não é receita/despesa.
 
+## Revisão do MVP — três datas e atualização segura
+
+A revisão de 29/09/2026 torna obrigatórias três datas financeiras para **receitas, despesas e transferências**:
+
+- `launch_at`: data de lançamento escolhida pelo usuário;
+- `due_at`: data de vencimento;
+- `effective_at`: data usada para contabilização no saldo realizado.
+
+`created_at` continua sendo somente metadado técnico de criação e não substitui `launch_at`.
+
+### Regras de cálculo
+
+- saldo realizado/atual considera apenas movimentos cuja `effective_at` esteja dentro do corte consultado;
+- movimento com `effective_at` futura não altera o saldo realizado antes dessa data;
+- saldo projetado considera movimentos pendentes/futuros usando `due_at`;
+- ao efetivar antecipadamente um movimento futuro, a aplicação permite definir `effective_at` como hoje ou como o vencimento;
+- transferências aplicam a mesma regra temporal nas duas contas e continuam fora das receitas/despesas.
+
+### Migration
+
+A alteração deve entrar por migration aditiva, preservando os registros existentes. Não recriar nem apagar o banco para acomodar o novo schema. Campos antigos de data devem ser migrados para defaults compatíveis e documentados, evitando perda ou mudança silenciosa de histórico.
+
+Também faz parte da validação do MVP testar a abertura de uma base criada por uma versão anterior do app, executar a migration e confirmar que contas, categorias, receitas, despesas e transferências continuam disponíveis.
+
 ## Evoluções previstas
 
 Adicionar por migrations, não antecipar todas no MVP: rateios, liquidações, reembolsos, recorrências, parcelamentos, cartões/faturas, orçamentos/versionamento, metas/planos, pessoas, estabelecimentos, tags N:N, dívidas, amortizações, renegociações, bens/avaliações, investimentos/cotações, anexos, auditoria, notificações, relatórios salvos, filtros e change log de sync.
