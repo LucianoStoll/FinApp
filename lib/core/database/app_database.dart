@@ -9,6 +9,7 @@ import 'schema_v1.dart';
 import 'schema_v2.dart';
 import 'schema_v3.dart';
 import 'schema_v4.dart';
+import 'backup_service.dart';
 
 /// Banco local do MVP. As migrations SQL ficam estáveis por versão; as DAOs
 /// tipadas serão adicionadas pelas features sem alterar o schema publicado.
@@ -19,6 +20,7 @@ class AppDatabase extends GeneratedDatabase {
         LazyDatabase(() async {
           final directory = await getApplicationSupportDirectory();
           await directory.create(recursive: true);
+          await BackupService.applyPendingRestore(directory);
           final file = File(p.join(directory.path, 'finapp.sqlite'));
           return NativeDatabase.createInBackground(file);
         }),
