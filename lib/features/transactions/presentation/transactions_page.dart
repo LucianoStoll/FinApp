@@ -38,11 +38,13 @@ class _TransactionsViewState extends State<_TransactionsView> {
   TransactionType? _type;
   String? _accountId;
   String? _categoryId;
+  String? _subcategoryId;
   TransactionStatus _status = TransactionStatus.all;
   DateTimeRange? _range;
 
   void _apply() => context.read<TransactionsCubit>().load(TransactionFilter(
-        type: _type, accountId: _accountId, categoryId: _categoryId,
+        type: _type, accountId: _accountId,
+        categoryId: _subcategoryId ?? _categoryId,
         status: _status, from: _range?.start, to: _range?.end,
       ));
 
@@ -147,10 +149,10 @@ class _TransactionsViewState extends State<_TransactionsView> {
         child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             ChoiceChip(label: const Text('Todos'), selected: _type == null,
-              onSelected: (_) { setState(() { _type = null; _categoryId = null; }); _apply(); }),
+              onSelected: (_) { setState(() { _type = null; _categoryId = null; _subcategoryId = null; }); _apply(); }),
             for (final type in TransactionType.values)
               ChoiceChip(label: Text(type.label), selected: _type == type,
-                onSelected: (_) { setState(() { _type = type; _categoryId = null; }); _apply(); }),
+                onSelected: (_) { setState(() { _type = type; _categoryId = null; _subcategoryId = null; }); _apply(); }),
             DropdownButton<String>(
               value: _accountId ?? '', hint: const Text('Conta'),
               items: [const DropdownMenuItem(value: '', child: Text('Todas as contas')),
@@ -162,9 +164,24 @@ class _TransactionsViewState extends State<_TransactionsView> {
               value: _categoryId ?? '', hint: const Text('Categoria'),
               items: [const DropdownMenuItem(value: '', child: Text('Todas as categorias')),
                 for (final category in state.categories.where((c) =>
-                    _type == null || c.type.name == _type!.name))
+                    c.parentId == null &&
+                    (_type == null || c.type.name == _type!.name)))
                   DropdownMenuItem(value: category.id, child: Text(category.name))],
-              onChanged: (id) { setState(() => _categoryId = id == '' ? null : id); _apply(); },
+              onChanged: (id) {
+                setState(() { _categoryId = id == '' ? null : id; _subcategoryId = null; });
+                _apply();
+              },
+            ),
+            DropdownButton<String>(
+              value: _subcategoryId ?? '', hint: const Text('Subcategoria'),
+              items: [const DropdownMenuItem(value: '', child: Text('Todas as subcategorias')),
+                for (final category in state.categories.where((c) =>
+                    c.parentId == _categoryId && _categoryId != null))
+                  DropdownMenuItem(value: category.id, child: Text(category.name))],
+              onChanged: _categoryId == null ? null : (id) {
+                setState(() => _subcategoryId = id == '' ? null : id);
+                _apply();
+              },
             ),
             DropdownButton<TransactionStatus>(
               value: _status,
@@ -235,6 +252,7 @@ class _TransactionDialogState extends State<_TransactionDialog> {
   late bool _isEffective;
   String? _accountId;
   String? _categoryId;
+  String? _subcategoryId;
 
   @override
   void initState() {
@@ -246,7 +264,10 @@ class _TransactionDialogState extends State<_TransactionDialog> {
     _date = item?.date ?? DateTime.now();
     _isEffective = item?.isEffective ?? true;
     _accountId = item?.accountId ?? _availableAccounts.firstOrNull?.id;
-    _categoryId = item?.categoryId;
+    final selected = widget.categories.where((category) =>
+        category.id == item?.categoryId).firstOrNull;
+    _categoryId = selected?.parentId ?? selected?.id;
+    _subcategoryId = selected?.parentId == null ? null : selected?.id;
   }
 
   List<Account> get _availableAccounts => widget.accounts.where((account) =>
@@ -270,18 +291,19 @@ class _TransactionDialogState extends State<_TransactionDialog> {
     Navigator.pop(context, TransactionDraft(
       description: _description.text.trim(), type: _type,
       amountMinor: MoneyMinor.parse(_amount.text), date: _date,
-      isEffective: _isEffective, accountId: _accountId!, categoryId: _categoryId,
+      isEffective: _isEffective, accountId: _accountId!,
+      categoryId: _subcategoryId ?? _categoryId,
     ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final categories = widget.categories.where((category) =>
-        category.type.name == _type.name &&
-        (!category.isArchived || category.id == widget.item?.categoryId) &&
-        (category.parentId == null || widget.categories.any((parent) =>
-            parent.id == category.parentId && !parent.isArchived) ||
-            category.id == widget.item?.categoryId)).toList();
+    final roots = widget.categories.where((category) =>
+        category.parentId == null && category.type.name == _type.name &&
+        (!category.isArchived || category.id == _categoryId)).toList();
+    final children = widget.categories.where((category) =>
+        category.parentId == _categoryId && _categoryId != null &&
+        (!category.isArchived || category.id == _subcategoryId)).toList();
     return AlertDialog(
       title: Text(widget.item == null ? 'Novo lançamento' : 'Editar lançamento'),
       content: SizedBox(width: 440,
@@ -293,7 +315,7 @@ class _TransactionDialogState extends State<_TransactionDialog> {
               items: TransactionType.values.map((type) => DropdownMenuItem(
                 value: type, child: Text(type.label))).toList(),
               onChanged: (type) {
-                if (type != null) setState(() { _type = type; _categoryId = null; });
+                if (type != null) setState(() { _type = type; _categoryId = null; _subcategoryId = null; });
               },
             ),
             TextFormField(controller: _description,
@@ -320,15 +342,30 @@ class _TransactionDialogState extends State<_TransactionDialog> {
               onChanged: (id) => setState(() => _accountId = id),
             ),
             DropdownButtonFormField<String>(
-              key: ValueKey(_type), initialValue: _categoryId,
-              decoration: const InputDecoration(labelText: 'Categoria / subcategoria'),
+              key: ValueKey('category-${_type.name}'),
+              initialValue: _categoryId,
+              decoration: const InputDecoration(labelText: 'Categoria'),
               items: [const DropdownMenuItem(value: '', child: Text('Sem categoria')),
-                for (final category in categories)
+                for (final category in roots)
                   DropdownMenuItem(value: category.id,
-                    child: Text('${category.parentId == null ? '' : '  ↳ '}'
-                        '${category.name}${category.isArchived ? ' (arquivada)' : ''}'))],
-              onChanged: (id) => setState(() =>
-                  _categoryId = id == null || id.isEmpty ? null : id),
+                    child: Text('${category.name}'
+                        '${category.isArchived ? ' (arquivada)' : ''}'))],
+              onChanged: (id) => setState(() {
+                _categoryId = id == null || id.isEmpty ? null : id;
+                _subcategoryId = null;
+              }),
+            ),
+            DropdownButtonFormField<String>(
+              key: ValueKey('subcategory-${_type.name}-$_categoryId'),
+              initialValue: _subcategoryId,
+              decoration: const InputDecoration(labelText: 'Subcategoria'),
+              items: [const DropdownMenuItem(value: '', child: Text('Nenhuma')),
+                for (final category in children)
+                  DropdownMenuItem(value: category.id,
+                    child: Text('${category.name}'
+                        '${category.isArchived ? ' (arquivada)' : ''}'))],
+              onChanged: _categoryId == null ? null : (id) => setState(() =>
+                  _subcategoryId = id == null || id.isEmpty ? null : id),
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
