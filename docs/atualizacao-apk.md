@@ -29,7 +29,9 @@ usuário de que a chave e os dois secrets foram configurados.
 
 A Action decodifica a chave apenas no runner, assina o APK release e verifica
 que o certificado do APK corresponde ao certificado da chave persistente.
-Confere também o identificador e o `versionCode`. O arquivo público
+A leitura aceita tanto o relatório com `Signer #1` quanto o relatório por
+faixa de SDK (`Signer (minSdkVersion=...)`), verificando todos os certificados
+informados. Confere também o identificador e o `versionCode`. O arquivo público
 `signing-info.txt`, junto do APK, registra o certificado e as versões para
 comparar builds consecutivas. O material privado é removido ao fim do job. O artefato antigo `somia-debug-not-updateable`
 não é um APK de atualização.
