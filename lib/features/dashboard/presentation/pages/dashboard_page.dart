@@ -87,7 +87,7 @@ class _DashboardViewState extends State<_DashboardView>
                 const Card(child: Padding(padding: EdgeInsets.all(24),
                   child: Text('Cadastre uma conta para começar seu resumo.'))),
               for (final currency in state.summary!.currencies)
-                _currencySection(context, currency),
+                _currencySection(context, currency, state.month),
               const SizedBox(height: 16),
               Row(children: [
                 Expanded(child: Text('Últimos lançamentos',
@@ -119,23 +119,30 @@ class _DashboardViewState extends State<_DashboardView>
     }),
   );
 
-  Widget _currencySection(BuildContext context, DashboardCurrencySummary currency) {
+  Widget _currencySection(BuildContext context, DashboardCurrencySummary currency,
+      DateTime month) {
     final scheme = Theme.of(context).colorScheme;
     final code = currency.currencyCode;
+    final now = DateTime.now();
+    final futureMonth = DateTime(month.year, month.month)
+      .isAfter(DateTime(now.year, now.month));
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (code != 'BRL' || context.read<DashboardCubit>().state.summary!.currencies.length > 1)
         Padding(padding: const EdgeInsets.only(top: 18, left: 8),
           child: Text(code, style: Theme.of(context).textTheme.titleMedium)),
       Card(child: Padding(padding: const EdgeInsets.all(22),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Saldo total'),
+          Text(futureMonth ? 'Saldo previsto' : 'Saldo total'),
           const SizedBox(height: 8),
           FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
-            child: Text(MoneyMinor.display(currency.currentBalanceMinor, code),
+            child: Text(MoneyMinor.display(futureMonth
+                ? currency.projectedBalanceMinor : currency.currentBalanceMinor, code),
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                 color: scheme.primary, fontWeight: FontWeight.bold))),
           const SizedBox(height: 10),
-          Text('Saldo projetado: ${MoneyMinor.display(currency.projectedBalanceMinor, code)}'),
+          Text(futureMonth
+            ? 'Saldo efetivado: ${MoneyMinor.display(currency.currentBalanceMinor, code)}'
+            : 'Saldo projetado: ${MoneyMinor.display(currency.projectedBalanceMinor, code)}'),
           const SizedBox(height: 4),
           Text('Até o fim do mês selecionado',
             style: Theme.of(context).textTheme.bodySmall),
