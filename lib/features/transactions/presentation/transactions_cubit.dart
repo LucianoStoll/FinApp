@@ -39,12 +39,16 @@ class TransactionsCubit extends Cubit<TransactionsState> {
       final items = await _transactions.list(nextFilter);
       final accounts = await _accounts.list();
       final categories = await _categories.list();
-      if (!isClosed) emit(TransactionsState(items: items, accounts: accounts,
-        categories: categories, filter: nextFilter));
+      if (!isClosed) {
+        emit(TransactionsState(items: items, accounts: accounts,
+          categories: categories, filter: nextFilter));
+      }
     } catch (_) {
-      if (!isClosed) emit(TransactionsState(items: state.items,
-        accounts: state.accounts, categories: state.categories,
-        filter: nextFilter, error: 'Não foi possível carregar os lançamentos.'));
+      if (!isClosed) {
+        emit(TransactionsState(items: state.items,
+          accounts: state.accounts, categories: state.categories,
+          filter: nextFilter, error: 'Não foi possível carregar os lançamentos.'));
+      }
     }
   }
 
