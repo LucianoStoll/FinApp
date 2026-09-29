@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/di/injection.dart';
+import '../../../core/routing/somia_shell.dart';
 import '../domain/account.dart';
 import '../domain/accounts_repository.dart';
 import '../domain/money_minor.dart';
@@ -56,11 +56,7 @@ class _AccountsView extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Contas'),
-          leading: IconButton(
-            tooltip: 'Voltar',
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/'),
-          ),
+          leading: somiaMenuLeading(context),
         ),
         floatingActionButton: Builder(
           builder: (context) => FloatingActionButton.extended(

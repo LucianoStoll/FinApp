@@ -7,6 +7,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/database/backup_service.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/routing/app_router.dart';
+import '../../../core/routing/somia_shell.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -73,7 +74,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Ajustes')),
+    appBar: AppBar(title: const Text('Ajustes'), leading: somiaMenuLeading(context)),
     body: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 680),
       child: ListView(padding: const EdgeInsets.all(20), children: [
         Text('Somia', style: Theme.of(context).textTheme.headlineMedium),

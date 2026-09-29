@@ -22,8 +22,9 @@ class TransactionsState {
 }
 
 class TransactionsCubit extends Cubit<TransactionsState> {
-  TransactionsCubit(this._transactions, this._accounts, this._categories)
-      : super(const TransactionsState()) {
+  TransactionsCubit(this._transactions, this._accounts, this._categories,
+      {TransactionType? sectionType})
+      : super(TransactionsState(filter: TransactionFilter(type: sectionType))) {
     load();
   }
 

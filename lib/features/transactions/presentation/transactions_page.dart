@@ -18,20 +18,24 @@ String _dateLabel(DateTime date) =>
     '${date.month.toString().padLeft(2, '0')}/${date.year}';
 
 class TransactionsPage extends StatelessWidget {
-  const TransactionsPage({super.key, this.initialCreateType});
+  const TransactionsPage({super.key, this.initialCreateType, this.sectionType});
   final String? initialCreateType;
+  final TransactionType? sectionType;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
         create: (_) => TransactionsCubit(getIt<TransactionsRepository>(),
-          getIt<AccountsRepository>(), getIt<CategoriesRepository>()),
-        child: _TransactionsView(initialCreateType: initialCreateType),
+          getIt<AccountsRepository>(), getIt<CategoriesRepository>(),
+          sectionType: sectionType),
+        child: _TransactionsView(initialCreateType: initialCreateType,
+          sectionType: sectionType),
       );
 }
 
 class _TransactionsView extends StatefulWidget {
-  const _TransactionsView({this.initialCreateType});
+  const _TransactionsView({this.initialCreateType, this.sectionType});
   final String? initialCreateType;
+  final TransactionType? sectionType;
 
   @override
   State<_TransactionsView> createState() => _TransactionsViewState();
@@ -46,6 +50,16 @@ class _TransactionsViewState extends State<_TransactionsView> {
   String? _subcategoryId;
   TransactionStatus _status = TransactionStatus.all;
   DateTimeRange? _range;
+
+  @override
+  void initState() {
+    super.initState();
+    _type = widget.sectionType;
+  }
+
+  String get _sectionPath => widget.sectionType == TransactionType.income
+    ? '/income' : widget.sectionType == TransactionType.expense
+    ? '/expenses' : '/transactions';
 
   void _apply() => context.read<TransactionsCubit>().load(TransactionFilter(
         type: _type, accountId: _accountId,
@@ -73,13 +87,15 @@ class _TransactionsViewState extends State<_TransactionsView> {
     final draft = await showDialog<TransactionDraft>(
       context: context,
       builder: (_) => _TransactionDialog(item: item,
-        initialType: widget.initialCreateType == 'income'
+        fixedType: widget.sectionType,
+        initialType: (widget.sectionType == TransactionType.income ||
+          widget.initialCreateType == 'income')
           ? TransactionType.income : TransactionType.expense,
         accounts: state.accounts, categories: state.categories),
     );
     if (!mounted) return;
     if (draft == null) {
-      if (item == null && widget.initialCreateType != null) context.go('/transactions');
+      if (item == null && widget.initialCreateType != null) context.go(_sectionPath);
       return;
     }
     try {
@@ -88,7 +104,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
       if (mounted) _showError(error);
     }
     if (mounted && item == null && widget.initialCreateType != null) {
-      context.go('/transactions');
+      context.go(_sectionPath);
     }
   }
 
@@ -149,11 +165,10 @@ class _TransactionsViewState extends State<_TransactionsView> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Lançamentos'),
-          leading: IconButton(
-            tooltip: 'Voltar', icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/'),
-          ),
+          title: Text(widget.sectionType == TransactionType.income ? 'Receitas'
+            : widget.sectionType == TransactionType.expense ? 'Despesas'
+            : 'Lançamentos'),
+          leading: somiaMenuLeading(context),
         ),
         floatingActionButton: const SomiaQuickActions(),
         body: BlocConsumer<TransactionsCubit, TransactionsState>(
@@ -180,7 +195,11 @@ class _TransactionsViewState extends State<_TransactionsView> {
             return Column(children: [
               _filters(state),
               Expanded(child: state.items.isEmpty
-                  ? const Center(child: Text('Nenhum lançamento para estes filtros.'))
+                  ? Center(child: Text(widget.sectionType == TransactionType.income
+                      ? 'Nenhuma receita para estes filtros.'
+                      : widget.sectionType == TransactionType.expense
+                      ? 'Nenhuma despesa para estes filtros.'
+                      : 'Nenhum lançamento para estes filtros.'))
                   : ListView.builder(
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 96),
                       itemCount: state.items.length,
@@ -196,11 +215,13 @@ class _TransactionsViewState extends State<_TransactionsView> {
         child: SingleChildScrollView(padding: const EdgeInsets.all(12),
         child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            ChoiceChip(label: const Text('Todos'), selected: _type == null,
-              onSelected: (_) { setState(() { _type = null; _categoryId = null; _subcategoryId = null; }); _apply(); }),
-            for (final type in TransactionType.values)
-              ChoiceChip(label: Text(type.label), selected: _type == type,
-                onSelected: (_) { setState(() { _type = type; _categoryId = null; _subcategoryId = null; }); _apply(); }),
+            if (widget.sectionType == null) ...[
+              ChoiceChip(label: const Text('Todos'), selected: _type == null,
+                onSelected: (_) { setState(() { _type = null; _categoryId = null; _subcategoryId = null; }); _apply(); }),
+              for (final type in TransactionType.values)
+                ChoiceChip(label: Text(type.label), selected: _type == type,
+                  onSelected: (_) { setState(() { _type = type; _categoryId = null; _subcategoryId = null; }); _apply(); }),
+            ],
             SizedBox(width: 220, child: DropdownButton<String>(
               isExpanded: true,
               value: _accountId ?? '', hint: const Text('Conta'),
@@ -304,8 +325,9 @@ class _TransactionsViewState extends State<_TransactionsView> {
 
 class _TransactionDialog extends StatefulWidget {
   const _TransactionDialog({required this.accounts, required this.categories,
-    this.item, this.initialType = TransactionType.expense});
+    this.item, this.fixedType, this.initialType = TransactionType.expense});
   final FinancialTransaction? item;
+  final TransactionType? fixedType;
   final TransactionType initialType;
   final List<Account> accounts;
   final List<FinanceCategory> categories;
@@ -380,7 +402,10 @@ class _TransactionDialogState extends State<_TransactionDialog> {
       content: SizedBox(width: 440,
         child: Form(key: _formKey, child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            DropdownButtonFormField<TransactionType>(
+            if (widget.fixedType != null)
+              ListTile(contentPadding: EdgeInsets.zero,
+                title: const Text('Tipo'), subtitle: Text(widget.fixedType!.label))
+            else DropdownButtonFormField<TransactionType>(
               isExpanded: true,
               initialValue: _type,
               decoration: const InputDecoration(labelText: 'Tipo'),

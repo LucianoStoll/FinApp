@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/di/injection.dart';
+import '../../../core/routing/somia_shell.dart';
 import '../../accounts/domain/account.dart';
 import '../../accounts/domain/accounts_repository.dart';
 import '../../accounts/domain/money_minor.dart';
@@ -85,10 +86,8 @@ class _TransfersViewState extends State<_TransfersView> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Transferências'), leading: IconButton(
-      tooltip: 'Voltar', icon: const Icon(Icons.arrow_back),
-      onPressed: () => context.go('/'),
-    )),
+    appBar: AppBar(title: const Text('Transferências'),
+      leading: somiaMenuLeading(context)),
     floatingActionButton: FloatingActionButton.extended(
       onPressed: () => _edit(context), icon: const Icon(Icons.add),
       label: const Text('Nova transferência'),

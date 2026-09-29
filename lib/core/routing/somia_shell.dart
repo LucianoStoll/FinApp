@@ -1,52 +1,94 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
 import 'app_router.dart';
+
+final _mobileScaffoldKey = GlobalKey<ScaffoldState>();
+
+class _MenuDestination {
+  const _MenuDestination(this.label, this.path, this.icon);
+  final String label;
+  final String path;
+  final IconData icon;
+}
+
+const _menu = <_MenuDestination>[
+  _MenuDestination('Resumo', AppRoutes.dashboardPath, Icons.home_outlined),
+  _MenuDestination('Receitas', AppRoutes.incomePath, Icons.south_west),
+  _MenuDestination('Despesas', AppRoutes.expensesPath, Icons.north_east),
+  _MenuDestination('Transferências', AppRoutes.transfersPath, Icons.swap_horiz),
+  _MenuDestination('Contas', AppRoutes.accountsPath, Icons.account_balance_wallet_outlined),
+  _MenuDestination('Categorias', AppRoutes.categoriesPath, Icons.category_outlined),
+  _MenuDestination('Configurações', AppRoutes.settingsPath, Icons.settings_outlined),
+];
+
+/// O drawer pertence ao Scaffold externo; este botão o abre a partir das páginas.
+Widget? somiaMenuLeading(BuildContext context) =>
+  MediaQuery.sizeOf(context).width < 800 ? const SomiaMenuButton() : null;
+
+class SomiaMenuButton extends StatelessWidget {
+  const SomiaMenuButton({super.key});
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: 'Abrir menu', icon: const Icon(Icons.menu),
+    onPressed: () => _mobileScaffoldKey.currentState?.openDrawer());
+}
 
 class SomiaShell extends StatelessWidget {
   const SomiaShell({super.key, required this.location, required this.child});
-
   final String location;
   final Widget child;
 
-  static const _destinations = [
-    NavigationDestination(icon: Icon(Icons.home_outlined),
-      selectedIcon: Icon(Icons.home), label: 'Resumo'),
-    NavigationDestination(icon: Icon(Icons.receipt_long_outlined),
-      selectedIcon: Icon(Icons.receipt_long), label: 'Lançamentos'),
-    NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined),
-      selectedIcon: Icon(Icons.account_balance_wallet), label: 'Contas'),
-    NavigationDestination(icon: Icon(Icons.settings_outlined),
-      selectedIcon: Icon(Icons.settings), label: 'Ajustes'),
-  ];
-  static const _paths = [AppRoutes.dashboardPath, AppRoutes.transactionsPath,
-    AppRoutes.accountsPath, AppRoutes.settingsPath];
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, constraints) {
+    if (constraints.maxWidth >= 800) {
+      return Scaffold(body: Row(children: [
+        SizedBox(width: 228, child: _SomiaMenu(location: location)),
+        const VerticalDivider(width: 1),
+        Expanded(child: child),
+      ]));
+    }
+    return Scaffold(key: _mobileScaffoldKey,
+      drawer: Drawer(width: math.min(300, constraints.maxWidth * 0.82),
+        child: _SomiaMenu(location: location, isDrawer: true)),
+      body: child);
+  });
+}
+
+class _SomiaMenu extends StatelessWidget {
+  const _SomiaMenu({required this.location, this.isDrawer = false});
+  final String location;
+  final bool isDrawer;
 
   @override
   Widget build(BuildContext context) {
-    final index = location == AppRoutes.transactionsPath ? 1
-        : location == AppRoutes.accountsPath ? 2
-        : location == AppRoutes.settingsPath ? 3 : 0;
-    void select(int value) => context.go(_paths[value]);
-    return LayoutBuilder(builder: (context, constraints) {
-      if (constraints.maxWidth >= 800) {
-        return Scaffold(body: Row(children: [
-          NavigationRail(selectedIndex: index, onDestinationSelected: select,
-            labelType: NavigationRailLabelType.all,
-            destinations: const [
-              NavigationRailDestination(icon: Icon(Icons.home_outlined), label: Text('Resumo')),
-              NavigationRailDestination(icon: Icon(Icons.receipt_long_outlined), label: Text('Lançamentos')),
-              NavigationRailDestination(icon: Icon(Icons.account_balance_wallet_outlined), label: Text('Contas')),
-              NavigationRailDestination(icon: Icon(Icons.settings_outlined), label: Text('Ajustes')),
-            ]),
-          const VerticalDivider(width: 1),
-          Expanded(child: child),
-        ]));
-      }
-      return Scaffold(body: child,
-        bottomNavigationBar: NavigationBar(selectedIndex: index,
-          onDestinationSelected: select, destinations: _destinations));
-    });
+    final scheme = Theme.of(context).colorScheme;
+    return Material(color: scheme.surface, child: SafeArea(child: ListView(
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
+      children: [
+        Padding(padding: const EdgeInsets.fromLTRB(16, 10, 8, 24),
+          child: Row(children: [
+            Expanded(child: Text('Somia', style: Theme.of(context)
+              .textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold))),
+            if (isDrawer) IconButton(tooltip: 'Fechar menu',
+              icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
+          ])),
+        for (final destination in _menu)
+          Padding(padding: const EdgeInsets.only(bottom: 6),
+            child: ListTile(
+              key: ValueKey('menu-${destination.path}'),
+              leading: Icon(destination.icon), title: Text(destination.label),
+              selected: location == destination.path,
+              selectedTileColor: scheme.primary.withValues(alpha: 0.13),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              onTap: () {
+                final router = GoRouter.of(context);
+                if (isDrawer) Navigator.of(context).pop();
+                if (location != destination.path) router.go(destination.path);
+              },
+            )),
+      ],
+    )));
   }
 }
 
@@ -64,7 +106,8 @@ class SomiaQuickActions extends StatelessWidget {
       if (action == 'transfer') {
         context.go('${AppRoutes.transfersPath}?create=1');
       } else {
-        context.go('${AppRoutes.transactionsPath}?create=$action');
+        final path = action == 'income' ? AppRoutes.incomePath : AppRoutes.expensesPath;
+        context.go('$path?create=1');
       }
     },
     itemBuilder: (_) => const [

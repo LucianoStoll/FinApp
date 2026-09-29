@@ -53,7 +53,7 @@ class _DashboardViewState extends State<_DashboardView>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Somia'), actions: [
+    appBar: AppBar(title: const Text('Somia'), leading: somiaMenuLeading(context), actions: [
       IconButton(tooltip: 'Atualizar resumo', icon: const Icon(Icons.refresh),
         onPressed: context.read<DashboardCubit>().load),
     ]),
@@ -115,7 +115,8 @@ class _DashboardViewState extends State<_DashboardView>
                         '${MoneyMinor.display(item.amountMinor, item.currencyCode)}'),
                     ]),
                   onTap: () => context.goNamed(item.type == DashboardActivityType.transfer
-                    ? AppRoutes.transfers : AppRoutes.transactions),
+                    ? AppRoutes.transfers : item.type == DashboardActivityType.income
+                    ? AppRoutes.income : AppRoutes.expenses),
                 )),
             ])))],
         ));

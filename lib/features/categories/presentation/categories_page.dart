@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/di/injection.dart';
+import '../../../core/routing/somia_shell.dart';
 import '../domain/categories_repository.dart';
 import '../domain/category.dart';
 import 'categories_cubit.dart';
@@ -79,10 +79,7 @@ class _CategoriesViewState extends State<_CategoriesView> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Categorias'),
-          leading: IconButton(
-            tooltip: 'Voltar', icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/'),
-          ),
+          leading: somiaMenuLeading(context),
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: _edit,
