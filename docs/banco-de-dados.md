@@ -90,7 +90,7 @@ versão publicada.
   `device_id` e `sync_version` preparam sincronização, sem habilitá-la.
 - Chaves estrangeiras são ativadas em toda abertura. Exclusão lógica usa
   `deleted_at`; referências históricas usam `ON DELETE RESTRICT`.
-- `schemaVersion` é 3. Novas versões entram como passos sequenciais em
+- `schemaVersion` é 4. Novas versões entram como passos sequenciais em
   `onUpgrade`; o schema da v1 permanece imutável. Uma versão sem migration
   explícita falha, preservando o banco anterior.
 
@@ -148,3 +148,18 @@ arquivamento da conta/categoria; mudar vínculos exige destino ativo.
 
 A lista oferece filtros de tipo, conta, categoria, estado e período. A
 persistência e os cálculos continuam locais; sincronização não é necessária.
+
+### Issue #22 — transferências entre contas
+
+`transfers` guarda uma única operação com conta de origem, conta de destino,
+valor e estado. Quando efetivada, a consulta de saldos subtrai da origem e
+soma no destino; a operação não entra em `transactions` nem em receitas ou
+despesas. Transferências pendentes não alteram o saldo atual. A exclusão
+lógica retira as duas pontas do cálculo. O MVP aceita somente contas distintas
+com a mesma moeda, sem tarifa ou conversão.
+
+A migration v3→v4 acrescenta `planned_at` a `transfers`, preserva as linhas
+existentes e preenche a data a partir de `effective_at` ou `created_at`. Assim,
+a data selecionada também persiste para uma transferência pendente. Atualizar
+valor ou data de um registro histórico não exige reativar contas arquivadas;
+trocar uma das contas exige uma conta ativa.

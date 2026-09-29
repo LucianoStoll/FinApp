@@ -4,6 +4,7 @@ import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/accounts/presentation/accounts_page.dart';
 import '../../features/categories/presentation/categories_page.dart';
 import '../../features/transactions/presentation/transactions_page.dart';
+import '../../features/transfers/presentation/transfers_page.dart';
 
 abstract final class AppRoutes {
   static const dashboard = 'dashboard';
@@ -14,11 +15,18 @@ abstract final class AppRoutes {
   static const categoriesPath = '/categories';
   static const transactions = 'transactions';
   static const transactionsPath = '/transactions';
+  static const transfers = 'transfers';
+  static const transfersPath = '/transfers';
 }
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.dashboardPath,
   routes: [
+    GoRoute(
+      path: AppRoutes.transfersPath,
+      name: AppRoutes.transfers,
+      builder: (context, state) => const TransfersPage(),
+    ),
     GoRoute(
       path: AppRoutes.transactionsPath,
       name: AppRoutes.transactions,

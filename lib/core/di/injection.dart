@@ -8,6 +8,8 @@ import '../../features/categories/data/sqlite_categories_repository.dart';
 import '../../features/categories/domain/categories_repository.dart';
 import '../../features/transactions/data/sqlite_transactions_repository.dart';
 import '../../features/transactions/domain/transactions_repository.dart';
+import '../../features/transfers/data/sqlite_transfers_repository.dart';
+import '../../features/transfers/domain/transfers_repository.dart';
 
 final getIt = GetIt.instance;
 
@@ -36,6 +38,10 @@ Future<void> configureDependencies(AppEnvironment environment) async {
 
   getIt.registerLazySingleton<TransactionsRepository>(
     () => SqliteTransactionsRepository(getIt<AppDatabase>()),
+  );
+
+  getIt.registerLazySingleton<TransfersRepository>(
+    () => SqliteTransfersRepository(getIt<AppDatabase>()),
   );
 
   // As dependências de cada feature serão registradas aqui por módulo.
