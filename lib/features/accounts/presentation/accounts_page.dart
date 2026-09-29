@@ -125,7 +125,8 @@ class _AccountsView extends StatelessWidget {
                 final account = state.accounts[index - 1];
                 return Card(
                   child: ListTile(
-                    title: Text(account.name),
+                    title: Text(account.name, maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
                     subtitle: Text(
                       '${account.type.label} · ${account.currencyCode}'
                       '${account.isArchived ? ' · Arquivada' : ''}'
@@ -234,6 +235,7 @@ class _AccountDialogState extends State<_AccountDialog> {
                         ? 'Informe o nome.' : null,
                   ),
                   DropdownButtonFormField<AccountType>(
+                    isExpanded: true,
                     initialValue: _type,
                     decoration: const InputDecoration(labelText: 'Tipo'),
                     items: AccountType.values
