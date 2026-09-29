@@ -130,7 +130,7 @@ jobs:
           info = Path('build/app/outputs/flutter-apk/signing-info.txt')
           text = info.read_text()
           expected = hashlib.sha256((folder / 'certificate.der').read_bytes()).hexdigest()
-          matches = re.findall(r'^Signer[^\n]* certificate SHA-256 digest:\s*([0-9a-fA-F:]+)\s*$', text, re.MULTILINE)
+          matches = re.findall(r'^(?:Signer|V[1-4](?:\.\d+)? Signer)[^\n]* certificate SHA-256 digest:\s*([0-9a-fA-F:]+)\s*$', text, re.MULTILINE)
           actual = [digest.replace(':', '').lower() for digest in matches]
           print('SHA-256 esperado: ' + expected)
           print('SHA-256 do APK: ' + ', '.join(actual))
