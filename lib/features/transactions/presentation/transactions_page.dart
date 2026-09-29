@@ -427,11 +427,13 @@ class _TransactionDialogState extends State<_TransactionDialog> {
       initialDate: field == 'posted' ? _date : field == 'due' ? _dueDate
         : _effectiveDate ?? DateTime.now(),
       firstDate: DateTime(2000), lastDate: DateTime(2100));
-    if (picked != null && mounted) setState(() {
-      if (field == 'posted') { _date = picked; }
-      else if (field == 'due') { _dueDate = picked; }
-      else { _effectiveDate = picked; }
-    });
+    if (picked != null && mounted) {
+      setState(() {
+        if (field == 'posted') { _date = picked; }
+        else if (field == 'due') { _dueDate = picked; }
+        else { _effectiveDate = picked; }
+      });
+    }
   }
 
   Future<void> _submit() async {
