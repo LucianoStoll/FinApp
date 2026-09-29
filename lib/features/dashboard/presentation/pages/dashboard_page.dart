@@ -105,12 +105,15 @@ class _DashboardViewState extends State<_DashboardView>
                     DashboardActivityType.transfer => Icons.swap_horiz,
                   })),
                   title: Text(item.description, maxLines: 2, overflow: TextOverflow.ellipsis),
-                  subtitle: Text('${item.accountLabel} · ${item.date.day.toString().padLeft(2, '0')}/'
-                    '${item.date.month.toString().padLeft(2, '0')}/${item.date.year}'
-                    '${item.isEffective ? '' : ' · Pendente'}'),
-                  trailing: Text('${item.type == DashboardActivityType.income ? '+' :
-                    item.type == DashboardActivityType.expense ? '-' : ''}'
-                    '${MoneyMinor.display(item.amountMinor, item.currencyCode)}'),
+                  subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${item.accountLabel} · ${item.date.day.toString().padLeft(2, '0')}/'
+                        '${item.date.month.toString().padLeft(2, '0')}/${item.date.year}'
+                        '${item.isEffective ? '' : ' · Pendente'}'),
+                      Text('${item.type == DashboardActivityType.income ? '+' :
+                        item.type == DashboardActivityType.expense ? '-' : ''}'
+                        '${MoneyMinor.display(item.amountMinor, item.currencyCode)}'),
+                    ]),
                   onTap: () => context.goNamed(item.type == DashboardActivityType.transfer
                     ? AppRoutes.transfers : AppRoutes.transactions),
                 )),
@@ -123,6 +126,7 @@ class _DashboardViewState extends State<_DashboardView>
       DateTime month) {
     final scheme = Theme.of(context).colorScheme;
     final code = currency.currencyCode;
+    final enlargedText = MediaQuery.textScalerOf(context).scale(16) >= 24;
     final now = DateTime.now();
     final futureMonth = DateTime(month.year, month.month)
       .isAfter(DateTime(now.year, now.month));
@@ -156,7 +160,13 @@ class _DashboardViewState extends State<_DashboardView>
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold))),
           const Divider(height: 32),
-          Row(children: [
+          if (enlargedText) ...[
+            _smallMetric(context, 'Receitas', currency.incomeMinor, code,
+              const Color(0xFFA4CDB9)),
+            const SizedBox(height: 14),
+            _smallMetric(context, 'Despesas', currency.expenseMinor, code,
+              const Color(0xFFE4A1AC)),
+          ] else Row(children: [
             Expanded(child: _smallMetric(context, 'Receitas',
               currency.incomeMinor, code, const Color(0xFFA4CDB9))),
             const SizedBox(width: 14),
@@ -176,29 +186,33 @@ class _DashboardViewState extends State<_DashboardView>
               child: Stack(alignment: Alignment.center, children: [
                 CustomPaint(size: const Size(160, 160),
                   painter: _DonutPainter(currency.expensesByCategory)),
-                Padding(padding: const EdgeInsets.all(35),
+                if (!enlargedText) Padding(padding: const EdgeInsets.all(35),
                   child: Text(MoneyMinor.display(currency.expenseMinor, code),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium)),
               ]));
             final legend = Column(crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (enlargedText) Padding(padding: const EdgeInsets.only(bottom: 8),
+                  child: Text('Total: ${MoneyMinor.display(currency.expenseMinor, code)}')),
                 for (var i = 0; i < currency.expensesByCategory.length; i++)
                   Padding(padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      CircleAvatar(radius: 5,
-                        backgroundColor: _chartColors[i % _chartColors.length]),
-                      const SizedBox(width: 8),
-                      Flexible(child: Text(currency.expensesByCategory[i].name,
-                        overflow: TextOverflow.ellipsis)),
-                      const SizedBox(width: 8),
-                      Text('${MoneyMinor.display(currency.expensesByCategory[i].amountMinor, code)} · '
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          CircleAvatar(radius: 5,
+                            backgroundColor: _chartColors[i % _chartColors.length]),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(currency.expensesByCategory[i].name)),
+                        ]),
+                        Padding(padding: const EdgeInsets.only(left: 18),
+                          child: Text('${MoneyMinor.display(currency.expensesByCategory[i].amountMinor, code)} · '
                         '${currency.expenseMinor == 0 ? 0 :
                         (currency.expensesByCategory[i].amountMinor * 100 /
-                        currency.expenseMinor).round()}%'),
-                    ])),
+                        currency.expenseMinor).round()}%')),
+                      ])),
               ]);
-            return wide ? Row(children: [chart, const SizedBox(width: 20),
+            return wide && !enlargedText ? Row(children: [chart, const SizedBox(width: 20),
               Expanded(child: legend)]) : Column(children: [
               chart, const SizedBox(height: 12), legend]);
           }),
