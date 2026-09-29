@@ -57,6 +57,9 @@ void main() {
     final brl = updated.currencies.firstWhere((x) => x.currencyCode == 'BRL');
     expect(brl.incomeMinor, 5000);
     expect(brl.expenseMinor, 1000);
+    expect(brl.monthlyResultMinor, 4000);
+    expect(brl.expensesByCategory.single.name, 'Sem categoria');
+    expect(brl.expensesByCategory.single.amountMinor, 1000);
     expect(brl.currentBalanceMinor, 24700);
     expect(brl.projectedBalanceMinor, 24100);
     expect(updated.currencies.firstWhere((x) => x.currencyCode == 'USD')
@@ -75,6 +78,8 @@ void main() {
     final hidden = await dashboard.load(september);
     expect(hidden.currencies.firstWhere((x) => x.currencyCode == 'BRL')
       .expenseMinor, 0);
+    expect(hidden.currencies.firstWhere((x) => x.currencyCode == 'BRL')
+      .expensesByCategory, isEmpty);
     expect(hidden.currencies.firstWhere((x) => x.currencyCode == 'BRL')
       .currentBalanceMinor, 24700);
 
