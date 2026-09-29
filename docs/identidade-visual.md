@@ -1,6 +1,6 @@
 # Somia — Identidade visual e interface do MVP
 
-Versão do documento: 1.0 • 29/09/2026  
+Versão do documento: 1.1 • 29/09/2026  
 Projeto: FinApp • Marco: v0.1.0-alpha  
 Origem: chat “Definir identidade visual”, de 28/09/2026.
 
@@ -14,6 +14,10 @@ Origem: chat “Definir identidade visual”, de 28/09/2026.
 | Tema do MVP | Somente escuro. Tema claro e seguir o sistema ficam para o futuro. |
 | Tela inicial | Resumo do mês, gráficos e lançamentos recentes. |
 | Ação principal | Botão + abre um pequeno balão flutuante com Receita, Despesa e Transferência. |
+| Navegação mobile | Remover a barra inferior e usar drawer/menu lateral recolhível. |
+| Organização | Receitas e Despesas são áreas independentes no menu principal. |
+| Navegação Windows | Mesma arquitetura de informação, adaptada para sidebar/NavigationRail em telas largas. |
+| Tema claro futuro | Direção visual clara aprovada para evolução posterior, mantendo a mesma estrutura e hierarquia do tema escuro. |
 | Dashboard no MVP | Composição básica e fixa. |
 | Dashboard futuro | Usuário poderá escolher quais informações aparecem e alterar a ordem. |
 | Plataformas | Android e Windows, com layout adaptativo e funcionamento offline. |
@@ -36,6 +40,14 @@ As referências enviadas no chat estão preservadas nos links abaixo. Esses link
 - [1000066876.jpg](https://chatgpt.com/api/library/files/libfile_a34821b1cd408191baf036a989185ded/download)
 
 Os valores, nomes de contas e datas do protótipo são ilustrativos. Não devem ser inseridos como dados reais ou fixos no aplicativo.
+### Referências mobile aprovadas em 29/09/2026
+
+Foi aprovada uma nova direção mobile com três vistas principais: dashboard, drawer aberto e tela dedicada de Receitas. A composição aprovada remove a navegação inferior, usa menu lateral e mantém o botão flutuante +.
+
+Também foi aprovada uma variação **clara/branca** dessa mesma estrutura para implementação futura. Ela não altera o escopo do MVP, que continua somente escuro, mas passa a ser referência para a futura implementação de tema claro.
+
+Os mockups foram gerados/aprovados durante a conversa de revisão do MVP em 29/09/2026. Enquanto os arquivos binários não estiverem versionados no repositório, este documento é a fonte textual das decisões de navegação e tema.
+
 
 ## 3. Navegação e telas
 
@@ -53,14 +65,25 @@ Os valores, nomes de contas e datas do protótipo são ilustrativos. Não devem 
 
 Resultado mensal significa receitas menos despesas do período. Não deve ser confundido com o saldo acumulado das contas. Transferências entre contas não entram como receita/despesa nem no gráfico de gastos.
 
-### Lançamentos
+### Receitas
 
+- Área independente no menu principal.
 - Período de referência visível.
-- Lista organizada por data, com descrição, conta, valor e identificação do tipo.
-- Diferenciação de receitas e despesas também por texto/sinal/ícone, sem depender apenas da cor.
-- Acesso aos fluxos existentes de criação, edição e exclusão.
-- Ação Efetivar visível em lançamentos pendentes, usando a data e o valor cadastrados; oferecer Desfazer depois da ação.
+- Lista organizada com descrição, conta, valor, categoria e situação.
+- Acesso aos fluxos existentes de criação, edição, exclusão e efetivação.
+- Ação Efetivar visível em pendências sem exigir abrir a edição completa.
+- Filtros e ordenação essenciais sem depender da tela de Despesas.
+
+### Despesas
+
+- Área independente no menu principal, com a mesma linguagem visual de Receitas.
+- Período de referência visível.
+- Lista organizada com descrição, conta, valor, categoria e situação.
+- Acesso aos fluxos existentes de criação, edição, exclusão e efetivação.
+- Diferenciação por texto/sinal/ícone, sem depender apenas da cor.
 - Botão + acessível sem cobrir conteúdo ou comandos importantes.
+
+Receitas e Despesas podem compartilhar componentes internos, mas **não devem depender de uma aba única de “Lançamentos” como navegação principal**.
 
 ### Contas
 
@@ -83,9 +106,24 @@ Resultado mensal significa receitas menos despesas do período. Não deve ser co
 
 A opção no balão deve abrir o fluxo específico de transferência, com contas de origem/destino e valor. Reutilizar a operação financeira existente e preservar a consistência entre os dois lados.
 
+### Navegação principal
+
+No mobile, a barra inferior deve ser removida. O cabeçalho apresenta um botão de menu que abre o drawer lateral Somia.
+
+Ordem base do menu:
+1. Dashboard/Resumo;
+2. Receitas;
+3. Despesas;
+4. Transferências;
+5. Contas;
+6. Categorias;
+7. Configurações.
+
+A seção atual deve possuir destaque claro no drawer. No Windows, a estrutura pode permanecer visível como sidebar/NavigationRail em telas largas.
+
 ### Ajustes
 
-A navegação do protótipo contém Resumo, Lançamentos, Contas e Ajustes. No MVP, Ajustes deve apresentar apenas funcionalidades disponíveis. Não incluir controles de tema claro ou personalização do dashboard nesta entrega.
+No MVP, Ajustes/Configurações deve apresentar apenas funcionalidades disponíveis. Não incluir controles de tema claro nem personalização do dashboard nesta entrega.
 
 ## 4. Comportamento do botão +
 
@@ -136,7 +174,9 @@ Códigos HEX, família tipográfica definitiva, medidas exatas e logotipo vetori
 
 | MVP v0.1.0-alpha | Pós-MVP |
 | --- | --- |
-| Tema escuro | Tema claro e opção de seguir o sistema |
+| Tema escuro | Tema claro aprovado e opção de seguir o sistema |
+| Drawer mobile; sidebar/rail adaptativa no Windows | Refinamentos de navegação e personalização futura |
+| Receitas e Despesas independentes | Filtros/visões avançadas configuráveis |
 | Dashboard básico com composição fixa | Mostrar/ocultar e reordenar blocos |
 | Resumo mensal e gráfico básico por categoria | Relatórios e gráficos avançados/personalizáveis |
 | + com três ações fixas | Ações rápidas personalizáveis |
@@ -149,7 +189,7 @@ Preparar componentes independentes para facilitar evolução, sem implementar ag
 
 1. Conferir a versão atual da branch v0.1.0-alpha e os componentes existentes.
 2. Consolidar o tema escuro Somia e os componentes reutilizáveis.
-3. Ajustar navegação e implementar o balão do +.
+3. Remover a barra inferior no mobile, implementar drawer Somia, separar Receitas/Despesas na navegação e manter o balão do +.
 4. Aplicar a composição aprovada em Resumo, Lançamentos, Contas e formulários.
 5. Conectar o resumo e o gráfico aos dados locais.
 6. Validar Android/Windows, acessibilidade básica e uso offline.
@@ -161,7 +201,10 @@ Usar branch identificada pela versão. A entrega desta documentação não signi
 ## 9. Relação com as issues existentes
 
 - #24 e #8: dashboard básico; complementar com resumo mensal, gráfico por categoria e composição Somia.
-- #25: ajustar escopo de tema para apenas escuro no MVP; manter acessibilidade e validação Android/Windows.
+- #25: manter tema escuro no MVP, acessibilidade e validação Android/Windows.
+- #32: implementar drawer/menu lateral, remover barra inferior e separar Receitas/Despesas.
+- #30: incorporar as três datas e a regra de efetivação ao fluxo visual.
+- #31: validar que APKs de teste atualizam sem perda de dados antes do fechamento do MVP.
 - #21 e #5: preservar receitas/despesas e seletores separados.
 - #22 e #6: reutilizar transferências no menu +.
 - #19 e #3: aplicar identidade à área de Contas.
@@ -173,9 +216,12 @@ As referências acima não declaram essas issues abertas, fechadas ou implementa
 ## 10. Critérios de aceite da interface
 
 - [ ] Nome Somia apresentado ao usuário nas telas alteradas.
-- [ ] Tema exclusivamente escuro no MVP, com destaque azul acinzentado.
+- [ ] Tema exclusivamente escuro no MVP, com destaque azul acinzentado; tema claro permanece referência aprovada para evolução futura.
 - [ ] Composição leve e coerente com o protótipo aprovado.
-- [ ] Navegação Resumo, Lançamentos, Contas e Ajustes.
+- [ ] Mobile sem barra inferior, usando drawer/menu lateral.
+- [ ] Drawer contém Dashboard/Resumo, Receitas, Despesas, Transferências, Contas, Categorias e Configurações.
+- [ ] Receitas e Despesas são telas/seções independentes na navegação principal.
+- [ ] Windows usa adaptação coerente da mesma arquitetura de informação.
 - [ ] Resumo mensal e gráfico básico usam dados reais e atualizam após alterações.
 - [ ] Resultado do mês claramente distinto do saldo total.
 - [ ] Saldo total em destaque no topo do resumo, com corte no mês selecionado.
