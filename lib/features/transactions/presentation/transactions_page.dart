@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../core/routing/somia_shell.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../accounts/domain/account.dart';
 import '../../accounts/domain/accounts_repository.dart';
 import '../../accounts/domain/money_minor.dart';
@@ -285,16 +286,19 @@ class _TransactionsViewState extends State<_TransactionsView> {
 
   Widget _itemTile(FinancialTransaction item) => Card(
         child: ListTile(
-          leading: Icon(item.type == TransactionType.income
-              ? Icons.arrow_downward : Icons.arrow_upward),
+          leading: CircleAvatar(
+            backgroundColor: (item.type == TransactionType.income
+              ? SomiaColors.green : SomiaColors.red).withValues(alpha: 0.16),
+            child: Icon(item.type == TransactionType.income
+              ? Icons.arrow_upward : Icons.arrow_downward,
+              color: item.type == TransactionType.income
+                ? SomiaColors.green : SomiaColors.red)),
           title: Text(item.description, maxLines: 2,
             overflow: TextOverflow.ellipsis),
           subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('${_dateLabel(item.date)} · ${item.accountName}'
               '${item.categoryName == null ? '' : ' · ${item.categoryName}'}'
               '${item.isEffective ? '' : ' · Pendente'}'),
-            Text('${item.type == TransactionType.income ? '+' : '-'}'
-              '${MoneyMinor.display(item.amountMinor, item.currencyCode)}'),
             if (!item.isEffective)
               TextButton.icon(
                 onPressed: _changingStatus.contains(item.id)
@@ -303,8 +307,17 @@ class _TransactionsViewState extends State<_TransactionsView> {
                 label: const Text('Efetivar'),
               ),
           ]),
-          trailing: PopupMenuButton<String>(
+          trailing: Column(mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text('${item.type == TransactionType.income ? '+' : '-'}'
+              '${MoneyMinor.display(item.amountMinor, item.currencyCode)}',
+              style: TextStyle(fontWeight: FontWeight.w600,
+                color: item.type == TransactionType.income
+                  ? SomiaColors.green : SomiaColors.red)),
+            SizedBox(height: 32, child: PopupMenuButton<String>(
             tooltip: 'Ações do lançamento',
+            icon: const Icon(Icons.more_horiz, size: 20),
+            padding: EdgeInsets.zero,
             onSelected: (action) {
               if (action == 'edit') _edit(item);
               if (action == 'delete') _delete(item);
@@ -317,7 +330,8 @@ class _TransactionsViewState extends State<_TransactionsView> {
                   child: Text('Marcar como pendente')),
               const PopupMenuItem(value: 'delete', child: Text('Excluir')),
             ],
-          ),
+          )),
+          ]),
           onTap: () => _edit(item),
         ),
       );

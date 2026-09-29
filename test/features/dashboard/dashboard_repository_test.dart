@@ -99,6 +99,13 @@ void main() {
     expect(brl.expensesByCategory.single.amountMinor, 1000);
     expect(brl.currentBalanceMinor, 24700);
     expect(brl.projectedBalanceMinor, 24100);
+    expect(brl.history.length, 6);
+    expect(brl.history.last.month, DateTime(2026, 9));
+    expect(brl.history.last.incomeMinor, 5000);
+    expect(brl.history.last.expenseMinor, 1000);
+    expect(brl.accounts.map((a) => a.name), containsAll(['Banco', 'Carteira']));
+    expect(brl.accounts.fold<int>(0, (sum, a) => sum + a.currentMinor),
+      brl.currentBalanceMinor);
     expect(updated.currencies.firstWhere((x) => x.currencyCode == 'USD')
       .currentBalanceMinor, 10000);
     expect(updated.recent.length, 5);
@@ -107,6 +114,8 @@ void main() {
     final next = await dashboard.load(october);
     expect(next.currencies.firstWhere((x) => x.currencyCode == 'BRL')
       .expenseMinor, 300);
+    expect(next.currencies.firstWhere((x) => x.currencyCode == 'BRL')
+      .history[4].incomeMinor, 5000);
     expect(next.currencies.firstWhere((x) => x.currencyCode == 'BRL')
       .currentBalanceMinor, 24400);
 

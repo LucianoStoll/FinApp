@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../accounts/domain/account.dart';
 import '../../balances/data/sqlite_balances_repository.dart';
 import '../domain/dashboard_repository.dart';
 import '../domain/entities/dashboard_summary.dart';
@@ -55,6 +56,49 @@ class SqliteDashboardRepository implements DashboardRepository {
         .add(DashboardCategoryExpense(row.read<String>('category_name'),
           row.read<int>('amount_minor')));
     }
+    final historyStart = DateTime.utc(month.year, month.month - 5)
+      .millisecondsSinceEpoch;
+    final historyRows = await _db.customSelect('''
+      SELECT a.currency_code,
+        strftime('%Y-%m', t.competence_at / 1000, 'unixepoch') AS month_key,
+        t.type, SUM(t.actual_amount_minor) AS amount_minor
+      FROM transactions t JOIN accounts a ON a.id = t.account_id
+      WHERE t.deleted_at IS NULL AND t.effective_at IS NOT NULL
+        AND t.actual_amount_minor IS NOT NULL AND t.ignore_analytics = 0
+        AND a.deleted_at IS NULL AND a.include_in_analytics = 1
+        AND t.competence_at >= ? AND t.competence_at < ?
+      GROUP BY a.currency_code, month_key, t.type
+    ''', variables: [Variable.withInt(historyStart), Variable.withInt(end)]).get();
+    final monthly = <String, Map<String, (int, int)>>{};
+    for (final row in historyRows) {
+      final code = row.read<String>('currency_code');
+      final key = row.read<String>('month_key');
+      final byMonth = monthly.putIfAbsent(code, () => {});
+      final prior = byMonth[key] ?? (0, 0);
+      final amount = row.read<int>('amount_minor');
+      byMonth[key] = row.read<String>('type') == 'income'
+        ? (prior.$1 + amount, prior.$2) : (prior.$1, prior.$2 + amount);
+    }
+    final accountRows = await _db.customSelect('''
+      SELECT id, name, type, currency_code FROM accounts
+      WHERE deleted_at IS NULL AND is_archived = 0 ORDER BY name
+    ''').get();
+    final accountBalances = {
+      for (final balance in balances.accounts) balance.accountId: balance,
+    };
+    final accountsByCurrency = <String, List<DashboardAccountBalance>>{};
+    for (final row in accountRows) {
+      final id = row.read<String>('id');
+      final balance = accountBalances[id];
+      if (balance == null) continue;
+      final code = row.read<String>('currency_code');
+      final type = AccountType.values.firstWhere(
+        (value) => value.name == row.read<String>('type'),
+        orElse: () => AccountType.other);
+      accountsByCurrency.putIfAbsent(code, () => []).add(
+        DashboardAccountBalance(row.read<String>('name'), type.label,
+          code, balance.currentMinor));
+    }
     // Mesmo que não existam contas ativas na moeda, os totais do período
     // permanecem disponíveis enquanto a conta histórica não foi removida.
     final currencies = <String>{
@@ -71,7 +115,18 @@ class SqliteDashboardRepository implements DashboardRepository {
           projectedBalanceMinor: byCurrency[currency]?.projectedMinor ?? 0,
           incomeMinor: totals[currency]?.$1 ?? 0,
           expenseMinor: totals[currency]?.$2 ?? 0,
-          expensesByCategory: categoryTotals[currency] ?? const []),
+          expensesByCategory: categoryTotals[currency] ?? const [],
+          accounts: accountsByCurrency[currency] ?? const [],
+          history: [for (var i = 5; i >= 0; i--)
+            DashboardMonthTotal(DateTime(month.year, month.month - i),
+              (monthly[currency]?[
+                '${DateTime(month.year, month.month - i).year}-'
+                '${DateTime(month.year, month.month - i).month.toString().padLeft(2, '0')}']
+                ?? (0, 0)).$1,
+              (monthly[currency]?[
+                '${DateTime(month.year, month.month - i).year}-'
+                '${DateTime(month.year, month.month - i).month.toString().padLeft(2, '0')}']
+                ?? (0, 0)).$2)]),
     ];
     final rows = await _db.customSelect('''
       SELECT id, type, description, account_label, currency_code,

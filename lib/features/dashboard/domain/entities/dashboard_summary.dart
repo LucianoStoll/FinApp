@@ -2,7 +2,8 @@ class DashboardCurrencySummary {
   const DashboardCurrencySummary({required this.currencyCode,
     required this.currentBalanceMinor, required this.projectedBalanceMinor,
     required this.incomeMinor, required this.expenseMinor,
-    this.expensesByCategory = const []});
+    this.expensesByCategory = const [], this.history = const [],
+    this.accounts = const []});
 
   final String currencyCode;
   final int currentBalanceMinor;
@@ -10,7 +11,25 @@ class DashboardCurrencySummary {
   final int incomeMinor;
   final int expenseMinor;
   final List<DashboardCategoryExpense> expensesByCategory;
+  final List<DashboardMonthTotal> history;
+  final List<DashboardAccountBalance> accounts;
   int get monthlyResultMinor => incomeMinor - expenseMinor;
+}
+
+class DashboardMonthTotal {
+  const DashboardMonthTotal(this.month, this.incomeMinor, this.expenseMinor);
+  final DateTime month;
+  final int incomeMinor;
+  final int expenseMinor;
+}
+
+class DashboardAccountBalance {
+  const DashboardAccountBalance(this.name, this.typeLabel, this.currencyCode,
+      this.currentMinor);
+  final String name;
+  final String typeLabel;
+  final String currencyCode;
+  final int currentMinor;
 }
 
 class DashboardCategoryExpense {

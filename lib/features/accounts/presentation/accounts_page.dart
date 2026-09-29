@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../core/routing/somia_shell.dart';
+import '../../../core/theme/app_theme.dart';
 import '../domain/account.dart';
 import '../domain/accounts_repository.dart';
 import '../domain/money_minor.dart';
@@ -127,11 +128,17 @@ class _AccountsView extends StatelessWidget {
                       '${account.type.label} · ${account.currencyCode}'
                       '${account.isArchived ? ' · Arquivada' : ''}'
                       '${account.includeInAnalytics ? '' : ' · Fora das análises'}'
-                      '\nAtual: ${MoneyMinor.display(account.currentBalanceMinor, account.currencyCode)}'
                       '\nProjetado: ${MoneyMinor.display(account.projectedBalanceMinor, account.currencyCode)}',
                     ),
-                    trailing: PopupMenuButton<String>(
+                    trailing: Column(mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Text(MoneyMinor.display(account.currentBalanceMinor,
+                        account.currencyCode), style: const TextStyle(
+                          fontWeight: FontWeight.w600)),
+                      SizedBox(height: 32, child: PopupMenuButton<String>(
                       tooltip: 'Ações da conta',
+                      icon: const Icon(Icons.more_horiz, size: 20),
+                      padding: EdgeInsets.zero,
                       onSelected: (action) {
                         if (action == 'edit') {
                           _edit(context, account);
@@ -146,11 +153,15 @@ class _AccountsView extends StatelessWidget {
                           child: Text(account.isArchived ? 'Reativar' : 'Arquivar'),
                         ),
                       ],
-                    ),
+                    )),
+                    ]),
                     isThreeLine: true,
-                    leading: Icon(account.type == AccountType.cash
+                    leading: CircleAvatar(
+                      backgroundColor: SomiaColors.blue.withValues(alpha: 0.17),
+                      child: Icon(account.type == AccountType.cash
                         ? Icons.account_balance_wallet_outlined
-                        : Icons.account_balance_outlined),
+                        : Icons.account_balance_outlined,
+                        color: SomiaColors.blue)),
                     dense: false,
                     onTap: () => _edit(context, account),
                   ),
