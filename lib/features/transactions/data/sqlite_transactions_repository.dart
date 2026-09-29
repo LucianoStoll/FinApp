@@ -60,7 +60,8 @@ class SqliteTransactionsRepository implements TransactionsRepository {
     }
     if (filter.to != null) {
       where.add('$dateColumn < ?');
-      final day = DateTime.utc(filter.to!.year, filter.to!.month, filter.to!.day + 1);
+      final day =
+          DateTime.utc(filter.to!.year, filter.to!.month, filter.to!.day + 1);
       variables.add(Variable.withInt(day.millisecondsSinceEpoch));
     }
     final rows = await _db.customSelect('''
@@ -79,17 +80,29 @@ class SqliteTransactionsRepository implements TransactionsRepository {
     final day = _dayMillis(draft.date);
     final due = _dayMillis(draft.dueDate ?? draft.date);
     final effective = draft.isEffective
-      ? _dayMillis(draft.effectiveDate ?? draft.date) : null;
+        ? _dayMillis(draft.effectiveDate ?? draft.date)
+        : null;
     await _db.customStatement('''
       INSERT INTO transactions
         (id, description, type, planned_amount_minor, actual_amount_minor,
          competence_at, posted_at, due_at, effective_at, account_id, category_id,
          created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', [id, draft.description.trim(), draft.type.name, draft.amountMinor,
-      draft.isEffective ? draft.amountMinor : null, day, day, due,
-      effective, draft.accountId, draft.categoryId,
-      now, now]);
+    ''', [
+      id,
+      draft.description.trim(),
+      draft.type.name,
+      draft.amountMinor,
+      draft.isEffective ? draft.amountMinor : null,
+      day,
+      day,
+      due,
+      effective,
+      draft.accountId,
+      draft.categoryId,
+      now,
+      now
+    ]);
     return _find(id);
   }
 
@@ -101,21 +114,30 @@ class SqliteTransactionsRepository implements TransactionsRepository {
     final categoryChanged = original.categoryId != draft.categoryId;
     final typeChanged = original.type != draft.type;
     if (accountChanged || categoryChanged || typeChanged) {
-      await _validateReferences(draft, checkAccount: accountChanged,
+      await _validateReferences(draft,
+          checkAccount: accountChanged,
           checkCategory: categoryChanged || typeChanged);
     }
     // Não revalida conta/categoria arquivada ao editar só descrição, data ou
     // valor de um lançamento histórico; mudar o vínculo exige entidade ativa.
     final fields = <String>[
-      'description = ?', 'planned_amount_minor = ?', 'actual_amount_minor = ?',
-      'competence_at = ?', 'posted_at = ?', 'due_at = ?',
-      'effective_at = ?', 'updated_at = ?',
+      'description = ?',
+      'planned_amount_minor = ?',
+      'actual_amount_minor = ?',
+      'competence_at = ?',
+      'posted_at = ?',
+      'due_at = ?',
+      'effective_at = ?',
+      'updated_at = ?',
       'sync_version = sync_version + 1',
     ];
     final day = _dayMillis(draft.date);
     final args = <Object?>[
-      draft.description.trim(), draft.amountMinor,
-      draft.isEffective ? draft.amountMinor : null, day, day,
+      draft.description.trim(),
+      draft.amountMinor,
+      draft.isEffective ? draft.amountMinor : null,
+      day,
+      day,
       _dayMillis(draft.dueDate ?? draft.date),
       draft.isEffective ? _dayMillis(draft.effectiveDate ?? draft.date) : null,
       EntityMetadata.nowUtcMillis(),
@@ -152,8 +174,8 @@ class SqliteTransactionsRepository implements TransactionsRepository {
   }
 
   @override
-  Future<void> setEffective(String id, {required bool effective,
-      DateTime? effectiveDate}) async {
+  Future<void> setEffective(String id,
+      {required bool effective, DateTime? effectiveDate}) async {
     final chosen = _dayMillis(effectiveDate ?? DateTime.now());
     final todayEnd = _dayMillis(DateTime.now().add(const Duration(days: 1)));
     final changed = await _db.customUpdate('''
@@ -162,11 +184,11 @@ class SqliteTransactionsRepository implements TransactionsRepository {
         actual_amount_minor = ${effective ? 'planned_amount_minor' : 'NULL'},
         updated_at = ?, sync_version = sync_version + 1
       WHERE id = ? AND deleted_at IS NULL
-        AND ${effective ? '(effective_at IS NULL OR effective_at >= ?)'
-          : 'effective_at IS NOT NULL'}
+        AND ${effective ? '(effective_at IS NULL OR effective_at >= ?)' : 'effective_at IS NOT NULL'}
     ''', variables: [
       if (effective) Variable.withInt(chosen),
-      Variable.withInt(EntityMetadata.nowUtcMillis()), Variable.withString(id),
+      Variable.withInt(EntityMetadata.nowUtcMillis()),
+      Variable.withString(id),
       if (effective) Variable.withInt(todayEnd),
     ]);
     if (changed != 1) {
@@ -198,8 +220,10 @@ class SqliteTransactionsRepository implements TransactionsRepository {
       WHERE c.id = ? AND c.type = ? AND c.deleted_at IS NULL
         AND c.is_archived = 0
         AND (c.parent_id IS NULL OR (p.is_archived = 0 AND p.deleted_at IS NULL))
-    ''', variables: [Variable.withString(draft.categoryId!),
-      Variable.withString(draft.type.name)]).get();
+    ''', variables: [
+      Variable.withString(draft.categoryId!),
+      Variable.withString(draft.type.name)
+    ]).get();
     if (category.isEmpty) {
       throw StateError('Selecione uma categoria ativa do mesmo tipo.');
     }
@@ -227,16 +251,18 @@ class SqliteTransactionsRepository implements TransactionsRepository {
         type: TransactionType.values.byName(row.read<String>('type')),
         amountMinor: row.read<int>('planned_amount_minor'),
         date: DateTime.fromMillisecondsSinceEpoch(
-          row.read<int>('posted_at'), isUtc: true,
+          row.read<int>('posted_at'),
+          isUtc: true,
         ),
-        dueDate: DateTime.fromMillisecondsSinceEpoch(
-          row.read<int>('due_at'), isUtc: true),
-        effectiveDate: row.readNullable<int>('effective_at') == null ? null
-          : DateTime.fromMillisecondsSinceEpoch(
-            row.read<int>('effective_at'), isUtc: true),
+        dueDate: DateTime.fromMillisecondsSinceEpoch(row.read<int>('due_at'),
+            isUtc: true),
+        effectiveDate: row.readNullable<int>('effective_at') == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(row.read<int>('effective_at'),
+                isUtc: true),
         isEffective: row.readNullable<int>('effective_at') != null &&
-          row.read<int>('effective_at') <
-            _dayMillis(DateTime.now().add(const Duration(days: 1))),
+            row.read<int>('effective_at') <
+                _dayMillis(DateTime.now().add(const Duration(days: 1))),
         accountId: row.read<String>('account_id'),
         accountName: row.read<String>('account_name'),
         categoryId: row.readNullable<String>('category_id'),

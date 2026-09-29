@@ -3,10 +3,12 @@ name: Flutter CI
 on:
   push:
     branches:
-      - v0.1.0-alpha
+      - main
+      - 'v*'
   pull_request:
     branches:
       - main
+      - 'v*'
   workflow_dispatch:
 
 permissions:
@@ -23,6 +25,8 @@ jobs:
           cache: true
       - name: Install dependencies
         run: flutter pub get
+      - name: Check Dart formatting
+        run: dart format --output=none --set-exit-if-changed lib test
       - name: Static analysis
         run: flutter analyze
       - name: Tests

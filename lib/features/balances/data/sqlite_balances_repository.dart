@@ -10,9 +10,11 @@ Future<List<QueryRow>> balanceRows(AppDatabase db,
     {DateTime? asOf, DateTime? through}) {
   final cutoff = asOf ?? DateTime.now();
   final asOfEnd = DateTime.utc(cutoff.year, cutoff.month, cutoff.day + 1)
-    .millisecondsSinceEpoch;
-  final end = through == null ? null : DateTime.utc(
-    through.year, through.month, through.day + 1).millisecondsSinceEpoch;
+      .millisecondsSinceEpoch;
+  final end = through == null
+      ? null
+      : DateTime.utc(through.year, through.month, through.day + 1)
+          .millisecondsSinceEpoch;
   const txEffectiveUntil = 'AND t.effective_at < ?';
   const transferEffectiveUntil = 'AND f.effective_at < ?';
   const txPending = '(t.effective_at IS NULL OR t.effective_at >= ?)';
@@ -20,7 +22,8 @@ Future<List<QueryRow>> balanceRows(AppDatabase db,
   final txUntil = end == null ? '' : 'AND t.due_at < ?';
   final transferUntil = end == null ? '' : 'AND f.due_at < ?';
   final variables = <Variable>[
-    Variable.withInt(asOfEnd), Variable.withInt(asOfEnd),
+    Variable.withInt(asOfEnd),
+    Variable.withInt(asOfEnd),
     Variable.withInt(asOfEnd),
     if (end != null) Variable.withInt(end),
     Variable.withInt(asOfEnd),
@@ -68,7 +71,8 @@ class SqliteBalancesRepository implements BalancesRepository {
   final AppDatabase _db;
 
   @override
-  Future<BalancesSnapshot> calculate({DateTime? asOf, DateTime? through}) async {
+  Future<BalancesSnapshot> calculate(
+      {DateTime? asOf, DateTime? through}) async {
     final rows = await balanceRows(_db, asOf: asOf, through: through);
     final accounts = <AccountBalance>[];
     final totals = <String, (int, int)>{};
@@ -76,15 +80,20 @@ class SqliteBalancesRepository implements BalancesRepository {
       final currency = row.read<String>('currency_code');
       final current = row.read<int>('current_balance_minor');
       final projected = current + row.read<int>('pending_balance_minor');
-      accounts.add(AccountBalance(accountId: row.read<String>('id'),
-        currencyCode: currency, currentMinor: current,
-        projectedMinor: projected));
+      accounts.add(AccountBalance(
+          accountId: row.read<String>('id'),
+          currencyCode: currency,
+          currentMinor: current,
+          projectedMinor: projected));
       final previous = totals[currency] ?? (0, 0);
       totals[currency] = (previous.$1 + current, previous.$2 + projected);
     }
-    final consolidated = totals.entries.map((entry) => CurrencyBalance(
-      currencyCode: entry.key, currentMinor: entry.value.$1,
-      projectedMinor: entry.value.$2)).toList()
+    final consolidated = totals.entries
+        .map((entry) => CurrencyBalance(
+            currencyCode: entry.key,
+            currentMinor: entry.value.$1,
+            projectedMinor: entry.value.$2))
+        .toList()
       ..sort((a, b) => a.currencyCode.compareTo(b.currencyCode));
     return BalancesSnapshot(accounts: accounts, consolidated: consolidated);
   }

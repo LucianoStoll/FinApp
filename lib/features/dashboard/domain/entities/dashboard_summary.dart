@@ -1,9 +1,13 @@
 class DashboardCurrencySummary {
-  const DashboardCurrencySummary({required this.currencyCode,
-    required this.currentBalanceMinor, required this.projectedBalanceMinor,
-    required this.incomeMinor, required this.expenseMinor,
-    this.expensesByCategory = const [], this.history = const [],
-    this.accounts = const []});
+  const DashboardCurrencySummary(
+      {required this.currencyCode,
+      required this.currentBalanceMinor,
+      required this.projectedBalanceMinor,
+      required this.incomeMinor,
+      required this.expenseMinor,
+      this.expensesByCategory = const [],
+      this.history = const [],
+      this.accounts = const []});
 
   final String currencyCode;
   final int currentBalanceMinor;
@@ -24,8 +28,8 @@ class DashboardMonthTotal {
 }
 
 class DashboardAccountBalance {
-  const DashboardAccountBalance(this.name, this.typeLabel, this.currencyCode,
-      this.currentMinor);
+  const DashboardAccountBalance(
+      this.name, this.typeLabel, this.currencyCode, this.currentMinor);
   final String name;
   final String typeLabel;
   final String currencyCode;
@@ -41,10 +45,15 @@ class DashboardCategoryExpense {
 enum DashboardActivityType { income, expense, transfer }
 
 class DashboardActivity {
-  const DashboardActivity({required this.id, required this.type,
-    required this.description, required this.accountLabel,
-    required this.currencyCode, required this.amountMinor,
-    required this.date, required this.isEffective});
+  const DashboardActivity(
+      {required this.id,
+      required this.type,
+      required this.description,
+      required this.accountLabel,
+      required this.currencyCode,
+      required this.amountMinor,
+      required this.date,
+      required this.isEffective});
 
   final String id;
   final DashboardActivityType type;
@@ -57,8 +66,8 @@ class DashboardActivity {
 }
 
 class DashboardSummary {
-  const DashboardSummary({required this.month, required this.currencies,
-    required this.recent});
+  const DashboardSummary(
+      {required this.month, required this.currencies, required this.recent});
 
   final DateTime month;
   final List<DashboardCurrencySummary> currencies;

@@ -15,7 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 class _DashboardStub implements DashboardRepository {
   @override
   Future<DashboardSummary> load(DateTime month) async =>
-    DashboardSummary(month: month, currencies: const [], recent: const []);
+      DashboardSummary(month: month, currencies: const [], recent: const []);
 }
 
 class _AccountsStub implements AccountsRepository {
@@ -24,56 +24,74 @@ class _AccountsStub implements AccountsRepository {
   @override
   Future<Account> create(AccountDraft draft) => throw UnimplementedError();
   @override
-  Future<Account> update(String id, AccountDraft draft) => throw UnimplementedError();
+  Future<Account> update(String id, AccountDraft draft) =>
+      throw UnimplementedError();
   @override
   Future<Account> setArchived(String id, {required bool archived}) =>
-    throw UnimplementedError();
+      throw UnimplementedError();
 }
 
 class _CategoriesStub implements CategoriesRepository {
   @override
   Future<List<FinanceCategory>> list() async => [];
   @override
-  Future<FinanceCategory> create(CategoryDraft draft) => throw UnimplementedError();
+  Future<FinanceCategory> create(CategoryDraft draft) =>
+      throw UnimplementedError();
   @override
   Future<FinanceCategory> update(String id, CategoryDraft draft) =>
-    throw UnimplementedError();
+      throw UnimplementedError();
   @override
   Future<FinanceCategory> setArchived(String id, {required bool archived}) =>
-    throw UnimplementedError();
+      throw UnimplementedError();
 }
 
 class _TransactionsStub implements TransactionsRepository {
   final requestedTypes = <TransactionType?>[];
   final items = [
-    FinancialTransaction(id: 'income', description: 'Salário',
-      type: TransactionType.income, amountMinor: 500000,
-      date: DateTime(2026, 9, 29), isEffective: true,
-      accountId: 'a', accountName: 'Conta', categoryId: null,
-      categoryName: null, currencyCode: 'BRL'),
-    FinancialTransaction(id: 'expense', description: 'Mercado',
-      type: TransactionType.expense, amountMinor: 18000,
-      date: DateTime(2026, 9, 29), isEffective: false,
-      accountId: 'a', accountName: 'Conta', categoryId: null,
-      categoryName: null, currencyCode: 'BRL'),
+    FinancialTransaction(
+        id: 'income',
+        description: 'Salário',
+        type: TransactionType.income,
+        amountMinor: 500000,
+        date: DateTime(2026, 9, 29),
+        isEffective: true,
+        accountId: 'a',
+        accountName: 'Conta',
+        categoryId: null,
+        categoryName: null,
+        currencyCode: 'BRL'),
+    FinancialTransaction(
+        id: 'expense',
+        description: 'Mercado',
+        type: TransactionType.expense,
+        amountMinor: 18000,
+        date: DateTime(2026, 9, 29),
+        isEffective: false,
+        accountId: 'a',
+        accountName: 'Conta',
+        categoryId: null,
+        categoryName: null,
+        currencyCode: 'BRL'),
   ];
   @override
-  Future<List<FinancialTransaction>> list([TransactionFilter filter =
-    const TransactionFilter()]) async {
+  Future<List<FinancialTransaction>> list(
+      [TransactionFilter filter = const TransactionFilter()]) async {
     requestedTypes.add(filter.type);
-    return items.where((item) => filter.type == null || item.type == filter.type)
-      .toList();
+    return items
+        .where((item) => filter.type == null || item.type == filter.type)
+        .toList();
   }
+
   @override
   Future<FinancialTransaction> create(TransactionDraft draft) =>
-    throw UnimplementedError();
+      throw UnimplementedError();
   @override
   Future<FinancialTransaction> update(String id, TransactionDraft draft) =>
-    throw UnimplementedError();
+      throw UnimplementedError();
   @override
-  Future<void> setEffective(String id, {required bool effective,
-    DateTime? effectiveDate}) =>
-    throw UnimplementedError();
+  Future<void> setEffective(String id,
+          {required bool effective, DateTime? effectiveDate}) =>
+      throw UnimplementedError();
   @override
   Future<void> delete(String id) => throw UnimplementedError();
 }
@@ -101,8 +119,15 @@ void main() {
     expect(find.byType(NavigationBar), findsNothing);
     await tester.tap(find.byTooltip('Abrir menu'));
     await tester.pumpAndSettle();
-    for (final label in ['Resumo', 'Receitas', 'Despesas', 'Transferências',
-      'Contas', 'Categorias', 'Configurações']) {
+    for (final label in [
+      'Resumo',
+      'Receitas',
+      'Despesas',
+      'Transferências',
+      'Contas',
+      'Categorias',
+      'Configurações'
+    ]) {
       expect(find.text(label), findsWidgets);
     }
     await tester.tap(find.byKey(const ValueKey('menu-/income')));
@@ -113,8 +138,11 @@ void main() {
 
     await tester.tap(find.byTooltip('Abrir menu'));
     await tester.pumpAndSettle();
-    expect(tester.widget<ListTile>(find.byKey(const ValueKey('menu-/income')))
-      .selected, isTrue);
+    expect(
+        tester
+            .widget<ListTile>(find.byKey(const ValueKey('menu-/income')))
+            .selected,
+        isTrue);
     await tester.tap(find.byKey(const ValueKey('menu-/expenses')));
     await tester.pumpAndSettle();
     expect(find.text('Mercado'), findsOneWidget);

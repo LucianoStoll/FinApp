@@ -9,8 +9,12 @@ import '../domain/transactions_repository.dart';
 
 class TransactionsState {
   const TransactionsState({
-    this.items = const [], this.accounts = const [], this.categories = const [],
-    this.filter = const TransactionFilter(), this.loading = false, this.error,
+    this.items = const [],
+    this.accounts = const [],
+    this.categories = const [],
+    this.filter = const TransactionFilter(),
+    this.loading = false,
+    this.error,
   });
 
   final List<FinancialTransaction> items;
@@ -34,21 +38,31 @@ class TransactionsCubit extends Cubit<TransactionsState> {
 
   Future<void> load([TransactionFilter? filter]) async {
     final nextFilter = filter ?? state.filter;
-    emit(TransactionsState(items: state.items, accounts: state.accounts,
-      categories: state.categories, filter: nextFilter, loading: true));
+    emit(TransactionsState(
+        items: state.items,
+        accounts: state.accounts,
+        categories: state.categories,
+        filter: nextFilter,
+        loading: true));
     try {
       final items = await _transactions.list(nextFilter);
       final accounts = await _accounts.list();
       final categories = await _categories.list();
       if (!isClosed) {
-        emit(TransactionsState(items: items, accounts: accounts,
-          categories: categories, filter: nextFilter));
+        emit(TransactionsState(
+            items: items,
+            accounts: accounts,
+            categories: categories,
+            filter: nextFilter));
       }
     } catch (_) {
       if (!isClosed) {
-        emit(TransactionsState(items: state.items,
-          accounts: state.accounts, categories: state.categories,
-          filter: nextFilter, error: 'Não foi possível carregar os lançamentos.'));
+        emit(TransactionsState(
+            items: state.items,
+            accounts: state.accounts,
+            categories: state.categories,
+            filter: nextFilter,
+            error: 'Não foi possível carregar os lançamentos.'));
       }
     }
   }
@@ -71,10 +85,10 @@ class TransactionsCubit extends Cubit<TransactionsState> {
     }
   }
 
-  Future<void> setEffective(String id, {required bool effective,
-      DateTime? effectiveDate}) async {
-    await _transactions.setEffective(id, effective: effective,
-      effectiveDate: effectiveDate);
+  Future<void> setEffective(String id,
+      {required bool effective, DateTime? effectiveDate}) async {
+    await _transactions.setEffective(id,
+        effective: effective, effectiveDate: effectiveDate);
     if (!isClosed) await load();
   }
 }

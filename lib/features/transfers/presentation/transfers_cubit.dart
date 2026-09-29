@@ -6,8 +6,11 @@ import '../domain/transfer.dart';
 import '../domain/transfers_repository.dart';
 
 class TransfersState {
-  const TransfersState({this.items = const [], this.accounts = const [],
-    this.loading = false, this.error});
+  const TransfersState(
+      {this.items = const [],
+      this.accounts = const [],
+      this.loading = false,
+      this.error});
 
   final List<Transfer> items;
   final List<Account> accounts;
@@ -16,7 +19,8 @@ class TransfersState {
 }
 
 class TransfersCubit extends Cubit<TransfersState> {
-  TransfersCubit(this._transfers, this._accounts) : super(const TransfersState()) {
+  TransfersCubit(this._transfers, this._accounts)
+      : super(const TransfersState()) {
     load();
   }
 
@@ -24,15 +28,18 @@ class TransfersCubit extends Cubit<TransfersState> {
   final AccountsRepository _accounts;
 
   Future<void> load() async {
-    emit(TransfersState(items: state.items, accounts: state.accounts, loading: true));
+    emit(TransfersState(
+        items: state.items, accounts: state.accounts, loading: true));
     try {
       final items = await _transfers.list();
       final accounts = await _accounts.list();
       if (!isClosed) emit(TransfersState(items: items, accounts: accounts));
     } catch (_) {
       if (!isClosed) {
-        emit(TransfersState(items: state.items, accounts: state.accounts,
-          error: 'Não foi possível carregar as transferências.'));
+        emit(TransfersState(
+            items: state.items,
+            accounts: state.accounts,
+            error: 'Não foi possível carregar as transferências.'));
       }
     }
   }
@@ -51,10 +58,10 @@ class TransfersCubit extends Cubit<TransfersState> {
     if (!isClosed) await load();
   }
 
-  Future<void> setEffective(String id, {required bool effective,
-      DateTime? effectiveDate}) async {
-    await _transfers.setEffective(id, effective: effective,
-      effectiveDate: effectiveDate);
+  Future<void> setEffective(String id,
+      {required bool effective, DateTime? effectiveDate}) async {
+    await _transfers.setEffective(id,
+        effective: effective, effectiveDate: effectiveDate);
     if (!isClosed) await load();
   }
 }

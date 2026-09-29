@@ -49,8 +49,8 @@ class _CategoriesViewState extends State<_CategoriesView> {
     final categories = context.read<CategoriesCubit>().state.categories;
     final draft = await showDialog<CategoryDraft>(
       context: context,
-      builder: (_) => _CategoryDialog(category: category, categories: categories,
-          defaultType: _filter),
+      builder: (_) => _CategoryDialog(
+          category: category, categories: categories, defaultType: _filter),
     );
     if (draft == null || !mounted) return;
     try {
@@ -69,10 +69,13 @@ class _CategoriesViewState extends State<_CategoriesView> {
   }
 
   void _showError(Object error) {
-    final message = error is FormatException ? error.message
-        : error is StateError ? error.message
-        : 'Não foi possível salvar a categoria.';
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    final message = error is FormatException
+        ? error.message
+        : error is StateError
+            ? error.message
+            : 'Não foi possível salvar a categoria.';
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -92,22 +95,29 @@ class _CategoriesViewState extends State<_CategoriesView> {
               return const Center(child: CircularProgressIndicator());
             }
             if (state.error != null) {
-              return Center(child: TextButton(
+              return Center(
+                  child: TextButton(
                 onPressed: context.read<CategoriesCubit>().load,
                 child: Text('${state.error} Tentar novamente'),
               ));
             }
-            final roots = state.categories.where(
-              (category) => category.type == _filter && !category.isSubcategory,
-            ).toList();
+            final roots = state.categories
+                .where(
+                  (category) =>
+                      category.type == _filter && !category.isSubcategory,
+                )
+                .toList();
             return Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: SegmentedButton<CategoryType>(
-                    segments: CategoryType.values.map((type) => ButtonSegment(
-                      value: type, label: Text(type.label),
-                    )).toList(),
+                    segments: CategoryType.values
+                        .map((type) => ButtonSegment(
+                              value: type,
+                              label: Text(type.label),
+                            ))
+                        .toList(),
                     selected: {_filter},
                     onSelectionChanged: (selection) =>
                         setState(() => _filter = selection.first),
@@ -115,7 +125,8 @@ class _CategoriesViewState extends State<_CategoriesView> {
                 ),
                 Expanded(
                   child: roots.isEmpty
-                      ? const Center(child: Text('Nenhuma categoria cadastrada.'))
+                      ? const Center(
+                          child: Text('Nenhuma categoria cadastrada.'))
                       : ListView(
                           padding: const EdgeInsets.fromLTRB(12, 0, 12, 96),
                           children: [
@@ -140,21 +151,26 @@ class _CategoriesViewState extends State<_CategoriesView> {
   Widget _categoryTile(FinanceCategory category) => Card(
         child: ListTile(
           leading: Icon(_icons[category.iconKey] ?? Icons.label_outline,
-              color: category.colorArgb == null ? null
-                : Color.lerp(Color(category.colorArgb!), Colors.white, 0.35)),
-          title: Text(category.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+              color: category.colorArgb == null
+                  ? null
+                  : Color.lerp(Color(category.colorArgb!), Colors.white, 0.35)),
+          title:
+              Text(category.name, maxLines: 2, overflow: TextOverflow.ellipsis),
           subtitle: Text(category.isArchived
               ? 'Arquivada · histórico preservado'
-              : category.isSubcategory ? 'Subcategoria' : 'Categoria principal'),
+              : category.isSubcategory
+                  ? 'Subcategoria'
+                  : 'Categoria principal'),
           onTap: () => _edit(category),
           trailing: PopupMenuButton<String>(
             tooltip: 'Ações da categoria',
-            onSelected: (action) => action == 'edit'
-                ? _edit(category) : _archive(category),
+            onSelected: (action) =>
+                action == 'edit' ? _edit(category) : _archive(category),
             itemBuilder: (_) => [
               const PopupMenuItem(value: 'edit', child: Text('Editar')),
-              PopupMenuItem(value: 'archive',
-                child: Text(category.isArchived ? 'Reativar' : 'Arquivar')),
+              PopupMenuItem(
+                  value: 'archive',
+                  child: Text(category.isArchived ? 'Reativar' : 'Arquivar')),
             ],
           ),
         ),
@@ -162,8 +178,8 @@ class _CategoriesViewState extends State<_CategoriesView> {
 }
 
 class _CategoryDialog extends StatefulWidget {
-  const _CategoryDialog({required this.categories, required this.defaultType,
-    this.category});
+  const _CategoryDialog(
+      {required this.categories, required this.defaultType, this.category});
   final FinanceCategory? category;
   final List<FinanceCategory> categories;
   final CategoryType defaultType;
@@ -198,20 +214,29 @@ class _CategoryDialogState extends State<_CategoryDialog> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    Navigator.pop(context, CategoryDraft(
-      name: _name.text.trim(), type: _type, parentId: _parentId,
-      iconKey: _iconKey, colorArgb: _colorArgb,
-    ));
+    Navigator.pop(
+        context,
+        CategoryDraft(
+          name: _name.text.trim(),
+          type: _type,
+          parentId: _parentId,
+          iconKey: _iconKey,
+          colorArgb: _colorArgb,
+        ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final parents = widget.categories.where((category) =>
-        category.type == _type && !category.isSubcategory &&
-        (!category.isArchived || category.id == _parentId) &&
-        category.id != widget.category?.id).toList();
+    final parents = widget.categories
+        .where((category) =>
+            category.type == _type &&
+            !category.isSubcategory &&
+            (!category.isArchived || category.id == _parentId) &&
+            category.id != widget.category?.id)
+        .toList();
     return AlertDialog(
-      title: Text(widget.category == null ? 'Nova categoria' : 'Editar categoria'),
+      title:
+          Text(widget.category == null ? 'Nova categoria' : 'Editar categoria'),
       content: SizedBox(
         width: 400,
         child: Form(
@@ -222,44 +247,59 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                 controller: _name,
                 decoration: const InputDecoration(labelText: 'Nome'),
                 validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Informe o nome.' : null,
+                    ? 'Informe o nome.'
+                    : null,
               ),
               DropdownButtonFormField<CategoryType>(
                 isExpanded: true,
                 initialValue: _type,
                 decoration: const InputDecoration(labelText: 'Tipo'),
-                items: CategoryType.values.map((type) => DropdownMenuItem(
-                  value: type, child: Text(type.label),
-                )).toList(),
+                items: CategoryType.values
+                    .map((type) => DropdownMenuItem(
+                          value: type,
+                          child: Text(type.label),
+                        ))
+                    .toList(),
                 onChanged: (type) {
-                  if (type != null) setState(() { _type = type; _parentId = null; });
+                  if (type != null)
+                    setState(() {
+                      _type = type;
+                      _parentId = null;
+                    });
                 },
               ),
               DropdownButtonFormField<String>(
                 isExpanded: true,
                 key: ValueKey(_type),
                 initialValue: _parentId,
-                decoration: const InputDecoration(labelText: 'Categoria principal'),
+                decoration:
+                    const InputDecoration(labelText: 'Categoria principal'),
                 hint: const Text('Nenhuma (categoria principal)'),
                 items: [
                   const DropdownMenuItem(value: '', child: Text('Nenhuma')),
                   for (final parent in parents)
-                    DropdownMenuItem(value: parent.id, child: Text(parent.name,
-                      maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(
+                        value: parent.id,
+                        child: Text(parent.name,
+                            maxLines: 1, overflow: TextOverflow.ellipsis)),
                 ],
-                onChanged: (id) => setState(() =>
-                    _parentId = id == null || id.isEmpty ? null : id),
+                onChanged: (id) => setState(
+                    () => _parentId = id == null || id.isEmpty ? null : id),
               ),
               DropdownButtonFormField<String>(
                 isExpanded: true,
                 initialValue: _iconKey,
                 decoration: const InputDecoration(labelText: 'Ícone'),
-                items: _icons.entries.map((entry) => DropdownMenuItem(
-                  value: entry.key,
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(entry.value), const SizedBox(width: 8), Text(entry.key),
-                  ]),
-                )).toList(),
+                items: _icons.entries
+                    .map((entry) => DropdownMenuItem(
+                          value: entry.key,
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(entry.value),
+                            const SizedBox(width: 8),
+                            Text(entry.key),
+                          ]),
+                        ))
+                    .toList(),
                 onChanged: (key) {
                   if (key != null) setState(() => _iconKey = key);
                 },
@@ -268,13 +308,16 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                 isExpanded: true,
                 initialValue: _colorArgb,
                 decoration: const InputDecoration(labelText: 'Cor'),
-                items: _colors.entries.map((entry) => DropdownMenuItem(
-                  value: entry.key,
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.circle, color: Color(entry.key)),
-                    const SizedBox(width: 8), Text(entry.value),
-                  ]),
-                )).toList(),
+                items: _colors.entries
+                    .map((entry) => DropdownMenuItem(
+                          value: entry.key,
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(Icons.circle, color: Color(entry.key)),
+                            const SizedBox(width: 8),
+                            Text(entry.value),
+                          ]),
+                        ))
+                    .toList(),
                 onChanged: (color) {
                   if (color != null) setState(() => _colorArgb = color);
                 },
@@ -284,8 +327,9 @@ class _CategoryDialogState extends State<_CategoryDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar')),
         FilledButton(onPressed: _submit, child: const Text('Salvar')),
       ],
     );

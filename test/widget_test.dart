@@ -11,20 +11,37 @@ class _DashboardStub implements DashboardRepository {
 
   @override
   Future<DashboardSummary> load(DateTime month) async => DashboardSummary(
-    month: month,
-    currencies: [DashboardCurrencySummary(currencyCode: 'BRL',
-      currentBalanceMinor: 12000, projectedBalanceMinor: 13000,
-      incomeMinor: 4000, expenseMinor: 2000,
-      expensesByCategory: withDetails ? const [
-        DashboardCategoryExpense('Uma categoria com nome bastante longo', 2000),
-      ] : const [])],
-    recent: withDetails ? [DashboardActivity(
-      id: 'long', type: DashboardActivityType.expense,
-      description: 'Lançamento de mercado com uma descrição muito extensa',
-      accountLabel: 'Conta corrente com nome longo', currencyCode: 'BRL',
-      amountMinor: 2000, date: month, isEffective: true,
-    )] : const [],
-  );
+        month: month,
+        currencies: [
+          DashboardCurrencySummary(
+              currencyCode: 'BRL',
+              currentBalanceMinor: 12000,
+              projectedBalanceMinor: 13000,
+              incomeMinor: 4000,
+              expenseMinor: 2000,
+              expensesByCategory: withDetails
+                  ? const [
+                      DashboardCategoryExpense(
+                          'Uma categoria com nome bastante longo', 2000),
+                    ]
+                  : const [])
+        ],
+        recent: withDetails
+            ? [
+                DashboardActivity(
+                  id: 'long',
+                  type: DashboardActivityType.expense,
+                  description:
+                      'Lançamento de mercado com uma descrição muito extensa',
+                  accountLabel: 'Conta corrente com nome longo',
+                  currencyCode: 'BRL',
+                  amountMinor: 2000,
+                  date: month,
+                  isEffective: true,
+                )
+              ]
+            : const [],
+      );
 }
 
 void main() {
@@ -41,7 +58,7 @@ void main() {
     expect(find.text('R\$ 20,00'), findsWidgets);
     expect(find.text('Receitas'), findsWidgets);
     expect(tester.getTopLeft(find.text('Saldo total')).dy,
-      lessThan(tester.getTopLeft(find.text('Resultado do mês')).dy));
+        lessThan(tester.getTopLeft(find.text('Resultado do mês')).dy));
 
     await tester.tap(find.byTooltip('Próximo mês'));
     await tester.pumpAndSettle();
@@ -67,7 +84,8 @@ void main() {
       tester.platformDispatcher.clearTextScaleFactorTestValue();
       await getIt.reset();
     });
-    getIt.registerSingleton<DashboardRepository>(_DashboardStub(withDetails: true));
+    getIt.registerSingleton<DashboardRepository>(
+        _DashboardStub(withDetails: true));
     await tester.pumpWidget(const FinApp());
     await tester.pumpAndSettle();
 

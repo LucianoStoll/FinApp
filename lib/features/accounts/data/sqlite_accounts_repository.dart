@@ -27,8 +27,16 @@ class SqliteAccountsRepository implements AccountsRepository {
         (id, name, type, currency_code, initial_balance_minor,
          include_in_analytics, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', [id, draft.name.trim(), draft.type.name, draft.currencyCode.toUpperCase(),
-      draft.initialBalanceMinor, draft.includeInAnalytics ? 1 : 0, now, now]);
+    ''', [
+      id,
+      draft.name.trim(),
+      draft.type.name,
+      draft.currencyCode.toUpperCase(),
+      draft.initialBalanceMinor,
+      draft.includeInAnalytics ? 1 : 0,
+      now,
+      now
+    ]);
     return _find(id);
   }
 
@@ -43,10 +51,14 @@ class SqliteAccountsRepository implements AccountsRepository {
           (SELECT COUNT(*) FROM transfers WHERE
              (source_account_id = ? OR destination_account_id = ?) AND deleted_at IS NULL)
           AS total
-      ''', variables: [Variable.withString(id), Variable.withString(id),
-        Variable.withString(id)]).getSingle();
+      ''', variables: [
+        Variable.withString(id),
+        Variable.withString(id),
+        Variable.withString(id)
+      ]).getSingle();
       if (references.read<int>('total') > 0) {
-        throw StateError('Não é possível trocar a moeda de uma conta com lançamentos.');
+        throw StateError(
+            'Não é possível trocar a moeda de uma conta com lançamentos.');
       }
     }
     await _db.customStatement('''
@@ -54,9 +66,15 @@ class SqliteAccountsRepository implements AccountsRepository {
         initial_balance_minor = ?, include_in_analytics = ?, updated_at = ?,
         sync_version = sync_version + 1
       WHERE id = ? AND deleted_at IS NULL
-    ''', [draft.name.trim(), draft.type.name, draft.currencyCode.toUpperCase(),
-      draft.initialBalanceMinor, draft.includeInAnalytics ? 1 : 0,
-      EntityMetadata.nowUtcMillis(), id]);
+    ''', [
+      draft.name.trim(),
+      draft.type.name,
+      draft.currencyCode.toUpperCase(),
+      draft.initialBalanceMinor,
+      draft.includeInAnalytics ? 1 : 0,
+      EntityMetadata.nowUtcMillis(),
+      id
+    ]);
     return _find(id);
   }
 
@@ -93,7 +111,8 @@ class SqliteAccountsRepository implements AccountsRepository {
       );
 
   void _validate(AccountDraft draft) {
-    if (draft.name.trim().isEmpty) throw const FormatException('Informe o nome da conta.');
+    if (draft.name.trim().isEmpty)
+      throw const FormatException('Informe o nome da conta.');
     if (!RegExp(r'^[A-Za-z]{3}$').hasMatch(draft.currencyCode)) {
       throw const FormatException('A moeda deve ter três letras (ex.: BRL).');
     }

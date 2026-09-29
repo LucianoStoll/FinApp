@@ -4,7 +4,8 @@ import '../domain/categories_repository.dart';
 import '../domain/category.dart';
 
 class CategoriesState {
-  const CategoriesState({this.categories = const [], this.loading = false, this.error});
+  const CategoriesState(
+      {this.categories = const [], this.loading = false, this.error});
 
   final List<FinanceCategory> categories;
   final bool loading;
@@ -25,7 +26,8 @@ class CategoriesCubit extends Cubit<CategoriesState> {
       if (!isClosed) emit(CategoriesState(categories: categories));
     } catch (_) {
       if (!isClosed) {
-        emit(CategoriesState(categories: state.categories,
+        emit(CategoriesState(
+            categories: state.categories,
             error: 'Não foi possível carregar as categorias.'));
       }
     }

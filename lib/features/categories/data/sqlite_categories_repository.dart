@@ -28,8 +28,16 @@ class SqliteCategoriesRepository implements CategoriesRepository {
       INSERT INTO categories
         (id, name, type, parent_id, icon_key, color_argb, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', [id, draft.name.trim(), draft.type.name, draft.parentId,
-      draft.iconKey, draft.colorArgb, now, now]);
+    ''', [
+      id,
+      draft.name.trim(),
+      draft.type.name,
+      draft.parentId,
+      draft.iconKey,
+      draft.colorArgb,
+      now,
+      now
+    ]);
     return _find(id);
   }
 
@@ -41,13 +49,21 @@ class SqliteCategoriesRepository implements CategoriesRepository {
       UPDATE categories SET name = ?, type = ?, parent_id = ?, icon_key = ?,
         color_argb = ?, updated_at = ?, sync_version = sync_version + 1
       WHERE id = ? AND deleted_at IS NULL
-    ''', [draft.name.trim(), draft.type.name, draft.parentId, draft.iconKey,
-      draft.colorArgb, EntityMetadata.nowUtcMillis(), id]);
+    ''', [
+      draft.name.trim(),
+      draft.type.name,
+      draft.parentId,
+      draft.iconKey,
+      draft.colorArgb,
+      EntityMetadata.nowUtcMillis(),
+      id
+    ]);
     return _find(id);
   }
 
   @override
-  Future<FinanceCategory> setArchived(String id, {required bool archived}) async {
+  Future<FinanceCategory> setArchived(String id,
+      {required bool archived}) async {
     final category = await _find(id);
     if (!archived && category.parentId != null) {
       final parent = await _find(category.parentId!);
@@ -84,13 +100,16 @@ class SqliteCategoriesRepository implements CategoriesRepository {
       throw StateError('Uma categoria não pode ser filha dela mesma.');
     }
     final parent = await _find(draft.parentId!);
-    if (parent.isSubcategory || parent.isArchived || parent.type != draft.type) {
+    if (parent.isSubcategory ||
+        parent.isArchived ||
+        parent.type != draft.type) {
       throw StateError('Escolha uma categoria principal ativa do mesmo tipo.');
     }
     if (id != null) {
       final children = await list();
       if (children.any((child) => child.parentId == id)) {
-        throw StateError('Uma categoria com subcategorias não pode virar subcategoria.');
+        throw StateError(
+            'Uma categoria com subcategorias não pode virar subcategoria.');
       }
     }
   }

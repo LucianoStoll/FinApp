@@ -13,7 +13,8 @@ abstract final class BackupService {
   static const _pendingName = 'finapp.restore.pending';
   static const _previousName = 'finapp.before-restore.sqlite';
 
-  static Future<Uint8List> export(AppDatabase database, Directory directory) async {
+  static Future<Uint8List> export(
+      AppDatabase database, Directory directory) async {
     await directory.create(recursive: true);
     final snapshot = File(p.join(directory.path, 'finapp.export.tmp.sqlite'));
     if (await snapshot.exists()) await snapshot.delete();
@@ -33,10 +34,12 @@ abstract final class BackupService {
     }
     final schemaVersion = ByteData.sublistView(bytes).getUint32(60, Endian.big);
     if (schemaVersion < 1 || schemaVersion > 5) {
-      throw const FormatException('Versão do backup incompatível com este aplicativo.');
+      throw const FormatException(
+          'Versão do backup incompatível com este aplicativo.');
     }
     await directory.create(recursive: true);
-    final candidate = File(p.join(directory.path, 'finapp.restore.check.sqlite'));
+    final candidate =
+        File(p.join(directory.path, 'finapp.restore.check.sqlite'));
     if (await candidate.exists()) await candidate.delete();
     try {
       await candidate.writeAsBytes(bytes, flush: true);
@@ -52,19 +55,25 @@ abstract final class BackupService {
   static Future<void> _validate(File file) async {
     final database = AppDatabase(NativeDatabase(file));
     try {
-      final integrity = await database.customSelect('PRAGMA integrity_check').get();
-      if (integrity.length != 1 || integrity.single.read<String>('integrity_check') != 'ok') {
+      final integrity =
+          await database.customSelect('PRAGMA integrity_check').get();
+      if (integrity.length != 1 ||
+          integrity.single.read<String>('integrity_check') != 'ok') {
         throw const FormatException('O backup está corrompido.');
       }
-      final violations = await database.customSelect('PRAGMA foreign_key_check').get();
+      final violations =
+          await database.customSelect('PRAGMA foreign_key_check').get();
       if (violations.isNotEmpty) {
         throw const FormatException('O backup contém vínculos inválidos.');
       }
-      final tables = await database.customSelect(
-        "SELECT name FROM sqlite_master WHERE type = 'table'",
-      ).get();
+      final tables = await database
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'table'",
+          )
+          .get();
       final names = tables.map((row) => row.read<String>('name')).toSet();
-      if (!names.containsAll(['accounts', 'categories', 'transactions', 'transfers'])) {
+      if (!names.containsAll(
+          ['accounts', 'categories', 'transactions', 'transfers'])) {
         throw const FormatException('O arquivo não contém os dados do Somia.');
       }
     } finally {

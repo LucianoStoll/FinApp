@@ -12,21 +12,51 @@ import '../../domain/dashboard_repository.dart';
 import '../../domain/entities/dashboard_summary.dart';
 import '../dashboard_cubit.dart';
 
-const _months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-const _shortMonths = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-  'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-const _chartColors = [SomiaColors.blue, SomiaColors.red, SomiaColors.purple,
-  SomiaColors.green, SomiaColors.yellow, Color(0xFF8F9BB7)];
+const _months = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro'
+];
+const _shortMonths = [
+  'Jan',
+  'Fev',
+  'Mar',
+  'Abr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Set',
+  'Out',
+  'Nov',
+  'Dez'
+];
+const _chartColors = [
+  SomiaColors.blue,
+  SomiaColors.red,
+  SomiaColors.purple,
+  SomiaColors.green,
+  SomiaColors.yellow,
+  Color(0xFF8F9BB7)
+];
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-    create: (_) => DashboardCubit(getIt<DashboardRepository>()),
-    child: const _DashboardView(),
-  );
+        create: (_) => DashboardCubit(getIt<DashboardRepository>()),
+        child: const _DashboardView(),
+      );
 }
 
 class _DashboardView extends StatefulWidget {
@@ -51,295 +81,502 @@ class _DashboardViewState extends State<_DashboardView>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) context.read<DashboardCubit>().load();
+    if (state == AppLifecycleState.resumed)
+      context.read<DashboardCubit>().load();
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Somia'), leading: somiaMenuLeading(context),
-      actions: [IconButton(tooltip: 'Atualizar resumo',
-        icon: const Icon(Icons.refresh),
-        onPressed: context.read<DashboardCubit>().load)]),
-    floatingActionButton: const SomiaQuickActions(),
-    body: BlocBuilder<DashboardCubit, DashboardState>(builder: (context, state) {
-      if (state.loading && state.summary == null) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (state.summary == null) {
-        return Center(child: TextButton(
-          onPressed: context.read<DashboardCubit>().load,
-          child: Text('${state.error ?? 'Resumo indisponível.'} Tentar novamente')));
-      }
-      return RefreshIndicator(onRefresh: context.read<DashboardCubit>().load,
-        child: LayoutBuilder(builder: (context, box) => ListView(
-          padding: EdgeInsets.fromLTRB(box.maxWidth < 600 ? 16 : 28,
-            12, box.maxWidth < 600 ? 16 : 28, 100),
-          children: [Center(child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1260),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              _header(context, state),
-              if (state.loading) const LinearProgressIndicator(),
-              if (state.error != null) Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(state.error!)),
-              if (state.summary!.currencies.isEmpty)
-                const Card(child: Padding(padding: EdgeInsets.all(24),
-                  child: Text('Cadastre uma conta para começar seu resumo.'))),
-              for (final currency in state.summary!.currencies)
-                _currencySection(context, currency, state.month,
-                  state.summary!.currencies.length > 1),
-              const SizedBox(height: 14),
-              _bottomPanels(context, state.summary!.recent,
-                state.summary!.currencies),
-            ])))])));
-    }),
-  );
+        appBar: AppBar(
+            title: const Text('Somia'),
+            leading: somiaMenuLeading(context),
+            actions: [
+              IconButton(
+                  tooltip: 'Atualizar resumo',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: context.read<DashboardCubit>().load)
+            ]),
+        floatingActionButton: const SomiaQuickActions(),
+        body: BlocBuilder<DashboardCubit, DashboardState>(
+            builder: (context, state) {
+          if (state.loading && state.summary == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state.summary == null) {
+            return Center(
+                child: TextButton(
+                    onPressed: context.read<DashboardCubit>().load,
+                    child: Text(
+                        '${state.error ?? 'Resumo indisponível.'} Tentar novamente')));
+          }
+          return RefreshIndicator(
+              onRefresh: context.read<DashboardCubit>().load,
+              child: LayoutBuilder(
+                  builder: (context, box) => ListView(
+                          padding: EdgeInsets.fromLTRB(
+                              box.maxWidth < 600 ? 16 : 28,
+                              12,
+                              box.maxWidth < 600 ? 16 : 28,
+                              100),
+                          children: [
+                            Center(
+                                child: ConstrainedBox(
+                                    constraints:
+                                        const BoxConstraints(maxWidth: 1260),
+                                    child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          _header(context, state),
+                                          if (state.loading)
+                                            const LinearProgressIndicator(),
+                                          if (state.error != null)
+                                            Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 8),
+                                                child: Text(state.error!)),
+                                          if (state.summary!.currencies.isEmpty)
+                                            const Card(
+                                                child: Padding(
+                                                    padding: EdgeInsets.all(24),
+                                                    child: Text(
+                                                        'Cadastre uma conta para começar seu resumo.'))),
+                                          for (final currency
+                                              in state.summary!.currencies)
+                                            _currencySection(
+                                                context,
+                                                currency,
+                                                state.month,
+                                                state.summary!.currencies
+                                                        .length >
+                                                    1),
+                                          const SizedBox(height: 14),
+                                          _bottomPanels(
+                                              context,
+                                              state.summary!.recent,
+                                              state.summary!.currencies),
+                                        ])))
+                          ])));
+        }),
+      );
 
   Widget _header(BuildContext context, DashboardState state) => Padding(
-    padding: const EdgeInsets.only(bottom: 20),
-    child: Wrap(alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center, spacing: 16, runSpacing: 14,
-      children: [
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Olá, bem-vindo ao Somia!',
-            style: const TextStyle(color: SomiaColors.muted)),
-          const SizedBox(height: 3),
-          Text('Resumo do mês', style: Theme.of(context).textTheme.headlineMedium
-            ?.copyWith(fontWeight: FontWeight.w700)),
-        ]),
-        Container(constraints: BoxConstraints(maxWidth:
-          MediaQuery.sizeOf(context).width < 600
-            ? MediaQuery.sizeOf(context).width - 32 : 340),
-          decoration: BoxDecoration(color: SomiaColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: SomiaColors.outline)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            IconButton(tooltip: 'Mês anterior', icon: const Icon(Icons.chevron_left),
-              onPressed: () => context.read<DashboardCubit>().moveMonth(-1)),
-            if (MediaQuery.textScalerOf(context).scale(16) < 24) ...[
-              const Icon(Icons.calendar_month_outlined, size: 18,
-                color: SomiaColors.blue),
-              const SizedBox(width: 8),
-            ],
-            Flexible(child: Text('${_months[state.month.month - 1]} '
-              '${state.month.year}', maxLines: 1,
-              overflow: TextOverflow.ellipsis)),
-            IconButton(tooltip: 'Próximo mês', icon: const Icon(Icons.chevron_right),
-              onPressed: () => context.read<DashboardCubit>().moveMonth(1)),
-          ])),
-      ]));
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 16,
+          runSpacing: 14,
+          children: [
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Olá, bem-vindo ao Somia!',
+                  style: const TextStyle(color: SomiaColors.muted)),
+              const SizedBox(height: 3),
+              Text('Resumo do mês',
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+            ]),
+            Container(
+                constraints: BoxConstraints(
+                    maxWidth: MediaQuery.sizeOf(context).width < 600
+                        ? MediaQuery.sizeOf(context).width - 32
+                        : 340),
+                decoration: BoxDecoration(
+                    color: SomiaColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: SomiaColors.outline)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  IconButton(
+                      tooltip: 'Mês anterior',
+                      icon: const Icon(Icons.chevron_left),
+                      onPressed: () =>
+                          context.read<DashboardCubit>().moveMonth(-1)),
+                  if (MediaQuery.textScalerOf(context).scale(16) < 24) ...[
+                    const Icon(Icons.calendar_month_outlined,
+                        size: 18, color: SomiaColors.blue),
+                    const SizedBox(width: 8),
+                  ],
+                  Flexible(
+                      child: Text(
+                          '${_months[state.month.month - 1]} '
+                          '${state.month.year}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis)),
+                  IconButton(
+                      tooltip: 'Próximo mês',
+                      icon: const Icon(Icons.chevron_right),
+                      onPressed: () =>
+                          context.read<DashboardCubit>().moveMonth(1)),
+                ])),
+          ]));
 
-  Widget _currencySection(BuildContext context, DashboardCurrencySummary currency,
-      DateTime month, bool multipleCurrencies) {
+  Widget _currencySection(
+      BuildContext context,
+      DashboardCurrencySummary currency,
+      DateTime month,
+      bool multipleCurrencies) {
     final now = DateTime.now();
     final future = DateTime(month.year, month.month)
-      .isAfter(DateTime(now.year, now.month));
+        .isAfter(DateTime(now.year, now.month));
     final code = currency.currencyCode;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      if (multipleCurrencies || code != 'BRL') Padding(
-        padding: const EdgeInsets.only(top: 18, bottom: 10),
-        child: Text(code, style: Theme.of(context).textTheme.titleMedium)),
+      if (multipleCurrencies || code != 'BRL')
+        Padding(
+            padding: const EdgeInsets.only(top: 18, bottom: 10),
+            child: Text(code, style: Theme.of(context).textTheme.titleMedium)),
       LayoutBuilder(builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 940 ? 4
-          : constraints.maxWidth >= 480 ? 2 : 1;
+        final columns = constraints.maxWidth >= 940
+            ? 4
+            : constraints.maxWidth >= 480
+                ? 2
+                : 1;
         const gap = 12.0;
         final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
         final tiles = [
-          _metric(context, future ? 'Saldo previsto' : 'Saldo total',
-            future ? currency.projectedBalanceMinor : currency.currentBalanceMinor,
-            code, Icons.account_balance_wallet_outlined, SomiaColors.blue,
-            future
-              ? 'Saldo efetivado: ${MoneyMinor.display(currency.currentBalanceMinor, code)}'
-              : 'Saldo projetado: ${MoneyMinor.display(currency.projectedBalanceMinor, code)}'),
+          _metric(
+              context,
+              future ? 'Saldo previsto' : 'Saldo total',
+              future
+                  ? currency.projectedBalanceMinor
+                  : currency.currentBalanceMinor,
+              code,
+              Icons.account_balance_wallet_outlined,
+              SomiaColors.blue,
+              future
+                  ? 'Saldo efetivado: ${MoneyMinor.display(currency.currentBalanceMinor, code)}'
+                  : 'Saldo projetado: ${MoneyMinor.display(currency.projectedBalanceMinor, code)}'),
           _metric(context, 'Receitas', currency.incomeMinor, code,
-            Icons.arrow_upward_rounded, SomiaColors.green, 'Neste mês'),
+              Icons.arrow_upward_rounded, SomiaColors.green, 'Neste mês'),
           _metric(context, 'Despesas', currency.expenseMinor, code,
-            Icons.arrow_downward_rounded, SomiaColors.red, 'Neste mês'),
-          _metric(context, 'Saldo projetado', currency.projectedBalanceMinor,
-            code, Icons.bar_chart_rounded, SomiaColors.blue,
-            MoneyMinor.display(currency.monthlyResultMinor, code)),
+              Icons.arrow_downward_rounded, SomiaColors.red, 'Neste mês'),
+          _metric(
+              context,
+              'Saldo projetado',
+              currency.projectedBalanceMinor,
+              code,
+              Icons.bar_chart_rounded,
+              SomiaColors.blue,
+              MoneyMinor.display(currency.monthlyResultMinor, code)),
         ];
-        return Wrap(spacing: gap, runSpacing: gap,
-          children: [for (final tile in tiles) SizedBox(width: width, child: tile)]);
+        return Wrap(spacing: gap, runSpacing: gap, children: [
+          for (final tile in tiles) SizedBox(width: width, child: tile)
+        ]);
       }),
       const SizedBox(height: 12),
       LayoutBuilder(builder: (context, constraints) {
         final wide = constraints.maxWidth >= 790 &&
-          MediaQuery.textScalerOf(context).scale(16) < 24;
+            MediaQuery.textScalerOf(context).scale(16) < 24;
         final chart = _historyPanel(context, currency);
         final donut = _categoryPanel(context, currency);
-        return wide ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(flex: 11, child: chart), const SizedBox(width: 12),
-          Expanded(flex: 9, child: donut),
-        ]) : Column(children: [chart, const SizedBox(height: 12), donut]);
+        return wide
+            ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(flex: 11, child: chart),
+                const SizedBox(width: 12),
+                Expanded(flex: 9, child: donut),
+              ])
+            : Column(children: [chart, const SizedBox(height: 12), donut]);
       }),
       const SizedBox(height: 6),
     ]);
   }
 
   Widget _metric(BuildContext context, String label, int amount, String code,
-      IconData icon, Color tint, String detail) => Container(
-    constraints: const BoxConstraints(minHeight: 146),
-    padding: const EdgeInsets.all(17),
-    decoration: BoxDecoration(
-      gradient: LinearGradient(begin: Alignment.topLeft,
-        end: Alignment.bottomRight, colors: [tint.withValues(alpha: 0.12),
-          SomiaColors.surface]),
-      border: Border.all(color: SomiaColors.outline),
-      borderRadius: BorderRadius.circular(15)),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(
-          color: tint.withValues(alpha: 0.16),
-          borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, size: 19, color: tint)),
-        const SizedBox(width: 10),
-        Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-          style: TextStyle(color: tint))),
-      ]),
-      const SizedBox(height: 15),
-      FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
-        child: Text(MoneyMinor.display(amount, code),
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w700))),
-      const SizedBox(height: 8),
-      if (label == 'Saldo projetado') ...[
-        Text('Resultado do mês', style: Theme.of(context).textTheme.bodySmall
-          ?.copyWith(color: SomiaColors.muted)),
-        Text(detail, style: Theme.of(context).textTheme.bodySmall
-          ?.copyWith(color: SomiaColors.muted)),
-      ] else Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: SomiaColors.muted)),
-    ]));
+          IconData icon, Color tint, String detail) =>
+      Container(
+          constraints: const BoxConstraints(minHeight: 146),
+          padding: const EdgeInsets.all(17),
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [tint.withValues(alpha: 0.12), SomiaColors.surface]),
+              border: Border.all(color: SomiaColors.outline),
+              borderRadius: BorderRadius.circular(15)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      color: tint.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(10)),
+                  child: Icon(icon, size: 19, color: tint)),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: Text(label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: tint))),
+            ]),
+            const SizedBox(height: 15),
+            FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(MoneyMinor.display(amount, code),
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w700))),
+            const SizedBox(height: 8),
+            if (label == 'Saldo projetado') ...[
+              Text('Resultado do mês',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: SomiaColors.muted)),
+              Text(detail,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: SomiaColors.muted)),
+            ] else
+              Text(detail,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: SomiaColors.muted)),
+          ]));
 
   Widget _panel(BuildContext context, String title, Widget content,
-      {Widget? action}) => Card(child: Padding(
-    padding: const EdgeInsets.all(18),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      LayoutBuilder(builder: (context, box) {
-        final heading = Text(title, style: Theme.of(context).textTheme
-          .titleMedium?.copyWith(fontWeight: FontWeight.w600));
-        if (action == null) return heading;
-        if (box.maxWidth < 400 ||
-            MediaQuery.textScalerOf(context).scale(16) >= 24) {
-          return Column(crossAxisAlignment: CrossAxisAlignment.start,
-            children: [heading, Align(alignment: Alignment.centerRight,
-              child: action)]);
-        }
-        return Row(children: [Expanded(child: heading), action]);
-      }),
-      const SizedBox(height: 16),
-      content,
-    ])));
+          {Widget? action}) =>
+      Card(
+          child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    LayoutBuilder(builder: (context, box) {
+                      final heading = Text(title,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600));
+                      if (action == null) return heading;
+                      if (box.maxWidth < 400 ||
+                          MediaQuery.textScalerOf(context).scale(16) >= 24) {
+                        return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              heading,
+                              Align(
+                                  alignment: Alignment.centerRight,
+                                  child: action)
+                            ]);
+                      }
+                      return Row(children: [Expanded(child: heading), action]);
+                    }),
+                    const SizedBox(height: 16),
+                    content,
+                  ])));
 
-  Widget _historyPanel(BuildContext context, DashboardCurrencySummary currency) =>
-    _panel(context, 'Receitas vs Despesas', Column(children: [
-      if (currency.history.isEmpty)
-        const SizedBox(height: 190,
-          child: Center(child: Text('Histórico mensal indisponível.')))
-      else SizedBox(height: 190, child: LayoutBuilder(builder: (context, box) {
-        final maximum = currency.history.fold<int>(0, (value, item) => math.max(
-          value, math.max(item.incomeMinor, item.expenseMinor)));
-        return Row(crossAxisAlignment: CrossAxisAlignment.end,
-          children: [for (final item in currency.history)
-            Expanded(child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-                Expanded(child: Row(crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisAlignment: MainAxisAlignment.center, children: [
-                    _bar(item.incomeMinor, maximum, SomiaColors.green),
-                    const SizedBox(width: 3),
-                    _bar(item.expenseMinor, maximum, SomiaColors.red),
-                  ])),
-                const SizedBox(height: 8),
-                Text(_shortMonths[item.month.month - 1],
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: SomiaColors.muted)),
-              ])))]);
-      })),
-      const SizedBox(height: 12),
-      const Wrap(alignment: WrapAlignment.center, spacing: 18, children: [
-        _LegendDot('Receitas', SomiaColors.green),
-        _LegendDot('Despesas', SomiaColors.red),
-      ]),
-    ]), action: Text('Últimos 6 meses',
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-        color: SomiaColors.muted)));
+  Widget _historyPanel(
+          BuildContext context, DashboardCurrencySummary currency) =>
+      _panel(
+          context,
+          'Receitas vs Despesas',
+          Column(children: [
+            if (currency.history.isEmpty)
+              const SizedBox(
+                  height: 190,
+                  child: Center(child: Text('Histórico mensal indisponível.')))
+            else
+              SizedBox(
+                  height: 190,
+                  child: LayoutBuilder(builder: (context, box) {
+                    final maximum = currency.history.fold<int>(
+                        0,
+                        (value, item) => math.max(value,
+                            math.max(item.incomeMinor, item.expenseMinor)));
+                    return Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          for (final item in currency.history)
+                            Expanded(
+                                child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 3),
+                                    child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          Expanded(
+                                              child: Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.end,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                _bar(item.incomeMinor, maximum,
+                                                    SomiaColors.green),
+                                                const SizedBox(width: 3),
+                                                _bar(item.expenseMinor, maximum,
+                                                    SomiaColors.red),
+                                              ])),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                              _shortMonths[
+                                                  item.month.month - 1],
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                      color:
+                                                          SomiaColors.muted)),
+                                        ])))
+                        ]);
+                  })),
+            const SizedBox(height: 12),
+            const Wrap(alignment: WrapAlignment.center, spacing: 18, children: [
+              _LegendDot('Receitas', SomiaColors.green),
+              _LegendDot('Despesas', SomiaColors.red),
+            ]),
+          ]),
+          action: Text('Últimos 6 meses',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: SomiaColors.muted)));
 
   Widget _bar(int amount, int maximum, Color color) => Flexible(
-    child: FractionallySizedBox(heightFactor: maximum <= 0 ? 0.02
-      : (amount / maximum).clamp(0.02, 1.0), alignment: Alignment.bottomCenter,
-      child: Container(decoration: BoxDecoration(color: color,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(4))))));
+      child: FractionallySizedBox(
+          heightFactor:
+              maximum <= 0 ? 0.02 : (amount / maximum).clamp(0.02, 1.0),
+          alignment: Alignment.bottomCenter,
+          child: Container(
+              decoration: BoxDecoration(
+                  color: color,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(4))))));
 
-  Widget _categoryPanel(BuildContext context, DashboardCurrencySummary currency) =>
-    _panel(context, 'Gastos por categoria',
-      currency.expensesByCategory.isEmpty
-        ? const SizedBox(height: 220, child: Center(
-          child: Text('Nenhuma despesa efetivada neste mês.')))
-        : LayoutBuilder(builder: (context, box) {
-          final wide = box.maxWidth >= 350 &&
-            MediaQuery.textScalerOf(context).scale(16) < 24;
-          final total = currency.expensesByCategory.fold<int>(0,
-            (sum, item) => sum + item.amountMinor);
-          final donut = SizedBox(width: 170, height: 170,
-            child: Stack(alignment: Alignment.center, children: [
-              CustomPaint(size: const Size(160, 160),
-                painter: _DonutPainter(currency.expensesByCategory)),
-              Padding(padding: const EdgeInsets.all(30),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  FittedBox(child: Text(MoneyMinor.display(total,
-                    currency.currencyCode),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold))),
-                  Text('Total do mês', style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: SomiaColors.muted)),
-                ])),
-            ]));
-          final legend = Column(crossAxisAlignment: CrossAxisAlignment.start,
-            children: [for (var i = 0; i < currency.expensesByCategory.length; i++)
-              Padding(padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Row(children: [
-                  CircleAvatar(radius: 5,
-                    backgroundColor: _chartColors[i % _chartColors.length]),
-                  const SizedBox(width: 9),
-                  Expanded(child: Text(currency.expensesByCategory[i].name,
-                    maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  const SizedBox(width: 7),
-                  Text('${total == 0 ? 0 :
-                    (currency.expensesByCategory[i].amountMinor * 100 / total).round()}%',
-                    style: const TextStyle(color: SomiaColors.muted)),
-                ]))]);
-          return ConstrainedBox(constraints: const BoxConstraints(minHeight: 220),
-            child: wide ? Row(children: [donut, const SizedBox(width: 18),
-              Expanded(child: legend)]) : Column(children: [donut,
-              const SizedBox(height: 12), legend]));
-        }));
+  Widget _categoryPanel(
+          BuildContext context, DashboardCurrencySummary currency) =>
+      _panel(
+          context,
+          'Gastos por categoria',
+          currency.expensesByCategory.isEmpty
+              ? const SizedBox(
+                  height: 220,
+                  child: Center(
+                      child: Text('Nenhuma despesa efetivada neste mês.')))
+              : LayoutBuilder(builder: (context, box) {
+                  final wide = box.maxWidth >= 350 &&
+                      MediaQuery.textScalerOf(context).scale(16) < 24;
+                  final total = currency.expensesByCategory
+                      .fold<int>(0, (sum, item) => sum + item.amountMinor);
+                  final donut = SizedBox(
+                      width: 170,
+                      height: 170,
+                      child: Stack(alignment: Alignment.center, children: [
+                        CustomPaint(
+                            size: const Size(160, 160),
+                            painter:
+                                _DonutPainter(currency.expensesByCategory)),
+                        Padding(
+                            padding: const EdgeInsets.all(30),
+                            child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  FittedBox(
+                                      child: Text(
+                                          MoneyMinor.display(
+                                              total, currency.currencyCode),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                  fontWeight:
+                                                      FontWeight.bold))),
+                                  Text('Total do mês',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(color: SomiaColors.muted)),
+                                ])),
+                      ]));
+                  final legend = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var i = 0;
+                            i < currency.expensesByCategory.length;
+                            i++)
+                          Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              child: Row(children: [
+                                CircleAvatar(
+                                    radius: 5,
+                                    backgroundColor:
+                                        _chartColors[i % _chartColors.length]),
+                                const SizedBox(width: 9),
+                                Expanded(
+                                    child: Text(
+                                        currency.expensesByCategory[i].name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis)),
+                                const SizedBox(width: 7),
+                                Text(
+                                    '${total == 0 ? 0 : (currency.expensesByCategory[i].amountMinor * 100 / total).round()}%',
+                                    style: const TextStyle(
+                                        color: SomiaColors.muted)),
+                              ]))
+                      ]);
+                  return ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 220),
+                      child: wide
+                          ? Row(children: [
+                              donut,
+                              const SizedBox(width: 18),
+                              Expanded(child: legend)
+                            ])
+                          : Column(children: [
+                              donut,
+                              const SizedBox(height: 12),
+                              legend
+                            ]));
+                }));
 
   Widget _bottomPanels(BuildContext context, List<DashboardActivity> recent,
-      List<DashboardCurrencySummary> currencies) => LayoutBuilder(
-    builder: (context, box) {
-      final wide = box.maxWidth >= 790 &&
-        MediaQuery.textScalerOf(context).scale(16) < 24;
-      final transactions = _panel(context, 'Últimos lançamentos',
-        recent.isEmpty ? const Text('Nenhuma movimentação ainda.') : Column(
-          children: [for (final item in recent) _recentTile(context, item)]),
-        action: TextButton(onPressed: () => context.goNamed(AppRoutes.transactions),
-          child: const Text('Ver todos')));
-      final accounts = _panel(context, 'Saldo por conta',
-        currencies.every((c) => c.accounts.isEmpty)
-          ? const Text('Nenhuma conta cadastrada.')
-          : Column(children: [for (final currency in currencies)
-            for (final account in currency.accounts.take(5))
-              _accountTile(context, account)]),
-        action: TextButton(onPressed: () => context.goNamed(AppRoutes.accounts),
-          child: const Text('Ver todas')));
-      return wide ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Expanded(child: transactions), const SizedBox(width: 12),
-        Expanded(child: accounts),
-      ]) : Column(children: [transactions, const SizedBox(height: 12), accounts]);
-    });
+          List<DashboardCurrencySummary> currencies) =>
+      LayoutBuilder(builder: (context, box) {
+        final wide = box.maxWidth >= 790 &&
+            MediaQuery.textScalerOf(context).scale(16) < 24;
+        final transactions = _panel(
+            context,
+            'Últimos lançamentos',
+            recent.isEmpty
+                ? const Text('Nenhuma movimentação ainda.')
+                : Column(children: [
+                    for (final item in recent) _recentTile(context, item)
+                  ]),
+            action: TextButton(
+                onPressed: () => context.goNamed(AppRoutes.transactions),
+                child: const Text('Ver todos')));
+        final accounts = _panel(
+            context,
+            'Saldo por conta',
+            currencies.every((c) => c.accounts.isEmpty)
+                ? const Text('Nenhuma conta cadastrada.')
+                : Column(children: [
+                    for (final currency in currencies)
+                      for (final account in currency.accounts.take(5))
+                        _accountTile(context, account)
+                  ]),
+            action: TextButton(
+                onPressed: () => context.goNamed(AppRoutes.accounts),
+                child: const Text('Ver todas')));
+        return wide
+            ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(child: transactions),
+                const SizedBox(width: 12),
+                Expanded(child: accounts),
+              ])
+            : Column(
+                children: [transactions, const SizedBox(height: 12), accounts]);
+      });
 
   Widget _recentTile(BuildContext context, DashboardActivity item) {
     final color = switch (item.type) {
@@ -347,40 +584,54 @@ class _DashboardViewState extends State<_DashboardView>
       DashboardActivityType.expense => SomiaColors.red,
       DashboardActivityType.transfer => SomiaColors.blue,
     };
-    return ListTile(contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(backgroundColor: color.withValues(alpha: 0.16),
-        child: Icon(switch (item.type) {
-          DashboardActivityType.income => Icons.arrow_upward,
-          DashboardActivityType.expense => Icons.shopping_cart_outlined,
-          DashboardActivityType.transfer => Icons.swap_horiz,
-        }, color: color, size: 20)),
-      title: Text(item.description, maxLines: 1,
-        overflow: TextOverflow.ellipsis),
-      subtitle: Text('${item.date.day.toString().padLeft(2, '0')}/'
-        '${item.date.month.toString().padLeft(2, '0')}/${item.date.year} · '
-        '${item.accountLabel}${item.isEffective ? '' : ' · Pendente'}',
-        maxLines: 1, overflow: TextOverflow.ellipsis),
-      trailing: Text('${item.type == DashboardActivityType.income ? '+' :
-        item.type == DashboardActivityType.expense ? '-' : ''}'
-        '${MoneyMinor.display(item.amountMinor, item.currencyCode)}',
-        style: TextStyle(color: color, fontWeight: FontWeight.w600)),
-      onTap: () => context.goNamed(item.type == DashboardActivityType.transfer
-        ? AppRoutes.transfers : item.type == DashboardActivityType.income
-        ? AppRoutes.income : AppRoutes.expenses));
+    return ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(
+            backgroundColor: color.withValues(alpha: 0.16),
+            child: Icon(
+                switch (item.type) {
+                  DashboardActivityType.income => Icons.arrow_upward,
+                  DashboardActivityType.expense => Icons.shopping_cart_outlined,
+                  DashboardActivityType.transfer => Icons.swap_horiz,
+                },
+                color: color,
+                size: 20)),
+        title: Text(item.description,
+            maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: Text(
+            '${item.date.day.toString().padLeft(2, '0')}/'
+            '${item.date.month.toString().padLeft(2, '0')}/${item.date.year} · '
+            '${item.accountLabel}${item.isEffective ? '' : ' · Pendente'}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis),
+        trailing: Text(
+            '${item.type == DashboardActivityType.income ? '+' : item.type == DashboardActivityType.expense ? '-' : ''}'
+            '${MoneyMinor.display(item.amountMinor, item.currencyCode)}',
+            style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+        onTap: () => context.goNamed(item.type == DashboardActivityType.transfer
+            ? AppRoutes.transfers
+            : item.type == DashboardActivityType.income
+                ? AppRoutes.income
+                : AppRoutes.expenses));
   }
 
   Widget _accountTile(BuildContext context, DashboardAccountBalance account) {
-    final color = _chartColors[account.name.codeUnits.fold<int>(0,
-      (value, code) => value + code) % _chartColors.length];
-    return ListTile(contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(backgroundColor: color.withValues(alpha: 0.22),
-        child: Text(account.name.isEmpty ? '?' : account.name[0].toUpperCase(),
-          style: TextStyle(color: color, fontWeight: FontWeight.w700))),
-      title: Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text(account.typeLabel),
-      trailing: Text(MoneyMinor.display(account.currentMinor,
-        account.currencyCode), style: const TextStyle(fontWeight: FontWeight.w600)),
-      onTap: () => context.goNamed(AppRoutes.accounts));
+    final color = _chartColors[
+        account.name.codeUnits.fold<int>(0, (value, code) => value + code) %
+            _chartColors.length];
+    return ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(
+            backgroundColor: color.withValues(alpha: 0.22),
+            child: Text(
+                account.name.isEmpty ? '?' : account.name[0].toUpperCase(),
+                style: TextStyle(color: color, fontWeight: FontWeight.w700))),
+        title: Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: Text(account.typeLabel),
+        trailing: Text(
+            MoneyMinor.display(account.currentMinor, account.currencyCode),
+            style: const TextStyle(fontWeight: FontWeight.w600)),
+        onTap: () => context.goNamed(AppRoutes.accounts));
   }
 }
 
@@ -389,10 +640,16 @@ class _LegendDot extends StatelessWidget {
   final String label;
   final Color color;
   @override
-  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min,
-    children: [CircleAvatar(radius: 5, backgroundColor: color),
-      const SizedBox(width: 7), Text(label, style: Theme.of(context)
-        .textTheme.bodySmall?.copyWith(color: SomiaColors.muted))]);
+  Widget build(BuildContext context) =>
+      Row(mainAxisSize: MainAxisSize.min, children: [
+        CircleAvatar(radius: 5, backgroundColor: color),
+        const SizedBox(width: 7),
+        Text(label,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: SomiaColors.muted))
+      ]);
 }
 
 class _DonutPainter extends CustomPainter {
@@ -401,21 +658,28 @@ class _DonutPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final total = categories.fold<int>(0, (sum, item) => sum + item.amountMinor);
+    final total =
+        categories.fold<int>(0, (sum, item) => sum + item.amountMinor);
     if (total <= 0) return;
     final rect = Rect.fromLTWH(13, 13, size.width - 26, size.height - 26);
     var start = -math.pi / 2;
     for (var i = 0; i < categories.length; i++) {
       final sweep = categories[i].amountMinor / total * math.pi * 2;
-      canvas.drawArc(rect, start, sweep, false, Paint()
-        ..color = _chartColors[i % _chartColors.length]
-        ..strokeCap = StrokeCap.butt
-        ..style = PaintingStyle.stroke ..strokeWidth = 23);
+      canvas.drawArc(
+          rect,
+          start,
+          sweep,
+          false,
+          Paint()
+            ..color = _chartColors[i % _chartColors.length]
+            ..strokeCap = StrokeCap.butt
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 23);
       start += sweep;
     }
   }
 
   @override
   bool shouldRepaint(covariant _DonutPainter oldDelegate) =>
-    oldDelegate.categories != categories;
+      oldDelegate.categories != categories;
 }

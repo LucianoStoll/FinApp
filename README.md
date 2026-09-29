@@ -59,7 +59,9 @@ Antes do fechamento do v0.1.0-alpha, as issues #30, #31 e #32 consolidam: três 
 
 ## Desenvolvimento
 
-Conventional Commits, branches padronizadas, PRs com checklist e Semantic Versioning. CI inicial: formatação + flutter analyze. Testes automatizados serão ampliados após o MVP.
+Veja [como contribuir](CONTRIBUTING.md) e as [guidelines de desenvolvimento](docs/guidelines-desenvolvimento.md).
+
+O CI verifica formatação Dart, análise estática e testes, compila Windows e gera APKs Android assinados fora de PRs. O fluxo usa Conventional Commits, branch da versão, template de PR e Semantic Versioning.
 
 ## Status
 

@@ -4,7 +4,8 @@ import '../domain/account.dart';
 import '../domain/accounts_repository.dart';
 
 class AccountsState {
-  const AccountsState({this.accounts = const [], this.loading = false, this.error});
+  const AccountsState(
+      {this.accounts = const [], this.loading = false, this.error});
 
   final List<Account> accounts;
   final bool loading;
@@ -23,7 +24,9 @@ class AccountsCubit extends Cubit<AccountsState> {
     try {
       emit(AccountsState(accounts: await _repository.list()));
     } catch (_) {
-      emit(AccountsState(accounts: state.accounts, error: 'Não foi possível carregar as contas.'));
+      emit(AccountsState(
+          accounts: state.accounts,
+          error: 'Não foi possível carregar as contas.'));
     }
   }
 

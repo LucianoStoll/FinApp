@@ -39,8 +39,13 @@ class AppDatabase extends GeneratedDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (_) async {
-          for (final statement in [...schemaV1, ...schemaV2, ...schemaV3,
-            ...schemaV4, ...schemaV5]) {
+          for (final statement in [
+            ...schemaV1,
+            ...schemaV2,
+            ...schemaV3,
+            ...schemaV4,
+            ...schemaV5
+          ]) {
             await customStatement(statement);
           }
         },
@@ -61,9 +66,11 @@ class AppDatabase extends GeneratedDatabase {
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
           if (details.wasCreated || details.hadUpgrade) {
-            final violations = await customSelect('PRAGMA foreign_key_check').get();
+            final violations =
+                await customSelect('PRAGMA foreign_key_check').get();
             if (violations.isNotEmpty) {
-              throw StateError('Integridade referencial inválida após migration');
+              throw StateError(
+                  'Integridade referencial inválida após migration');
             }
           }
         },

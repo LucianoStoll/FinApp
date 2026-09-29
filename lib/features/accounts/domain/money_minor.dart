@@ -3,12 +3,12 @@ abstract final class MoneyMinor {
   static int parse(String input) {
     final value = input.trim();
     if (!RegExp(r'^-?\d+(?:[,.]\d{1,2})?$').hasMatch(value)) {
-      throw const FormatException('Informe um valor com até duas casas decimais.');
+      throw const FormatException(
+          'Informe um valor com até duas casas decimais.');
     }
     final negative = value.startsWith('-');
-    final parts = (negative ? value.substring(1) : value)
-        .replaceAll(',', '.')
-        .split('.');
+    final parts =
+        (negative ? value.substring(1) : value).replaceAll(',', '.').split('.');
     final whole = int.parse(parts[0]);
     final cents = parts.length == 1 ? 0 : int.parse(parts[1].padRight(2, '0'));
     if (whole > 90000000000000) {

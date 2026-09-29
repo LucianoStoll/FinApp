@@ -30,8 +30,11 @@ class _LegacyV1 extends GeneratedDatabase {
 
 void main() {
   const draft = AccountDraft(
-    name: 'Carteira', type: AccountType.cash, currencyCode: 'BRL',
-    initialBalanceMinor: 12345, includeInAnalytics: true,
+    name: 'Carteira',
+    type: AccountType.cash,
+    currencyCode: 'BRL',
+    initialBalanceMinor: 12345,
+    includeInAnalytics: true,
   );
 
   test('converte dinheiro sem ponto flutuante', () {
@@ -41,7 +44,8 @@ void main() {
     expect(() => MoneyMinor.parse('1,234'), throwsFormatException);
   });
 
-  test('CRUD offline, saldo efetivo, arquivamento e bloqueio no banco', () async {
+  test('CRUD offline, saldo efetivo, arquivamento e bloqueio no banco',
+      () async {
     final directory = await Directory.systemTemp.createTemp('finapp-accounts-');
     addTearDown(() => directory.delete(recursive: true));
     final file = File('${directory.path}/finapp.sqlite');
@@ -51,10 +55,15 @@ void main() {
     expect(account.currentBalanceMinor, 12345);
     expect(account.type, AccountType.cash);
 
-    final updated = await repo.update(account.id, const AccountDraft(
-      name: 'Dinheiro', type: AccountType.cash, currencyCode: 'BRL',
-      initialBalanceMinor: 15000, includeInAnalytics: false,
-    ));
+    final updated = await repo.update(
+        account.id,
+        const AccountDraft(
+          name: 'Dinheiro',
+          type: AccountType.cash,
+          currencyCode: 'BRL',
+          initialBalanceMinor: 15000,
+          includeInAnalytics: false,
+        ));
     expect(updated.name, 'Dinheiro');
     expect(updated.includeInAnalytics, false);
 
@@ -62,15 +71,23 @@ void main() {
     await db.customStatement('''INSERT INTO transactions
       (id, description, type, planned_amount_minor, actual_amount_minor,
        competence_at, effective_at, account_id, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-      ['expense-1', 'Pago', 'expense', 3000, 2500, now, now,
-        account.id, now, now]);
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', [
+      'expense-1',
+      'Pago',
+      'expense',
+      3000,
+      2500,
+      now,
+      now,
+      account.id,
+      now,
+      now
+    ]);
     await db.customStatement('''INSERT INTO transactions
       (id, description, type, planned_amount_minor, competence_at,
        account_id, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-      ['pending-1', 'Pendente', 'expense', 9000, now,
-        account.id, now, now]);
+        ['pending-1', 'Pendente', 'expense', 9000, now, account.id, now, now]);
     expect((await repo.list()).single.currentBalanceMinor, 12500);
 
     await repo.setArchived(account.id, archived: true);
@@ -80,7 +97,7 @@ void main() {
         (id, description, type, planned_amount_minor, competence_at,
          account_id, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-        ['blocked', 'Não pode', 'expense', 100, now, account.id, now, now]),
+          ['blocked', 'Não pode', 'expense', 100, now, account.id, now, now]),
       throwsA(isA<Exception>()),
     );
     await db.close();
@@ -94,14 +111,15 @@ void main() {
   });
 
   test('migra v1 para v5 sem perder contas existentes', () async {
-    final directory = await Directory.systemTemp.createTemp('finapp-migration-');
+    final directory =
+        await Directory.systemTemp.createTemp('finapp-migration-');
     addTearDown(() => directory.delete(recursive: true));
     final file = File('${directory.path}/finapp.sqlite');
     final old = _LegacyV1(NativeDatabase(file));
     await old.customStatement('''INSERT INTO accounts
       (id, name, type, currency_code, initial_balance_minor,
        created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)''',
-      ['legacy', 'Legada', 'cash', 'BRL', 730, 1, 1]);
+        ['legacy', 'Legada', 'cash', 'BRL', 730, 1, 1]);
     await old.close();
 
     final db = AppDatabase(NativeDatabase(file));

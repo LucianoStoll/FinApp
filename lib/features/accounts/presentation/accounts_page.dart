@@ -50,7 +50,8 @@ class _AccountsView extends StatelessWidget {
   }
 
   void _message(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -102,17 +103,21 @@ class _AccountsView extends StatelessWidget {
               itemCount: state.accounts.length + 1,
               itemBuilder: (context, index) {
                 if (index == 0) {
-                  return Column(crossAxisAlignment: CrossAxisAlignment.start,
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Padding(padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-                        child: Text('Saldos consolidados',
-                          style: Theme.of(context).textTheme.titleMedium)),
+                      Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+                          child: Text('Saldos consolidados',
+                              style: Theme.of(context).textTheme.titleMedium)),
                       for (final currency in currencies)
-                        Card(child: ListTile(
+                        Card(
+                            child: ListTile(
                           title: Text(currency),
-                          subtitle: Text('Atual: ${MoneyMinor.display(totals[currency]!.$1, currency)}'
-                            '\nProjetado (todas as pendências): '
-                            '${MoneyMinor.display(totals[currency]!.$2, currency)}'),
+                          subtitle: Text(
+                              'Atual: ${MoneyMinor.display(totals[currency]!.$1, currency)}'
+                              '\nProjetado (todas as pendências): '
+                              '${MoneyMinor.display(totals[currency]!.$2, currency)}'),
                           isThreeLine: true,
                         )),
                       const SizedBox(height: 8),
@@ -122,46 +127,57 @@ class _AccountsView extends StatelessWidget {
                 final account = state.accounts[index - 1];
                 return Card(
                   child: ListTile(
-                    title: Text(account.name, maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
+                    title: Text(account.name,
+                        maxLines: 2, overflow: TextOverflow.ellipsis),
                     subtitle: Text(
                       '${account.type.label} · ${account.currencyCode}'
                       '${account.isArchived ? ' · Arquivada' : ''}'
                       '${account.includeInAnalytics ? '' : ' · Fora das análises'}'
                       '\nProjetado: ${MoneyMinor.display(account.projectedBalanceMinor, account.currencyCode)}',
                     ),
-                    trailing: Column(mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      Text(MoneyMinor.display(account.currentBalanceMinor,
-                        account.currencyCode), style: const TextStyle(
-                          fontWeight: FontWeight.w600)),
-                      SizedBox(height: 32, child: PopupMenuButton<String>(
-                      tooltip: 'Ações da conta',
-                      icon: const Icon(Icons.more_horiz, size: 20),
-                      padding: EdgeInsets.zero,
-                      onSelected: (action) {
-                        if (action == 'edit') {
-                          _edit(context, account);
-                        } else {
-                          _archive(context, account);
-                        }
-                      },
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(value: 'edit', child: Text('Editar')),
-                        PopupMenuItem(
-                          value: 'archive',
-                          child: Text(account.isArchived ? 'Reativar' : 'Arquivar'),
-                        ),
-                      ],
-                    )),
-                    ]),
+                    trailing: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                              MoneyMinor.display(account.currentBalanceMinor,
+                                  account.currencyCode),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600)),
+                          SizedBox(
+                              height: 32,
+                              child: PopupMenuButton<String>(
+                                tooltip: 'Ações da conta',
+                                icon: const Icon(Icons.more_horiz, size: 20),
+                                padding: EdgeInsets.zero,
+                                onSelected: (action) {
+                                  if (action == 'edit') {
+                                    _edit(context, account);
+                                  } else {
+                                    _archive(context, account);
+                                  }
+                                },
+                                itemBuilder: (_) => [
+                                  const PopupMenuItem(
+                                      value: 'edit', child: Text('Editar')),
+                                  PopupMenuItem(
+                                    value: 'archive',
+                                    child: Text(account.isArchived
+                                        ? 'Reativar'
+                                        : 'Arquivar'),
+                                  ),
+                                ],
+                              )),
+                        ]),
                     isThreeLine: true,
                     leading: CircleAvatar(
-                      backgroundColor: SomiaColors.blue.withValues(alpha: 0.17),
-                      child: Icon(account.type == AccountType.cash
-                        ? Icons.account_balance_wallet_outlined
-                        : Icons.account_balance_outlined,
-                        color: SomiaColors.blue)),
+                        backgroundColor:
+                            SomiaColors.blue.withValues(alpha: 0.17),
+                        child: Icon(
+                            account.type == AccountType.cash
+                                ? Icons.account_balance_wallet_outlined
+                                : Icons.account_balance_outlined,
+                            color: SomiaColors.blue)),
                     dense: false,
                     onTap: () => _edit(context, account),
                   ),
@@ -239,7 +255,8 @@ class _AccountDialogState extends State<_AccountDialog> {
                     controller: _name,
                     decoration: const InputDecoration(labelText: 'Nome'),
                     validator: (value) => value == null || value.trim().isEmpty
-                        ? 'Informe o nome.' : null,
+                        ? 'Informe o nome.'
+                        : null,
                   ),
                   DropdownButtonFormField<AccountType>(
                     isExpanded: true,
@@ -258,17 +275,21 @@ class _AccountDialogState extends State<_AccountDialog> {
                   TextFormField(
                     controller: _currency,
                     textCapitalization: TextCapitalization.characters,
-                    decoration: const InputDecoration(labelText: 'Moeda (ISO 4217)'),
-                    validator: (value) => RegExp(r'^[A-Za-z]{3}$')
-                            .hasMatch(value?.trim() ?? '')
-                        ? null : 'Use três letras, como BRL.',
+                    decoration:
+                        const InputDecoration(labelText: 'Moeda (ISO 4217)'),
+                    validator: (value) =>
+                        RegExp(r'^[A-Za-z]{3}$').hasMatch(value?.trim() ?? '')
+                            ? null
+                            : 'Use três letras, como BRL.',
                   ),
                   TextFormField(
                     controller: _initialBalance,
                     keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true, signed: true,
+                      decimal: true,
+                      signed: true,
                     ),
-                    decoration: const InputDecoration(labelText: 'Saldo inicial'),
+                    decoration:
+                        const InputDecoration(labelText: 'Saldo inicial'),
                     validator: (value) {
                       try {
                         MoneyMinor.parse(value ?? '');
@@ -281,7 +302,8 @@ class _AccountDialogState extends State<_AccountDialog> {
                   SwitchListTile(
                     title: const Text('Incluir em análises'),
                     value: _includeInAnalytics,
-                    onChanged: (value) => setState(() => _includeInAnalytics = value),
+                    onChanged: (value) =>
+                        setState(() => _includeInAnalytics = value),
                   ),
                 ],
               ),
@@ -289,7 +311,9 @@ class _AccountDialogState extends State<_AccountDialog> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar')),
           FilledButton(onPressed: _submit, child: const Text('Salvar')),
         ],
       );

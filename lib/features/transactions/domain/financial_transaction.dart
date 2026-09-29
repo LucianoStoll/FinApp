@@ -7,6 +7,7 @@ enum TransactionType {
 }
 
 enum TransactionStatus { all, effective, pending }
+
 enum TransactionDateField { posted, due, effective }
 
 class FinancialTransaction {
@@ -30,6 +31,7 @@ class FinancialTransaction {
   final String description;
   final TransactionType type;
   final int amountMinor;
+
   /// Data de lançamento, independente de `created_at`.
   final DateTime date;
   final DateTime? dueDate;
@@ -67,9 +69,14 @@ class TransactionDraft {
 }
 
 class TransactionFilter {
-  const TransactionFilter({this.type, this.accountId, this.categoryId,
-    this.status = TransactionStatus.all, this.from, this.to,
-    this.dateField = TransactionDateField.due});
+  const TransactionFilter(
+      {this.type,
+      this.accountId,
+      this.categoryId,
+      this.status = TransactionStatus.all,
+      this.from,
+      this.to,
+      this.dateField = TransactionDateField.due});
 
   final TransactionType? type;
   final String? accountId;

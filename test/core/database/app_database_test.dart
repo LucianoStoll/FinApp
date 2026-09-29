@@ -12,9 +12,11 @@ void main() {
     final version = await db.customSelect('PRAGMA user_version').getSingle();
     expect(version.read<int>('user_version'), 5);
 
-    final tables = await db.customSelect(
-      "SELECT name FROM sqlite_master WHERE type = 'table'",
-    ).get();
+    final tables = await db
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'table'",
+        )
+        .get();
     expect(
       tables.map((row) => row.read<String>('name')),
       containsAll(['accounts', 'categories', 'transactions', 'transfers']),
@@ -41,8 +43,16 @@ void main() {
            (id, description, type, planned_amount_minor, competence_at,
             account_id, created_at, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-        [EntityMetadata.newId(), 'Teste', 'expense', 100, now,
-          EntityMetadata.newId(), now, now],
+        [
+          EntityMetadata.newId(),
+          'Teste',
+          'expense',
+          100,
+          now,
+          EntityMetadata.newId(),
+          now,
+          now
+        ],
       ),
       throwsA(isA<Exception>()),
     );

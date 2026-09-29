@@ -17,12 +17,15 @@ abstract final class SomiaColors {
 abstract final class AppTheme {
   static ThemeData get dark {
     final scheme = ColorScheme.fromSeed(
-      seedColor: SomiaColors.blue, brightness: Brightness.dark,
-      surface: SomiaColors.surface).copyWith(
-        primary: SomiaColors.blue, onPrimary: SomiaColors.sidebar,
-        onSurface: const Color(0xFFF3F6FA),
-        outline: SomiaColors.outline,
-      );
+            seedColor: SomiaColors.blue,
+            brightness: Brightness.dark,
+            surface: SomiaColors.surface)
+        .copyWith(
+      primary: SomiaColors.blue,
+      onPrimary: SomiaColors.sidebar,
+      onSurface: const Color(0xFFF3F6FA),
+      outline: SomiaColors.outline,
+    );
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
@@ -30,20 +33,30 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: SomiaColors.background,
       canvasColor: SomiaColors.background,
       dividerColor: SomiaColors.outline,
-      appBarTheme: const AppBarTheme(backgroundColor: SomiaColors.background,
-        centerTitle: false, elevation: 0),
-      cardTheme: CardThemeData(color: SomiaColors.surface, elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: SomiaColors.outline, width: 0.7))),
+      appBarTheme: const AppBarTheme(
+          backgroundColor: SomiaColors.background,
+          centerTitle: false,
+          elevation: 0),
+      cardTheme: CardThemeData(
+          color: SomiaColors.surface,
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: SomiaColors.outline, width: 0.7))),
       inputDecorationTheme: InputDecorationTheme(
-        filled: true, fillColor: SomiaColors.surfaceHigh,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: SomiaColors.outline))),
-      popupMenuTheme: PopupMenuThemeData(color: SomiaColors.surfaceHigh,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-      listTileTheme: const ListTileThemeData(iconColor: SomiaColors.muted,
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 2)),
+          filled: true,
+          fillColor: SomiaColors.surfaceHigh,
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: SomiaColors.outline))),
+      popupMenuTheme: PopupMenuThemeData(
+          color: SomiaColors.surfaceHigh,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+      listTileTheme: const ListTileThemeData(
+          iconColor: SomiaColors.muted,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 2)),
     );
   }
 }
