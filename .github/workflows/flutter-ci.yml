@@ -27,43 +27,7 @@ jobs:
         run: flutter analyze
       - name: Tests
         run: flutter test
-      - name: Prepare persistent signing key
-        id: signing
-        env:
-          SOMIA_KEYSTORE_B64: ${{ secrets.SOMIA_KEYSTORE_B64 }}
-          SOMIA_KEYSTORE_PASSWORD: ${{ secrets.SOMIA_KEYSTORE_PASSWORD }}
-        run: |
-          if [[ -n "$SOMIA_KEYSTORE_B64" && -n "$SOMIA_KEYSTORE_PASSWORD" ]]; then
-            printf '%s' "$SOMIA_KEYSTORE_B64" | base64 --decode > android/app/upload-keystore.jks
-            printf 'storeFile=upload-keystore.jks\nstorePassword=%s\nkeyPassword=%s\nkeyAlias=somia\n' \
-              "$SOMIA_KEYSTORE_PASSWORD" "$SOMIA_KEYSTORE_PASSWORD" > android/key.properties
-            chmod 600 android/key.properties android/app/upload-keystore.jks
-            echo 'available=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'available=false' >> "$GITHUB_OUTPUT"
-          fi
-      - name: Build signed release APK
-        if: steps.signing.outputs.available == 'true'
-        run: flutter build apk --release --build-name 0.1.0-alpha --build-number ${{ github.run_number }}
-      - name: Publish updateable APK
-        if: steps.signing.outputs.available == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: somia-signed-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-          retention-days: 30
-      - name: Build temporary debug APK until signing is configured
-        if: steps.signing.outputs.available != 'true'
-        run: flutter build apk --debug --build-name 0.1.0-alpha --build-number ${{ github.run_number }}
-      - name: Publish temporary debug APK
-        if: steps.signing.outputs.available != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: somia-debug-not-updateable
-          path: build/app/outputs/flutter-apk/app-debug.apk
-          if-no-files-found: error
-          retention-days: 30
+      # APK pausado na #31 até a chave persistente ser criada e validada.
 
   windows-build:
     runs-on: windows-latest
