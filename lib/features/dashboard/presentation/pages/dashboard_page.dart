@@ -107,16 +107,23 @@ class _DashboardViewState extends State<_DashboardView>
           Text('Resumo do mês', style: Theme.of(context).textTheme.headlineMedium
             ?.copyWith(fontWeight: FontWeight.w700)),
         ]),
-        Container(decoration: BoxDecoration(color: SomiaColors.surface,
+        Container(constraints: BoxConstraints(maxWidth:
+          MediaQuery.sizeOf(context).width < 600
+            ? MediaQuery.sizeOf(context).width - 32 : 340),
+          decoration: BoxDecoration(color: SomiaColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: SomiaColors.outline)),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             IconButton(tooltip: 'Mês anterior', icon: const Icon(Icons.chevron_left),
               onPressed: () => context.read<DashboardCubit>().moveMonth(-1)),
-            const Icon(Icons.calendar_month_outlined, size: 18,
-              color: SomiaColors.blue),
-            const SizedBox(width: 8),
-            Text('${_months[state.month.month - 1]} ${state.month.year}'),
+            if (MediaQuery.textScalerOf(context).scale(16) < 24) ...[
+              const Icon(Icons.calendar_month_outlined, size: 18,
+                color: SomiaColors.blue),
+              const SizedBox(width: 8),
+            ],
+            Flexible(child: Text('${_months[state.month.month - 1]} '
+              '${state.month.year}', maxLines: 1,
+              overflow: TextOverflow.ellipsis)),
             IconButton(tooltip: 'Próximo mês', icon: const Icon(Icons.chevron_right),
               onPressed: () => context.read<DashboardCubit>().moveMonth(1)),
           ])),
@@ -210,9 +217,18 @@ class _DashboardViewState extends State<_DashboardView>
       {Widget? action}) => Card(child: Padding(
     padding: const EdgeInsets.all(18),
     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Row(children: [Expanded(child: Text(title, style: Theme.of(context)
-        .textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))),
-        if (action != null) action]),
+      LayoutBuilder(builder: (context, box) {
+        final heading = Text(title, style: Theme.of(context).textTheme
+          .titleMedium?.copyWith(fontWeight: FontWeight.w600));
+        if (action == null) return heading;
+        if (box.maxWidth < 400 ||
+            MediaQuery.textScalerOf(context).scale(16) >= 24) {
+          return Column(crossAxisAlignment: CrossAxisAlignment.start,
+            children: [heading, Align(alignment: Alignment.centerRight,
+              child: action)]);
+        }
+        return Row(children: [Expanded(child: heading), action]);
+      }),
       const SizedBox(height: 16),
       content,
     ])));

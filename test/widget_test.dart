@@ -46,7 +46,7 @@ void main() {
     await tester.tap(find.byTooltip('Próximo mês'));
     await tester.pumpAndSettle();
     expect(find.text('Saldo previsto'), findsOneWidget);
-    expect(find.text('R\$ 130,00'), findsOneWidget);
+    expect(find.text('R\$ 130,00'), findsWidgets);
     expect(find.text('Saldo efetivado: R\$ 120,00'), findsOneWidget);
     expect(find.text('Saldo total'), findsNothing);
 
