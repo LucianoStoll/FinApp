@@ -8,9 +8,11 @@ O primeiro MVP (v0.1.0-alpha) é enxuto: contas, categorias/subcategorias, recei
 
 ## Núcleo financeiro
 
-Transações suportarão progressivamente descrição, valor previsto/realizado, recorrência, competência, vencimento, efetivação, conta, categoria/subcategoria e flags independentes para ignorar em saldo e em análises. Estados principais: Pendente, Efetivada e Atrasada (preferencialmente derivada).
+No MVP, receitas, despesas e transferências passam a possuir explicitamente **data de lançamento, data de vencimento e data de efetivação**. A data de lançamento é uma data financeira do movimento e não deve ser confundida com `created_at`, que continua sendo metadado técnico. Conceitos adicionais de competência podem evoluir depois sem substituir essas três datas operacionais.
 
-Saldo atual considera efetivações; saldo projetado incorpora pendências/futuros. Previsto e realizado são preservados e comparáveis.
+Estados principais: Pendente, Efetivada e Atrasada (preferencialmente derivada). O **saldo atual/realizado usa a data de efetivação** como referência temporal; pendências e movimentos futuros entram no **saldo projetado conforme o vencimento**. Previsto e realizado são preservados e comparáveis.
+
+Ao efetivar antecipadamente um movimento cujo vencimento esteja no futuro, a interface deve perguntar se o usuário quer **Contabilizar hoje** ou **Contabilizar no vencimento**. A escolha define a data de efetivação. Se essa data for futura, o movimento não entra no saldo realizado antes dela.
 
 Obrigações podem ter liquidações parciais com juros, multa, desconto e acréscimos. A mesma abstração atende contas a pagar/receber e antecipações de fatura.
 
@@ -88,7 +90,11 @@ Ações rápidas, autocompletar e modelos inteligentes reutilizam histórico e c
 
 ## UX
 
-UI adaptativa Android/Windows. Tema claro/escuro/sistema. Acessibilidade básica: leitor de tela, contraste e texto escalável. Sem localização em lançamentos.
+UI adaptativa Android/Windows. No MVP, o Somia usa **tema escuro**; tema claro e opção de seguir o sistema ficam para evolução posterior, já com direção visual aprovada.
+
+No mobile, a navegação principal usa **drawer/menu lateral**, sem barra inferior. O menu expõe Dashboard/Resumo, Receitas, Despesas, Transferências, Contas, Categorias e Configurações. **Receitas e Despesas são áreas independentes**. Em telas largas do Windows, a mesma arquitetura de informação pode ser apresentada como sidebar/NavigationRail persistente.
+
+Acessibilidade básica: leitor de tela, contraste e texto escalável. Sem localização em lançamentos.
 
 Onboarding contínuo e Ajuda contextual com tooltips, busca, guias e futuro assistente baseado na documentação. Windows terá atalhos configuráveis.
 
@@ -114,6 +120,8 @@ Conflitos usam Last Write Wins com histórico. Anexos: Automático/Somente Wi-Fi
 
 Flutter/Dart, Drift/SQLite, UUID, BLoC/Cubit, go_router, get_it, arquitetura por feature com data/domain/presentation + core, migrations com backup/validação/rollback, tratamento central de erros e cache/agregações para desempenho.
 
-CI inicial: formatação + flutter analyze. MVP começa com testes manuais; testes automatizados dos fluxos críticos entram depois.
+CI inicial: formatação + flutter analyze. Para os APKs de teste do MVP, o Android deve manter `applicationId` fixo, assinatura persistente e `versionCode` crescente, permitindo atualizar o app sem desinstalação. Migrations Drift/SQLite devem ser aditivas/não destrutivas e preservar os dados locais entre versões. Um mecanismo simples de exportação/importação de backup pode ser usado como proteção adicional durante os testes.
+
+MVP começa com testes manuais; testes automatizados dos fluxos críticos entram depois.
 
 Git: Conventional Commits, branches padronizadas, PR checklist, vínculo com issues. Releases seguem Semantic Versioning com alpha/beta, tags e changelog. Licença será decidida próximo da publicação.
