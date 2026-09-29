@@ -22,8 +22,9 @@ void main() {
     await tester.pumpWidget(const FinApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Seu resumo'), findsOneWidget);
-    expect(find.text('R\$ 120,00'), findsOneWidget);
-    expect(find.text('Receitas do mês'), findsOneWidget);
+    expect(find.text('Somia'), findsOneWidget);
+    expect(find.text('Resultado do mês'), findsOneWidget);
+    expect(find.text('R\$ 20,00'), findsOneWidget);
+    expect(find.text('Receitas'), findsOneWidget);
   });
 }
