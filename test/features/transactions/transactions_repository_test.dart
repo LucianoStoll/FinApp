@@ -12,6 +12,37 @@ import 'package:finapp/features/transactions/domain/financial_transaction.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('efetivar na lista atualiza saldo e permite desfazer sem editar campos', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final accounts = SqliteAccountsRepository(db);
+    final account = await accounts.create(const AccountDraft(
+      name: 'Carteira', type: AccountType.cash, currencyCode: 'BRL',
+      initialBalanceMinor: 5000, includeInAnalytics: true));
+    final categories = SqliteCategoriesRepository(db);
+    final category = await categories.create(const CategoryDraft(
+      name: 'Mercado', type: CategoryType.expense));
+    final repo = SqliteTransactionsRepository(db);
+    final date = DateTime.utc(2026, 9, 28);
+    final pending = await repo.create(TransactionDraft(description: 'Compra',
+      type: TransactionType.expense, amountMinor: 1200, date: date,
+      isEffective: false, accountId: account.id, categoryId: category.id));
+    await categories.setArchived(category.id, archived: true);
+    await accounts.setArchived(account.id, archived: true);
+    await repo.setEffective(pending.id, effective: true);
+    final effective = (await repo.list()).single;
+    expect(effective.isEffective, isTrue);
+    expect(effective.date, date);
+    expect(effective.categoryId, category.id);
+    expect(effective.amountMinor, 1200);
+    expect((await accounts.list()).single.currentBalanceMinor, 3800);
+    await expectLater(repo.setEffective(pending.id, effective: true),
+      throwsA(isA<StateError>()));
+    await repo.setEffective(pending.id, effective: false);
+    expect((await accounts.list()).single.currentBalanceMinor, 5000);
+    expect((await repo.list()).single.isEffective, isFalse);
+  });
+
   test('receita/despesa, pendência, edição, filtros e exclusão lógica', () async {
     final directory = await Directory.systemTemp.createTemp('finapp-transactions-');
     addTearDown(() => directory.delete(recursive: true));
