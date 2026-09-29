@@ -17,24 +17,27 @@ String _dateLabel(DateTime date) =>
     '${date.month.toString().padLeft(2, '0')}/${date.year}';
 
 class TransactionsPage extends StatelessWidget {
-  const TransactionsPage({super.key});
+  const TransactionsPage({super.key, this.initialCreateType});
+  final String? initialCreateType;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
         create: (_) => TransactionsCubit(getIt<TransactionsRepository>(),
           getIt<AccountsRepository>(), getIt<CategoriesRepository>()),
-        child: const _TransactionsView(),
+        child: _TransactionsView(initialCreateType: initialCreateType),
       );
 }
 
 class _TransactionsView extends StatefulWidget {
-  const _TransactionsView();
+  const _TransactionsView({this.initialCreateType});
+  final String? initialCreateType;
 
   @override
   State<_TransactionsView> createState() => _TransactionsViewState();
 }
 
 class _TransactionsViewState extends State<_TransactionsView> {
+  bool _openedInitial = false;
   TransactionType? _type;
   String? _accountId;
   String? _categoryId;
@@ -67,6 +70,8 @@ class _TransactionsViewState extends State<_TransactionsView> {
     final draft = await showDialog<TransactionDraft>(
       context: context,
       builder: (_) => _TransactionDialog(item: item,
+        initialType: widget.initialCreateType == 'income'
+          ? TransactionType.income : TransactionType.expense,
         accounts: state.accounts, categories: state.categories),
     );
     if (draft == null || !mounted) return;
@@ -119,7 +124,17 @@ class _TransactionsViewState extends State<_TransactionsView> {
           onPressed: _edit, icon: const Icon(Icons.add),
           label: const Text('Novo lançamento'),
         ),
-        body: BlocBuilder<TransactionsCubit, TransactionsState>(
+        body: BlocConsumer<TransactionsCubit, TransactionsState>(
+          listener: (context, state) {
+            if (!_openedInitial && !state.loading && state.error == null &&
+                (widget.initialCreateType == 'income' ||
+                 widget.initialCreateType == 'expense')) {
+              _openedInitial = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) _edit();
+              });
+            }
+          },
           builder: (context, state) {
             if (state.loading && state.accounts.isEmpty && state.items.isEmpty) {
               return const Center(child: CircularProgressIndicator());
@@ -234,8 +249,9 @@ class _TransactionsViewState extends State<_TransactionsView> {
 
 class _TransactionDialog extends StatefulWidget {
   const _TransactionDialog({required this.accounts, required this.categories,
-    this.item});
+    this.item, this.initialType = TransactionType.expense});
   final FinancialTransaction? item;
+  final TransactionType initialType;
   final List<Account> accounts;
   final List<FinanceCategory> categories;
 
@@ -260,7 +276,7 @@ class _TransactionDialogState extends State<_TransactionDialog> {
     final item = widget.item;
     _description = TextEditingController(text: item?.description ?? '');
     _amount = TextEditingController(text: MoneyMinor.plain(item?.amountMinor ?? 0));
-    _type = item?.type ?? TransactionType.expense;
+    _type = item?.type ?? widget.initialType;
     _date = item?.date ?? DateTime.now();
     _isEffective = item?.isEffective ?? true;
     _accountId = item?.accountId ?? _availableAccounts.firstOrNull?.id;
