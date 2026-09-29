@@ -39,6 +39,7 @@ class _TransactionsView extends StatefulWidget {
 
 class _TransactionsViewState extends State<_TransactionsView> {
   bool _openedInitial = false;
+  final Set<String> _changingStatus = {};
   TransactionType? _type;
   String? _accountId;
   String? _categoryId;
@@ -110,6 +111,31 @@ class _TransactionsViewState extends State<_TransactionsView> {
       await context.read<TransactionsCubit>().delete(item.id);
     } catch (error) {
       if (mounted) _showError(error);
+    }
+  }
+
+  Future<void> _setEffective(FinancialTransaction item, bool effective) async {
+    if (_changingStatus.contains(item.id)) return;
+    setState(() => _changingStatus.add(item.id));
+    final cubit = context.read<TransactionsCubit>();
+    try {
+      await cubit.setEffective(item.id, effective: effective);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(effective ? 'Lançamento efetivado.' : 'Lançamento voltou a pendente.'),
+        action: SnackBarAction(label: 'Desfazer', onPressed: () async {
+          try {
+            await cubit.setEffective(item.id, effective: !effective);
+          } catch (error) {
+            if (mounted) _showError(error);
+          }
+        }),
+      ));
+    } catch (error) {
+      if (mounted) _showError(error);
+    } finally {
+      if (mounted) setState(() => _changingStatus.remove(item.id));
     }
   }
 
@@ -233,21 +259,35 @@ class _TransactionsViewState extends State<_TransactionsView> {
           leading: Icon(item.type == TransactionType.income
               ? Icons.arrow_downward : Icons.arrow_upward),
           title: Text(item.description),
-          subtitle: Text('${_dateLabel(item.date)} · ${item.accountName}'
+          subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('${_dateLabel(item.date)} · ${item.accountName}'
               '${item.categoryName == null ? '' : ' · ${item.categoryName}'}'
               '${item.isEffective ? '' : ' · Pendente'}'),
-          trailing: Row(mainAxisSize: MainAxisSize.min, children: [
             Text('${item.type == TransactionType.income ? '+' : '-'}'
               '${MoneyMinor.display(item.amountMinor, item.currencyCode)}'),
-            PopupMenuButton<String>(
-              tooltip: 'Ações do lançamento',
-              onSelected: (action) => action == 'edit' ? _edit(item) : _delete(item),
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Text('Editar')),
-                PopupMenuItem(value: 'delete', child: Text('Excluir')),
-              ],
-            ),
+            if (!item.isEffective)
+              TextButton.icon(
+                onPressed: _changingStatus.contains(item.id)
+                  ? null : () => _setEffective(item, true),
+                icon: const Icon(Icons.check_circle_outline),
+                label: const Text('Efetivar'),
+              ),
           ]),
+          trailing: PopupMenuButton<String>(
+            tooltip: 'Ações do lançamento',
+            onSelected: (action) {
+              if (action == 'edit') _edit(item);
+              if (action == 'delete') _delete(item);
+              if (action == 'pending') _setEffective(item, false);
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'edit', child: Text('Editar')),
+              if (item.isEffective)
+                const PopupMenuItem(value: 'pending',
+                  child: Text('Marcar como pendente')),
+              const PopupMenuItem(value: 'delete', child: Text('Excluir')),
+            ],
+          ),
           onTap: () => _edit(item),
         ),
       );
