@@ -137,6 +137,24 @@ class SqliteTransactionsRepository implements TransactionsRepository {
     ''', [now, now, id]);
   }
 
+  @override
+  Future<void> setEffective(String id, {required bool effective}) async {
+    // Mantém a data de competência, o valor e os vínculos do lançamento.
+    // O corte por competência continua coerente com a edição pelo formulário.
+    final changed = await _db.customUpdate('''
+      UPDATE transactions
+      SET effective_at = ${effective ? 'competence_at' : 'NULL'},
+        actual_amount_minor = ${effective ? 'planned_amount_minor' : 'NULL'},
+        updated_at = ?, sync_version = sync_version + 1
+      WHERE id = ? AND deleted_at IS NULL
+        AND effective_at IS ${effective ? 'NULL' : 'NOT NULL'}
+    ''', variables: [Variable.withInt(EntityMetadata.nowUtcMillis()),
+      Variable.withString(id)]);
+    if (changed != 1) {
+      throw StateError('O lançamento já mudou de estado. Atualize a lista.');
+    }
+  }
+
   Future<FinancialTransaction> _find(String id) async {
     final rows = await _db.customSelect('''
       $_select WHERE t.id = ? AND t.deleted_at IS NULL
