@@ -41,11 +41,18 @@ class _TransfersViewState extends State<_TransfersView> {
     final cubit = context.read<TransfersCubit>();
     final draft = await showDialog<TransferDraft>(context: context,
       builder: (_) => _TransferDialog(item: item, accounts: cubit.state.accounts));
-    if (draft == null || !context.mounted) return;
+    if (!context.mounted) return;
+    if (draft == null) {
+      if (item == null && widget.startCreate) context.go('/transfers');
+      return;
+    }
     try {
       await cubit.save(draft, id: item?.id);
     } catch (error) {
       if (context.mounted) _showError(context, error);
+    }
+    if (context.mounted && item == null && widget.startCreate) {
+      context.go('/transfers');
     }
   }
 
