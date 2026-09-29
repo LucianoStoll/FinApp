@@ -12,7 +12,7 @@ keystore e a chave:
 
 ```sh
 keytool -genkeypair -v -keystore somia-upload.jks -alias somia \
-  -keyalg RSA -keysize 3072 -validity 10000
+  -storetype JKS -keyalg RSA -keysize 3072 -validity 10000
 ```
 
 Em **Settings → Secrets and variables → Actions** do repositório, crie:
@@ -24,13 +24,14 @@ No PowerShell, obtenha o primeiro valor com
 `[Convert]::ToBase64String([IO.File]::ReadAllBytes('somia-upload.jks'))`.
 Não publique a chave, a senha nem o Base64 em issues, commits ou logs.
 
-**Estado atual:** a geração de APK está pausada a pedido do usuário. Depois de
-criar a chave e avisar, reativaremos a etapa Android no workflow e validaremos
-os APKs consecutivos. O procedimento abaixo descreve o comportamento após a
-reativação.
+**Estado atual:** geração de APK reativada em 29/09/2026 após confirmação do
+usuário de que a chave e os dois secrets foram configurados.
 
-Após a reativação, a Action decodificará a chave apenas no runner e a usará
-para assinar o APK release. O artefato antigo `somia-debug-not-updateable`
+A Action decodifica a chave apenas no runner, assina o APK release e verifica
+que o certificado do APK corresponde ao certificado da chave persistente.
+Confere também o identificador e o `versionCode`. O arquivo público
+`signing-info.txt`, junto do APK, registra o certificado e as versões para
+comparar builds consecutivas. O material privado é removido ao fim do job. O artefato antigo `somia-debug-not-updateable`
 não é um APK de atualização.
 
 O APK de atualização estará em **Actions → Flutter CI → Artifacts →
