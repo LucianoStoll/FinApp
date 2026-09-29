@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/di/injection.dart';
+import '../../../core/routing/somia_shell.dart';
 import '../../accounts/domain/account.dart';
 import '../../accounts/domain/accounts_repository.dart';
 import '../../accounts/domain/money_minor.dart';
@@ -66,7 +67,8 @@ class _TransactionsViewState extends State<_TransactionsView> {
   }
 
   Future<void> _edit([FinancialTransaction? item]) async {
-    final state = context.read<TransactionsCubit>().state;
+    final cubit = context.read<TransactionsCubit>();
+    final state = cubit.state;
     final draft = await showDialog<TransactionDraft>(
       context: context,
       builder: (_) => _TransactionDialog(item: item,
@@ -74,11 +76,18 @@ class _TransactionsViewState extends State<_TransactionsView> {
           ? TransactionType.income : TransactionType.expense,
         accounts: state.accounts, categories: state.categories),
     );
-    if (draft == null || !mounted) return;
+    if (!mounted) return;
+    if (draft == null) {
+      if (item == null && widget.initialCreateType != null) context.go('/transactions');
+      return;
+    }
     try {
-      await context.read<TransactionsCubit>().save(draft, id: item?.id);
+      await cubit.save(draft, id: item?.id);
     } catch (error) {
       if (mounted) _showError(error);
+    }
+    if (mounted && item == null && widget.initialCreateType != null) {
+      context.go('/transactions');
     }
   }
 
@@ -120,10 +129,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
             onPressed: () => context.go('/'),
           ),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _edit, icon: const Icon(Icons.add),
-          label: const Text('Novo lançamento'),
-        ),
+        floatingActionButton: const SomiaQuickActions(),
         body: BlocConsumer<TransactionsCubit, TransactionsState>(
           listener: (context, state) {
             if (!_openedInitial && !state.loading && state.error == null &&
