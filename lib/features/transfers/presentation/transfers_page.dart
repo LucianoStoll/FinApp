@@ -122,19 +122,20 @@ class _TransfersViewState extends State<_TransfersView> {
           final item = state.items[index];
           return Card(child: ListTile(
             leading: const Icon(Icons.swap_horiz),
-            title: Text('${item.sourceAccountName} → ${item.destinationAccountName}'),
-            subtitle: Text('${_dateLabel(item.date)}'
-              '${item.isEffective ? '' : ' · Pendente'}'),
-            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+            title: Text('${item.sourceAccountName} → ${item.destinationAccountName}',
+              maxLines: 2, overflow: TextOverflow.ellipsis),
+            subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${_dateLabel(item.date)}'
+                '${item.isEffective ? '' : ' · Pendente'}'),
               Text(MoneyMinor.display(item.amountMinor, item.currencyCode)),
-              PopupMenuButton<String>(tooltip: 'Ações da transferência',
+            ]),
+            trailing: PopupMenuButton<String>(tooltip: 'Ações da transferência',
                 onSelected: (action) => action == 'edit'
                     ? _edit(context, item) : _delete(context, item),
                 itemBuilder: (_) => const [
                   PopupMenuItem(value: 'edit', child: Text('Editar')),
                   PopupMenuItem(value: 'delete', child: Text('Excluir')),
                 ]),
-            ]),
             onTap: () => _edit(context, item),
           ));
         },
@@ -207,11 +208,13 @@ class _TransferDialogState extends State<_TransferDialog> {
       child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min,
         children: [
           DropdownButtonFormField<String>(key: ValueKey('source-$_sourceId'),
+            isExpanded: true,
             initialValue: _sourceId,
             decoration: const InputDecoration(labelText: 'Conta de origem'),
             items: _sources.map((a) => DropdownMenuItem(value: a.id,
               child: Text('${a.name} (${a.currencyCode})'
-                '${a.isArchived ? ' · arquivada' : ''}'))).toList(),
+                '${a.isArchived ? ' · arquivada' : ''}',
+                maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
             validator: (id) => id == null ? 'Selecione uma conta de origem.' : null,
             onChanged: (id) => setState(() {
               _sourceId = id;
@@ -221,11 +224,13 @@ class _TransferDialogState extends State<_TransferDialog> {
             }),
           ),
           DropdownButtonFormField<String>(key: ValueKey('destination-$_sourceId'),
+            isExpanded: true,
             initialValue: _destinationId,
             decoration: const InputDecoration(labelText: 'Conta de destino'),
             items: _destinations.map((a) => DropdownMenuItem(value: a.id,
               child: Text('${a.name} (${a.currencyCode})'
-                '${a.isArchived ? ' · arquivada' : ''}'))).toList(),
+                '${a.isArchived ? ' · arquivada' : ''}',
+                maxLines: 1, overflow: TextOverflow.ellipsis))).toList(),
             validator: (id) => id == null ? 'Selecione outra conta da mesma moeda.' : null,
             onChanged: (id) => setState(() => _destinationId = id),
           ),
