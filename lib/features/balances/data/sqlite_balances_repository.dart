@@ -6,13 +6,26 @@ import '../domain/balances_snapshot.dart';
 
 /// Consulta compartilhada com a listagem de contas para manter a mesma
 /// definição de saldo em toda a aplicação.
-Future<List<QueryRow>> balanceRows(AppDatabase db, {DateTime? through}) {
+Future<List<QueryRow>> balanceRows(AppDatabase db,
+    {DateTime? asOf, DateTime? through}) {
+  final asOfEnd = asOf == null ? null : DateTime.utc(
+    asOf.year, asOf.month, asOf.day + 1).millisecondsSinceEpoch;
   final end = through == null ? null : DateTime.utc(
     through.year, through.month, through.day + 1).millisecondsSinceEpoch;
+  final txEffectiveUntil = asOfEnd == null ? '' : 'AND t.effective_at < ?';
+  final transferEffectiveUntil = asOfEnd == null ? '' : 'AND f.effective_at < ?';
+  final txPending = asOfEnd == null ? 't.effective_at IS NULL'
+      : '(t.effective_at IS NULL OR t.effective_at >= ?)';
+  final transferPending = asOfEnd == null ? 'f.effective_at IS NULL'
+      : '(f.effective_at IS NULL OR f.effective_at >= ?)';
   final txUntil = end == null ? '' : 'AND t.competence_at < ?';
   final transferUntil = end == null ? '' : 'AND f.planned_at < ?';
   final variables = <Variable>[
+    if (asOfEnd != null) Variable.withInt(asOfEnd),
+    if (asOfEnd != null) Variable.withInt(asOfEnd),
+    if (asOfEnd != null) Variable.withInt(asOfEnd),
     if (end != null) Variable.withInt(end),
+    if (asOfEnd != null) Variable.withInt(asOfEnd),
     if (end != null) Variable.withInt(end),
   ];
   return db.customSelect('''
@@ -22,25 +35,27 @@ Future<List<QueryRow>> balanceRows(AppDatabase db, {DateTime? through}) {
                       THEN t.actual_amount_minor ELSE -t.actual_amount_minor END)
                 FROM transactions t
                 WHERE t.account_id = a.id AND t.effective_at IS NOT NULL
+                  $txEffectiveUntil
                   AND t.actual_amount_minor IS NOT NULL
                   AND t.ignore_balance = 0 AND t.deleted_at IS NULL), 0) +
       COALESCE((SELECT SUM(CASE WHEN f.destination_account_id = a.id
                       THEN f.amount_minor ELSE -f.amount_minor END)
                 FROM transfers f
                 WHERE (f.source_account_id = a.id OR f.destination_account_id = a.id)
-                  AND f.effective_at IS NOT NULL AND f.deleted_at IS NULL), 0)
+                  AND f.effective_at IS NOT NULL $transferEffectiveUntil
+                  AND f.deleted_at IS NULL), 0)
       AS current_balance_minor,
       COALESCE((SELECT SUM(CASE WHEN t.type = 'income'
                       THEN t.planned_amount_minor ELSE -t.planned_amount_minor END)
                 FROM transactions t
-                WHERE t.account_id = a.id AND t.effective_at IS NULL
+                WHERE t.account_id = a.id AND $txPending
                   AND t.ignore_balance = 0 AND t.deleted_at IS NULL
                   $txUntil), 0) +
       COALESCE((SELECT SUM(CASE WHEN f.destination_account_id = a.id
                       THEN f.amount_minor ELSE -f.amount_minor END)
                 FROM transfers f
                 WHERE (f.source_account_id = a.id OR f.destination_account_id = a.id)
-                  AND f.effective_at IS NULL AND f.deleted_at IS NULL
+                  AND $transferPending AND f.deleted_at IS NULL
                   $transferUntil), 0)
       AS pending_balance_minor
     FROM accounts a
@@ -55,8 +70,8 @@ class SqliteBalancesRepository implements BalancesRepository {
   final AppDatabase _db;
 
   @override
-  Future<BalancesSnapshot> calculate({DateTime? through}) async {
-    final rows = await balanceRows(_db, through: through);
+  Future<BalancesSnapshot> calculate({DateTime? asOf, DateTime? through}) async {
+    final rows = await balanceRows(_db, asOf: asOf, through: through);
     final accounts = <AccountBalance>[];
     final totals = <String, (int, int)>{};
     for (final row in rows) {

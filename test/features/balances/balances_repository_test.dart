@@ -81,4 +81,37 @@ void main() {
     expect((await db.customSelect('SELECT COUNT(*) AS count FROM transactions')
       .getSingle()).read<int>('count'), 4);
   });
+
+  test('liquidação posterior entra na projeção do mês original', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final accounts = SqliteAccountsRepository(db);
+    Future<Account> add(String name, int initial) => accounts.create(AccountDraft(
+      name: name, type: AccountType.cash, currencyCode: 'BRL',
+      initialBalanceMinor: initial, includeInAnalytics: true));
+    final source = await add('Origem', 10000);
+    final destination = await add('Destino', 0);
+    final october = DateTime.utc(2026, 10, 10);
+    final december = DateTime.utc(2026, 12, 5);
+    final expense = await SqliteTransactionsRepository(db).create(TransactionDraft(
+      description: 'Compra', type: TransactionType.expense,
+      amountMinor: 2000, date: october, isEffective: true,
+      accountId: source.id));
+    final transfer = await SqliteTransfersRepository(db).create(TransferDraft(
+      sourceAccountId: source.id, destinationAccountId: destination.id,
+      amountMinor: 1000, date: october, isEffective: true));
+    await db.customStatement('UPDATE transactions SET effective_at = ? WHERE id = ?',
+      [december.millisecondsSinceEpoch, expense.id]);
+    await db.customStatement('UPDATE transfers SET effective_at = ? WHERE id = ?',
+      [december.millisecondsSinceEpoch, transfer.id]);
+
+    final snapshot = await SqliteBalancesRepository(db).calculate(
+      asOf: DateTime.utc(2026, 10, 31), through: DateTime.utc(2026, 10, 31));
+    final byId = {for (final account in snapshot.accounts) account.accountId: account};
+    expect(byId[source.id]!.currentMinor, 10000);
+    expect(byId[source.id]!.projectedMinor, 7000);
+    expect(byId[destination.id]!.currentMinor, 0);
+    expect(byId[destination.id]!.projectedMinor, 1000);
+    expect(snapshot.consolidated.single.projectedMinor, 8000);
+  });
 }

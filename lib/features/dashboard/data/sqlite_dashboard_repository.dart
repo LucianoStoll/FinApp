@@ -14,7 +14,9 @@ class SqliteDashboardRepository implements DashboardRepository {
   Future<DashboardSummary> load(DateTime month) => _db.transaction(() async {
     final start = DateTime.utc(month.year, month.month).millisecondsSinceEpoch;
     final end = DateTime.utc(month.year, month.month + 1).millisecondsSinceEpoch;
-    final balances = await SqliteBalancesRepository(_db).calculate();
+    final monthEnd = DateTime.utc(month.year, month.month + 1, 0);
+    final balances = await SqliteBalancesRepository(_db).calculate(
+      asOf: monthEnd, through: monthEnd);
     final totals = <String, (int, int)>{};
     final period = await _db.customSelect('''
       SELECT a.currency_code, t.type, SUM(t.actual_amount_minor) AS amount_minor

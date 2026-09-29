@@ -57,8 +57,8 @@ void main() {
     final brl = updated.currencies.firstWhere((x) => x.currencyCode == 'BRL');
     expect(brl.incomeMinor, 5000);
     expect(brl.expenseMinor, 1000);
-    expect(brl.currentBalanceMinor, 24400);
-    expect(brl.projectedBalanceMinor, 23800);
+    expect(brl.currentBalanceMinor, 24700);
+    expect(brl.projectedBalanceMinor, 24100);
     expect(updated.currencies.firstWhere((x) => x.currencyCode == 'USD')
       .currentBalanceMinor, 10000);
     expect(updated.recent.length, 5);
@@ -67,6 +67,8 @@ void main() {
     final next = await dashboard.load(october);
     expect(next.currencies.firstWhere((x) => x.currencyCode == 'BRL')
       .expenseMinor, 300);
+    expect(next.currencies.firstWhere((x) => x.currencyCode == 'BRL')
+      .currentBalanceMinor, 24400);
 
     await db.customStatement('UPDATE transactions SET ignore_analytics = 1 WHERE id = ?',
       [expense.id]);
@@ -74,15 +76,46 @@ void main() {
     expect(hidden.currencies.firstWhere((x) => x.currencyCode == 'BRL')
       .expenseMinor, 0);
     expect(hidden.currencies.firstWhere((x) => x.currencyCode == 'BRL')
-      .currentBalanceMinor, 24400);
+      .currentBalanceMinor, 24700);
 
     await transactions.delete(income.id);
     await transfers.delete(transfer.id);
     final afterDelete = await dashboard.load(september);
     final afterBrl = afterDelete.currencies.firstWhere((x) => x.currencyCode == 'BRL');
     expect(afterBrl.incomeMinor, 0);
-    expect(afterBrl.currentBalanceMinor, 19400);
+    expect(afterBrl.currentBalanceMinor, 19700);
     expect(afterDelete.recent.any((x) => x.id == income.id ||
       x.id == transfer.id), isFalse);
+  });
+
+  test('despesa de dezembro não altera saldos de outubro', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final account = await SqliteAccountsRepository(db).create(const AccountDraft(
+      name: 'Conta', type: AccountType.checking, currencyCode: 'BRL',
+      initialBalanceMinor: 10000, includeInAnalytics: true));
+    final transactions = SqliteTransactionsRepository(db);
+    final october = DateTime.utc(2026, 10, 15);
+    final december = DateTime.utc(2026, 12, 5);
+    Future<void> add(TransactionType type, int amount, DateTime date,
+        {bool effective = true}) async {
+      await transactions.create(TransactionDraft(description: 'Teste', type: type,
+        amountMinor: amount, date: date, isEffective: effective,
+        accountId: account.id));
+    }
+    await add(TransactionType.income, 1000, october);
+    await add(TransactionType.expense, 20000, december);
+    await add(TransactionType.expense, 4000, december, effective: false);
+
+    final dashboard = SqliteDashboardRepository(db);
+    final oct = (await dashboard.load(october)).currencies.single;
+    expect(oct.currentBalanceMinor, 11000);
+    expect(oct.projectedBalanceMinor, 11000);
+    final dec = (await dashboard.load(december)).currencies.single;
+    expect(dec.currentBalanceMinor, -9000);
+    expect(dec.projectedBalanceMinor, -13000);
+    // A listagem da conta continua exibindo o saldo atual sem corte mensal.
+    expect((await SqliteAccountsRepository(db).list()).single.currentBalanceMinor,
+      -9000);
   });
 }

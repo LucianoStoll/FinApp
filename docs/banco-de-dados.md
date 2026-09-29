@@ -186,3 +186,9 @@ da #23. Uma leitura transacional mantém os cartões e a lista coerentes durante
 a atualização. Navegar de volta ao início, retomar o aplicativo, atualizar
 manualmente ou puxar a lista recarrega o banco local sem reiniciar o app. Os
 cartões se adaptam à largura disponível no Android e no Windows.
+
+Os saldos em destaque usam o último dia do mês selecionado como corte: somente
+movimentos efetivados até essa data entram no saldo atual, e a projeção adiciona
+apenas movimentos planejados até a mesma data que ainda não estavam efetivados
+naquele momento. Um lançamento de dezembro não altera os saldos mostrados em
+outubro. A tela de Contas permanece com a posição atual sem corte mensal.
