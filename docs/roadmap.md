@@ -49,6 +49,20 @@ Antes de qualquer implementação, verificar qual é a branch de versão ativa e
 - [ ] 100% offline
 - [ ] Validação manual
 
+### Revisão final antes da conclusão do MVP
+- [ ] receitas, despesas e transferências com data de lançamento, vencimento e efetivação;
+- [ ] saldo realizado baseado na data de efetivação e projeções baseadas no vencimento;
+- [ ] aviso ao efetivar compromisso futuro: contabilizar hoje ou no vencimento;
+- [ ] migration Drift/SQLite não destrutiva para preservar bases já usadas;
+- [ ] APK Android atualizável sobre a instalação anterior, com assinatura persistente e build number crescente;
+- [ ] teste de atualização preservando os dados locais;
+- [ ] backup/exportação e importação simples como proteção durante os testes;
+- [ ] remover barra inferior no mobile e adotar drawer/menu lateral;
+- [ ] Receitas e Despesas como áreas independentes no menu;
+- [ ] manter tema escuro no MVP e preparar os componentes para tema claro futuro.
+
+Issues de acompanhamento: #30, #31 e #32.
+
 ## Fase 3 — Núcleo financeiro avançado
 - [ ] Competência/vencimento/efetivação
 - [ ] Previsto x realizado
