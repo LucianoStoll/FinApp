@@ -47,6 +47,8 @@ jobs:
           cache: true
       - name: Install dependencies
         run: flutter pub get
+      - name: Tests on Windows
+        run: flutter test
       - name: Build Windows debug
         run: flutter build windows --debug
       - name: Publish Windows build
