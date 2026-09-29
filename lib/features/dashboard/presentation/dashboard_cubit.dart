@@ -23,13 +23,15 @@ class DashboardCubit extends Cubit<DashboardState> {
 
   Future<void> load([DateTime? month]) async {
     final selected = month ?? state.month;
-    emit(DashboardState(month: selected, summary: state.summary, loading: true));
+    final previousSummary = selected.year == state.month.year &&
+        selected.month == state.month.month ? state.summary : null;
+    emit(DashboardState(month: selected, summary: previousSummary, loading: true));
     try {
       final summary = await _repository.load(selected);
       if (!isClosed) emit(DashboardState(month: selected, summary: summary));
     } catch (_) {
       if (!isClosed) {
-        emit(DashboardState(month: selected, summary: state.summary,
+        emit(DashboardState(month: selected, summary: previousSummary,
           error: 'Não foi possível carregar o resumo.'));
       }
     }
