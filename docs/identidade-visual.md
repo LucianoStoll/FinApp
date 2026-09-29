@@ -40,6 +40,12 @@ As referências enviadas no chat estão preservadas nos links abaixo. Esses link
 - [1000066876.jpg](https://chatgpt.com/api/library/files/libfile_a34821b1cd408191baf036a989185ded/download)
 
 Os valores, nomes de contas e datas do protótipo são ilustrativos. Não devem ser inseridos como dados reais ou fixos no aplicativo.
+### Referência visual de polimento aprovada em 29/09/2026
+
+A imagem [Somia — dashboard desktop](https://chatgpt.com/api/library/files/libfile_82b14d5505cc8191b345810285984adc/download) orienta o acabamento da interface: fundo azul quase preto, superfícies azul acinzentadas com bordas discretas, ícones coloridos por tipo, sidebar com item ativo, cartões de saldo/receitas/despesas/projeção, barras de seis meses, gráfico circular de categorias e painéis de lançamentos recentes e saldos por conta. Em janela intermediária a sidebar pode ficar compacta; no mobile, permanece o drawer aprovado, e os blocos se reorganizam em coluna ou grade responsiva.
+
+Os bancos, valores, percentuais e comparações da imagem são ilustrativos. Exibir dados reais do aplicativo, sem inserir marcas de bancos ou tendências calculadas sem histórico.
+
 ### Referências mobile aprovadas em 29/09/2026
 
 Foi aprovada uma nova direção mobile com três vistas principais: dashboard, drawer aberto e tela dedicada de Receitas. A composição aprovada remove a navegação inferior, usa menu lateral e mantém o botão flutuante +.
