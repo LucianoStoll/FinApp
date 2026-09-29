@@ -130,30 +130,7 @@ jobs:
           info = Path('build/app/outputs/flutter-apk/signing-info.txt')
           text = info.read_text()
           expected = hashlib.sha256((folder / 'certificate.der').read_bytes()).hexdigest()
-          matches = re.findall(r'^Signer[^\n]* certificate SHA-256 digest:\s*([0-9a-fA-F:]+)\s*
-              raise SystemExit('O certificado do APK não corresponde à chave persistente.')
-          package = re.search(r"package: name='([^']+)' versionCode='([^']+)' versionName='([^']+)'", (folder / 'badging.txt').read_text())
-          if not package or package.group(1) != 'com.example.finapp' or package.group(2) != os.environ['EXPECTED_VERSION_CODE']:
-              raise SystemExit('Identificador ou versionCode do APK incorreto.')
-          metadata = '\nPackage: ' + package.group(1) + '\nVersionCode: ' + package.group(2) + '\nVersionName: ' + package.group(3) + '\n'
-          info.write_text(text + metadata)
-          print('Certificado persistente conferido.' + metadata)
-          PY
-      - name: Publish signed APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: somia-signed-apk
-          path: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/flutter-apk/signing-info.txt
-          if-no-files-found: error
-          retention-days: 30
-      - name: Remove signing material
-        if: always()
-        run: |
-          rm -f android/key.properties
-          rm -rf "$RUNNER_TEMP/somia-signing"
-, text, re.MULTILINE)
+          matches = re.findall(r'^Signer[^\n]* certificate SHA-256 digest:\s*([0-9a-fA-F:]+)\s*$', text, re.MULTILINE)
           actual = [digest.replace(':', '').lower() for digest in matches]
           print('SHA-256 esperado: ' + expected)
           print('SHA-256 do APK: ' + ', '.join(actual))
