@@ -43,10 +43,11 @@ Os valores, nomes de contas e datas do protótipo são ilustrativos. Não devem 
 
 - Identificação Somia no cabeçalho.
 - Mês de referência visível, com navegação entre meses.
-- Resultado do mês em destaque, com receitas e despesas do mesmo período.
+- Saldo total em destaque no primeiro cartão, com saldo projetado do mês identificado logo abaixo.
+- Resultado do mês em cartão próprio, com receitas e despesas do mesmo período.
 - Gráfico básico de gastos por categoria, com legenda e valores/percentuais.
 - Lançamentos recentes e acesso à listagem completa.
-- Saldo total acessível na área de Contas; quando exibido no resumo, deve ser claramente separado do resultado mensal.
+- Os saldos do resumo usam o último dia do mês selecionado como corte, sem incorporar lançamentos de meses posteriores.
 - Atualização após criar, editar ou excluir movimentos, sem reiniciar o aplicativo.
 
 Resultado mensal significa receitas menos despesas do período. Não deve ser confundido com o saldo acumulado das contas. Transferências entre contas não entram como receita/despesa nem no gráfico de gastos.
@@ -57,6 +58,7 @@ Resultado mensal significa receitas menos despesas do período. Não deve ser co
 - Lista organizada por data, com descrição, conta, valor e identificação do tipo.
 - Diferenciação de receitas e despesas também por texto/sinal/ícone, sem depender apenas da cor.
 - Acesso aos fluxos existentes de criação, edição e exclusão.
+- Ação Efetivar visível em lançamentos pendentes, usando a data e o valor cadastrados; oferecer Desfazer depois da ação.
 - Botão + acessível sem cobrir conteúdo ou comandos importantes.
 
 ### Contas
@@ -175,6 +177,8 @@ As referências acima não declaram essas issues abertas, fechadas ou implementa
 - [ ] Navegação Resumo, Lançamentos, Contas e Ajustes.
 - [ ] Resumo mensal e gráfico básico usam dados reais e atualizam após alterações.
 - [ ] Resultado do mês claramente distinto do saldo total.
+- [ ] Saldo total em destaque no topo do resumo, com corte no mês selecionado.
+- [ ] Lançamento pendente pode ser efetivado pela lista sem abrir a edição.
 - [ ] Transferências excluídas das receitas/despesas e dos gastos por categoria.
 - [ ] + abre balão com Receita, Despesa e Transferência.
 - [ ] Categoria e subcategoria em campos distintos.
@@ -183,4 +187,3 @@ As referências acima não declaram essas issues abertas, fechadas ou implementa
 - [ ] Layout funcional em Android e Windows, offline.
 - [ ] Análise/formatação do projeto aprovadas e APK disponível para teste.
 - [ ] Validação visual e funcional do usuário antes do encerramento.
-
