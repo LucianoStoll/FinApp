@@ -143,8 +143,9 @@ class _CategoriesViewState extends State<_CategoriesView> {
   Widget _categoryTile(FinanceCategory category) => Card(
         child: ListTile(
           leading: Icon(_icons[category.iconKey] ?? Icons.label_outline,
-              color: category.colorArgb == null ? null : Color(category.colorArgb!)),
-          title: Text(category.name),
+              color: category.colorArgb == null ? null
+                : Color.lerp(Color(category.colorArgb!), Colors.white, 0.35)),
+          title: Text(category.name, maxLines: 2, overflow: TextOverflow.ellipsis),
           subtitle: Text(category.isArchived
               ? 'Arquivada · histórico preservado'
               : category.isSubcategory ? 'Subcategoria' : 'Categoria principal'),
@@ -227,6 +228,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                     ? 'Informe o nome.' : null,
               ),
               DropdownButtonFormField<CategoryType>(
+                isExpanded: true,
                 initialValue: _type,
                 decoration: const InputDecoration(labelText: 'Tipo'),
                 items: CategoryType.values.map((type) => DropdownMenuItem(
@@ -237,6 +239,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                 },
               ),
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 key: ValueKey(_type),
                 initialValue: _parentId,
                 decoration: const InputDecoration(labelText: 'Categoria principal'),
@@ -244,12 +247,14 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                 items: [
                   const DropdownMenuItem(value: '', child: Text('Nenhuma')),
                   for (final parent in parents)
-                    DropdownMenuItem(value: parent.id, child: Text(parent.name)),
+                    DropdownMenuItem(value: parent.id, child: Text(parent.name,
+                      maxLines: 1, overflow: TextOverflow.ellipsis)),
                 ],
                 onChanged: (id) => setState(() =>
                     _parentId = id == null || id.isEmpty ? null : id),
               ),
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue: _iconKey,
                 decoration: const InputDecoration(labelText: 'Ícone'),
                 items: _icons.entries.map((entry) => DropdownMenuItem(
@@ -263,6 +268,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                 },
               ),
               DropdownButtonFormField<int>(
+                isExpanded: true,
                 initialValue: _colorArgb,
                 decoration: const InputDecoration(labelText: 'Cor'),
                 items: _colors.entries.map((entry) => DropdownMenuItem(
