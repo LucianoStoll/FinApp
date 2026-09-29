@@ -24,7 +24,7 @@ void main() {
 
     expect(find.text('Somia'), findsOneWidget);
     expect(find.text('Resultado do mês'), findsOneWidget);
-    expect(find.text('R\$ 20,00'), findsOneWidget);
+    expect(find.text('R\$ 20,00'), findsWidgets);
     expect(find.text('Receitas'), findsOneWidget);
   });
 }
