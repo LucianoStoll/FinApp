@@ -35,6 +35,26 @@ class SqliteDashboardRepository implements DashboardRepository {
           ? (previous.$1 + amount, previous.$2)
           : (previous.$1, previous.$2 + amount);
     }
+    final categoryRows = await _db.customSelect('''
+      SELECT a.currency_code, COALESCE(parent.name, c.name, 'Sem categoria')
+        AS category_name, SUM(t.actual_amount_minor) AS amount_minor
+      FROM transactions t JOIN accounts a ON a.id = t.account_id
+      LEFT JOIN categories c ON c.id = t.category_id
+      LEFT JOIN categories parent ON parent.id = c.parent_id
+      WHERE t.deleted_at IS NULL AND t.type = 'expense'
+        AND t.effective_at IS NOT NULL AND t.actual_amount_minor IS NOT NULL
+        AND t.ignore_analytics = 0 AND a.deleted_at IS NULL
+        AND a.include_in_analytics = 1
+        AND t.competence_at >= ? AND t.competence_at < ?
+      GROUP BY a.currency_code, COALESCE(parent.name, c.name, 'Sem categoria')
+      ORDER BY amount_minor DESC, category_name
+    ''', variables: [Variable.withInt(start), Variable.withInt(end)]).get();
+    final categoryTotals = <String, List<DashboardCategoryExpense>>{};
+    for (final row in categoryRows) {
+      categoryTotals.putIfAbsent(row.read<String>('currency_code'), () => [])
+        .add(DashboardCategoryExpense(row.read<String>('category_name'),
+          row.read<int>('amount_minor')));
+    }
     // Mesmo que não existam contas ativas na moeda, os totais do período
     // permanecem disponíveis enquanto a conta histórica não foi removida.
     final currencies = <String>{
@@ -50,7 +70,8 @@ class SqliteDashboardRepository implements DashboardRepository {
           currentBalanceMinor: byCurrency[currency]?.currentMinor ?? 0,
           projectedBalanceMinor: byCurrency[currency]?.projectedMinor ?? 0,
           incomeMinor: totals[currency]?.$1 ?? 0,
-          expenseMinor: totals[currency]?.$2 ?? 0),
+          expenseMinor: totals[currency]?.$2 ?? 0,
+          expensesByCategory: categoryTotals[currency] ?? const []),
     ];
     final rows = await _db.customSelect('''
       SELECT id, type, description, account_label, currency_code,
