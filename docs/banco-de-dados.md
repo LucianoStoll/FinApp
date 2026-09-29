@@ -175,3 +175,14 @@ receitas/despesas pendentes pelo valor previsto e as transferências pendentes;
 escolhida. Sem limite, considera todas as pendências. O consolidado inclui
 contas arquivadas com histórico e agrupa por moeda, sem converter ou somar
 moedas diferentes. `include_in_analytics` não altera saldo patrimonial.
+
+### Issue #24 — dashboard básico
+
+O resumo mensal apresenta saldo atual/projetado por moeda, receitas e despesas
+efetivadas no mês de competência e as cinco movimentações recentes, incluindo
+transferências sem contá-las como receita ou despesa. Os totais mensais respeitam
+`ignore_analytics` e `include_in_analytics`; saldos seguem a regra patrimonial
+da #23. Uma leitura transacional mantém os cartões e a lista coerentes durante
+a atualização. Navegar de volta ao início, retomar o aplicativo, atualizar
+manualmente ou puxar a lista recarrega o banco local sem reiniciar o app. Os
+cartões se adaptam à largura disponível no Android e no Windows.
