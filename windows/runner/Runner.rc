@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "finapp" "\0"
+            VALUE "FileDescription", "Somia" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "finapp" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "finapp.exe" "\0"
-            VALUE "ProductName", "finapp" "\0"
+            VALUE "ProductName", "Somia" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
