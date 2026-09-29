@@ -28,8 +28,10 @@ class DashboardCubit extends Cubit<DashboardState> {
       final summary = await _repository.load(selected);
       if (!isClosed) emit(DashboardState(month: selected, summary: summary));
     } catch (_) {
-      if (!isClosed) emit(DashboardState(month: selected, summary: state.summary,
-        error: 'Não foi possível carregar o resumo.'));
+      if (!isClosed) {
+        emit(DashboardState(month: selected, summary: state.summary,
+          error: 'Não foi possível carregar o resumo.'));
+      }
     }
   }
 

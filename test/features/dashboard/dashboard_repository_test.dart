@@ -38,6 +38,8 @@ void main() {
     expect(initial.currencies.length, 2);
     expect(initial.currencies.firstWhere((x) => x.currencyCode == 'BRL')
       .currentBalanceMinor, 20000);
+    expect(initial.currencies.firstWhere((x) => x.currencyCode == usd.currencyCode)
+      .currentBalanceMinor, 10000);
     expect(initial.recent, isEmpty);
     final income = await move(TransactionType.income, 5000, september);
     final expense = await move(TransactionType.expense, 1000, september);
