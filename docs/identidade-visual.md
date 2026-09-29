@@ -43,7 +43,8 @@ Os valores, nomes de contas e datas do protótipo são ilustrativos. Não devem 
 
 - Identificação Somia no cabeçalho.
 - Mês de referência visível, com navegação entre meses.
-- Saldo total em destaque no primeiro cartão, com saldo projetado do mês identificado logo abaixo.
+- No mês atual e nos anteriores, saldo total em destaque no primeiro cartão, com saldo projetado identificado logo abaixo.
+- Em meses futuros, saldo previsto em destaque e saldo já efetivado como referência secundária.
 - Resultado do mês em cartão próprio, com receitas e despesas do mesmo período.
 - Gráfico básico de gastos por categoria, com legenda e valores/percentuais.
 - Lançamentos recentes e acesso à listagem completa.
