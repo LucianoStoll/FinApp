@@ -24,7 +24,11 @@ class _LegacyV5 extends GeneratedDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(onCreate: (_) async {
         for (final statement in [
-          ...schemaV1, ...schemaV2, ...schemaV3, ...schemaV4, ...schemaV5
+          ...schemaV1,
+          ...schemaV2,
+          ...schemaV3,
+          ...schemaV4,
+          ...schemaV5
         ]) {
           await customStatement(statement);
         }
@@ -53,12 +57,19 @@ void main() {
     final migrated = (await repo.list()).single;
     expect(migrated.includeInBalance, true);
     expect(migrated.currentBalanceMinor, 12845);
-    expect((await db.customSelect('PRAGMA user_version').getSingle())
-        .read<int>('user_version'), 6);
-    await repo.update('a', const AccountDraft(
-        name: 'Aplicação', type: AccountType.investment, currencyCode: 'BRL',
-        initialBalanceMinor: 12345, includeInAnalytics: true,
-        includeInBalance: false));
+    expect(
+        (await db.customSelect('PRAGMA user_version').getSingle())
+            .read<int>('user_version'),
+        6);
+    await repo.update(
+        'a',
+        const AccountDraft(
+            name: 'Aplicação',
+            type: AccountType.investment,
+            currencyCode: 'BRL',
+            initialBalanceMinor: 12345,
+            includeInAnalytics: true,
+            includeInBalance: false));
     final bytes = await BackupService.export(db, directory);
     await db.close();
     await BackupService.stageRestore(bytes, directory);
@@ -69,8 +80,13 @@ void main() {
     expect(account.includeInBalance, false);
     expect(account.includeInAnalytics, true);
     expect(account.currentBalanceMinor, 12845);
-    expect((await restored.customSelect('SELECT description FROM transactions')
-        .getSingle()).read<String>('description'), 'Rendimento');
-    expect(await restored.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
+    expect(
+        (await restored
+                .customSelect('SELECT description FROM transactions')
+                .getSingle())
+            .read<String>('description'),
+        'Rendimento');
+    expect(
+        await restored.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
   });
 }

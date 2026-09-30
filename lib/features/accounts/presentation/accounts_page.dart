@@ -85,137 +85,138 @@ class _AccountsView extends StatelessWidget {
                   builder: (context, month, _) => MonthSelector(
                       month: month, onChanged: referenceMonth.select))),
           Expanded(child: BlocBuilder<AccountsCubit, AccountsState>(
-          builder: (context, state) {
-            if (state.loading && state.accounts.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (state.error != null) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(state.error!),
-                    TextButton(
-                      onPressed: context.read<AccountsCubit>().load,
-                      child: const Text('Tentar novamente'),
-                    ),
-                  ],
-                ),
-              );
-            }
-            if (state.accounts.isEmpty) {
-              return const Center(child: Text('Nenhuma conta cadastrada.'));
-            }
-            final totals = <String, (int, int)>{};
-            for (final account in state.accounts) {
-              totals.putIfAbsent(account.currencyCode, () => (0, 0));
-              if (!account.includeInBalance) continue;
-              final current = totals[account.currencyCode]!;
-              totals[account.currencyCode] = (
-                current.$1 + account.currentBalanceMinor,
-                current.$2 + account.projectedBalanceMinor,
-              );
-            }
-            final currencies = totals.keys.toList()..sort();
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-              itemCount: state.accounts.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            builder: (context, state) {
+              if (state.loading && state.accounts.isEmpty) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (state.error != null) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-                          child: Text('Saldos no fim do mês',
-                              style: Theme.of(context).textTheme.titleMedium)),
-                      for (final currency in currencies)
-                        Card(
-                            child: ListTile(
-                          title: Text(currency),
-                          subtitle: Text(
-                              'Efetivado: ${MoneyMinor.display(totals[currency]!.$1, currency)}'
-                              '\nProjetado até o fim do mês: '
-                              '${MoneyMinor.display(totals[currency]!.$2, currency)}'),
-                          isThreeLine: true,
-                        )),
-                      const SizedBox(height: 8),
+                      Text(state.error!),
+                      TextButton(
+                        onPressed: context.read<AccountsCubit>().load,
+                        child: const Text('Tentar novamente'),
+                      ),
                     ],
-                  );
-                }
-                final account = state.accounts[index - 1];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    title: Text(account.name,
-                        maxLines: 2, overflow: TextOverflow.ellipsis),
-                    subtitle: Text(
-                      '${account.type.label} · ${account.currencyCode}'
-                      '${account.isArchived ? ' · Arquivada' : ''}'
-                      '${account.includeInAnalytics ? '' : ' · Fora das análises'}'
-                      '${account.includeInBalance ? '' : ' · Fora do saldo consolidado'}'
-                      '\nProjetado: ${MoneyMinor.display(account.projectedBalanceMinor, account.currencyCode)}',
-                    ),
-                    trailing: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                              MoneyMinor.display(account.currentBalanceMinor,
-                                  account.currencyCode),
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600)),
-                          SizedBox(
-                              height: 32,
-                              child: PopupMenuButton<String>(
-                                key: ValueKey('account-menu-${account.id}'),
-                                tooltip: 'Ações da conta',
-                                icon: const Icon(Icons.more_horiz, size: 20),
-                                padding: EdgeInsets.zero,
-                                onSelected: (action) {
-                                  if (action == 'edit') {
-                                    _edit(context, account);
-                                  } else if (action == 'balance') {
-                                    _toggleBalance(context, account);
-                                  } else {
-                                    _archive(context, account);
-                                  }
-                                },
-                                itemBuilder: (_) => [
-                                  const PopupMenuItem(
-                                      value: 'edit', child: Text('Editar')),
-                                  PopupMenuItem(
-                                    value: 'balance',
-                                    child: Text(account.includeInBalance
-                                        ? 'Excluir do saldo do mês'
-                                        : 'Incluir no saldo do mês'),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'archive',
-                                    child: Text(account.isArchived
-                                        ? 'Reativar'
-                                        : 'Arquivar'),
-                                  ),
-                                ],
-                              )),
-                        ]),
-                    isThreeLine: true,
-                    leading: CircleAvatar(
-                        backgroundColor:
-                            SomiaColors.blue.withValues(alpha: 0.17),
-                        child: Icon(
-                            account.type == AccountType.cash
-                                ? Icons.account_balance_wallet_outlined
-                                : Icons.account_balance_outlined,
-                            color: SomiaColors.blue)),
-                    dense: false,
-                    onTap: () => _edit(context, account),
                   ),
                 );
-              },
-            );
-          },
-        )),
+              }
+              if (state.accounts.isEmpty) {
+                return const Center(child: Text('Nenhuma conta cadastrada.'));
+              }
+              final totals = <String, (int, int)>{};
+              for (final account in state.accounts) {
+                totals.putIfAbsent(account.currencyCode, () => (0, 0));
+                if (!account.includeInBalance) continue;
+                final current = totals[account.currencyCode]!;
+                totals[account.currencyCode] = (
+                  current.$1 + account.currentBalanceMinor,
+                  current.$2 + account.projectedBalanceMinor,
+                );
+              }
+              final currencies = totals.keys.toList()..sort();
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                itemCount: state.accounts.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+                            child: Text('Saldos no fim do mês',
+                                style:
+                                    Theme.of(context).textTheme.titleMedium)),
+                        for (final currency in currencies)
+                          Card(
+                              child: ListTile(
+                            title: Text(currency),
+                            subtitle: Text(
+                                'Efetivado: ${MoneyMinor.display(totals[currency]!.$1, currency)}'
+                                '\nProjetado até o fim do mês: '
+                                '${MoneyMinor.display(totals[currency]!.$2, currency)}'),
+                            isThreeLine: true,
+                          )),
+                        const SizedBox(height: 8),
+                      ],
+                    );
+                  }
+                  final account = state.accounts[index - 1];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      title: Text(account.name,
+                          maxLines: 2, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(
+                        '${account.type.label} · ${account.currencyCode}'
+                        '${account.isArchived ? ' · Arquivada' : ''}'
+                        '${account.includeInAnalytics ? '' : ' · Fora das análises'}'
+                        '${account.includeInBalance ? '' : ' · Fora do saldo consolidado'}'
+                        '\nProjetado: ${MoneyMinor.display(account.projectedBalanceMinor, account.currencyCode)}',
+                      ),
+                      trailing: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                                MoneyMinor.display(account.currentBalanceMinor,
+                                    account.currencyCode),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600)),
+                            SizedBox(
+                                height: 32,
+                                child: PopupMenuButton<String>(
+                                  key: ValueKey('account-menu-${account.id}'),
+                                  tooltip: 'Ações da conta',
+                                  icon: const Icon(Icons.more_horiz, size: 20),
+                                  padding: EdgeInsets.zero,
+                                  onSelected: (action) {
+                                    if (action == 'edit') {
+                                      _edit(context, account);
+                                    } else if (action == 'balance') {
+                                      _toggleBalance(context, account);
+                                    } else {
+                                      _archive(context, account);
+                                    }
+                                  },
+                                  itemBuilder: (_) => [
+                                    const PopupMenuItem(
+                                        value: 'edit', child: Text('Editar')),
+                                    PopupMenuItem(
+                                      value: 'balance',
+                                      child: Text(account.includeInBalance
+                                          ? 'Excluir do saldo do mês'
+                                          : 'Incluir no saldo do mês'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'archive',
+                                      child: Text(account.isArchived
+                                          ? 'Reativar'
+                                          : 'Arquivar'),
+                                    ),
+                                  ],
+                                )),
+                          ]),
+                      isThreeLine: true,
+                      leading: CircleAvatar(
+                          backgroundColor:
+                              SomiaColors.blue.withValues(alpha: 0.17),
+                          child: Icon(
+                              account.type == AccountType.cash
+                                  ? Icons.account_balance_wallet_outlined
+                                  : Icons.account_balance_outlined,
+                              color: SomiaColors.blue)),
+                      dense: false,
+                      onTap: () => _edit(context, account),
+                    ),
+                  );
+                },
+              );
+            },
+          )),
         ]),
       );
 }

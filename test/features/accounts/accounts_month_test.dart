@@ -16,24 +16,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('contas por mês preservam aplicações fora do saldo consolidado', () async {
+  test('contas por mês preservam aplicações fora do saldo consolidado',
+      () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
     final repo = SqliteAccountsRepository(db);
     final bank = await repo.create(const AccountDraft(
-        name: 'Corrente', type: AccountType.checking, currencyCode: 'BRL',
-        initialBalanceMinor: 10000, includeInAnalytics: true));
+        name: 'Corrente',
+        type: AccountType.checking,
+        currencyCode: 'BRL',
+        initialBalanceMinor: 10000,
+        includeInAnalytics: true));
     final investment = await repo.create(const AccountDraft(
-        name: 'Aplicação', type: AccountType.investment, currencyCode: 'BRL',
-        initialBalanceMinor: 50000, includeInAnalytics: true,
+        name: 'Aplicação',
+        type: AccountType.investment,
+        currencyCode: 'BRL',
+        initialBalanceMinor: 50000,
+        includeInAnalytics: true,
         includeInBalance: false));
     final transactions = SqliteTransactionsRepository(db);
     Future<void> add(TransactionType type, int amount, DateTime date,
         {bool effective = true}) async {
       await transactions.create(TransactionDraft(
-          description: 'Teste', type: type, amountMinor: amount, date: date,
-          isEffective: effective, accountId: bank.id));
+          description: 'Teste',
+          type: type,
+          amountMinor: amount,
+          date: date,
+          isEffective: effective,
+          accountId: bank.id));
     }
+
     await add(TransactionType.income, 5000, DateTime.utc(2026, 1, 10));
     await add(TransactionType.expense, 1000, DateTime.utc(2026, 2, 1));
     await add(TransactionType.expense, 700, DateTime.utc(2026, 1, 31),
@@ -41,8 +53,11 @@ void main() {
     await add(TransactionType.expense, 900, DateTime.utc(2026, 2, 1),
         effective: false);
     await SqliteTransfersRepository(db).create(TransferDraft(
-        sourceAccountId: bank.id, destinationAccountId: investment.id,
-        amountMinor: 2000, date: DateTime.utc(2026, 1, 15), isEffective: true));
+        sourceAccountId: bank.id,
+        destinationAccountId: investment.id,
+        amountMinor: 2000,
+        date: DateTime.utc(2026, 1, 15),
+        isEffective: true));
     final january = await repo.list(
         asOf: DateTime.utc(2026, 1, 31), through: DateTime.utc(2026, 1, 31));
     final current = january.firstWhere((a) => a.id == bank.id);
@@ -61,21 +76,42 @@ void main() {
     expect(summary.accounts.length, 2);
     final february = await repo.list(
         asOf: DateTime.utc(2026, 2, 28), through: DateTime.utc(2026, 2, 28));
-    expect(february.firstWhere((a) => a.id == bank.id).currentBalanceMinor, 12000);
-    expect(february.firstWhere((a) => a.id == bank.id).projectedBalanceMinor, 10400);
-    await repo.update(investment.id, const AccountDraft(
-        name: 'Aplicação', type: AccountType.investment, currencyCode: 'BRL',
-        initialBalanceMinor: 50000, includeInAnalytics: true));
-    expect((await dashboard.load(DateTime(2026, 1))).currencies.single
-        .currentBalanceMinor, 65000);
-    await repo.update(bank.id, const AccountDraft(
-        name: 'Corrente', type: AccountType.checking, currencyCode: 'BRL',
-        initialBalanceMinor: 10000, includeInAnalytics: true,
-        includeInBalance: false));
-    await repo.update(investment.id, const AccountDraft(
-        name: 'Aplicação', type: AccountType.investment, currencyCode: 'BRL',
-        initialBalanceMinor: 50000, includeInAnalytics: true,
-        includeInBalance: false));
+    expect(
+        february.firstWhere((a) => a.id == bank.id).currentBalanceMinor, 12000);
+    expect(february.firstWhere((a) => a.id == bank.id).projectedBalanceMinor,
+        10400);
+    await repo.update(
+        investment.id,
+        const AccountDraft(
+            name: 'Aplicação',
+            type: AccountType.investment,
+            currencyCode: 'BRL',
+            initialBalanceMinor: 50000,
+            includeInAnalytics: true));
+    expect(
+        (await dashboard.load(DateTime(2026, 1)))
+            .currencies
+            .single
+            .currentBalanceMinor,
+        65000);
+    await repo.update(
+        bank.id,
+        const AccountDraft(
+            name: 'Corrente',
+            type: AccountType.checking,
+            currencyCode: 'BRL',
+            initialBalanceMinor: 10000,
+            includeInAnalytics: true,
+            includeInBalance: false));
+    await repo.update(
+        investment.id,
+        const AccountDraft(
+            name: 'Aplicação',
+            type: AccountType.investment,
+            currencyCode: 'BRL',
+            initialBalanceMinor: 50000,
+            includeInAnalytics: true,
+            includeInBalance: false));
     final balances = await SqliteBalancesRepository(db).calculate(
         asOf: DateTime.utc(2026, 1, 31), through: DateTime.utc(2026, 1, 31));
     expect(balances.accounts.length, 2);
@@ -83,15 +119,19 @@ void main() {
     expect(balances.consolidated.single.projectedMinor, 0);
   });
 
-  testWidgets('Contas compartilha mês e menu alterna inclusão sem esconder conta',
+  testWidgets(
+      'Contas compartilha mês e menu alterna inclusão sem esconder conta',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     final db = AppDatabase(NativeDatabase.memory());
     final repo = SqliteAccountsRepository(db);
     final account = await repo.create(const AccountDraft(
-        name: 'Aplicação', type: AccountType.investment, currencyCode: 'BRL',
-        initialBalanceMinor: 50000, includeInAnalytics: true));
+        name: 'Aplicação',
+        type: AccountType.investment,
+        currencyCode: 'BRL',
+        initialBalanceMinor: 50000,
+        includeInAnalytics: true));
     getIt.registerSingleton<AccountsRepository>(repo);
     referenceMonth.select(DateTime(2026, 1));
     addTearDown(() async {
