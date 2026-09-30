@@ -126,6 +126,7 @@ class _AccountsView extends StatelessWidget {
                 }
                 final account = state.accounts[index - 1];
                 return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     title: Text(account.name,
                         maxLines: 2, overflow: TextOverflow.ellipsis),
@@ -250,6 +251,7 @@ class _AccountDialogState extends State<_AccountDialog> {
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                spacing: 16,
                 children: [
                   TextFormField(
                     controller: _name,

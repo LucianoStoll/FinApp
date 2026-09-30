@@ -38,7 +38,7 @@ class MobileDashboardAppBar extends StatelessWidget
   const MobileDashboardAppBar({super.key});
 
   @override
-  Size get preferredSize => const Size.fromHeight(72);
+  Size get preferredSize => const Size.fromHeight(128);
 
   @override
   Widget build(BuildContext context) =>
@@ -81,18 +81,19 @@ class MobileDashboardAppBar extends StatelessWidget
               ),
             ),
           ]),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(56),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: MonthSelector(
                 key: const ValueKey('dashboard-month-selector'),
                 month: state.month,
                 compact: compact,
-                arrows: false,
+                arrows: true,
                 onChanged: referenceMonth.select,
               ),
             ),
-          ],
+          ),
         );
       });
 }

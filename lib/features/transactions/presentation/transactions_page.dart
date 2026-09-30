@@ -534,6 +534,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
       );
 
   Widget _itemTile(FinancialTransaction item) => Card(
+        margin: const EdgeInsets.only(bottom: 12),
         child: ListTile(
           leading: CircleAvatar(
               backgroundColor: (item.type == TransactionType.income
@@ -737,141 +738,149 @@ class _TransactionDialogState extends State<_TransactionDialog> {
         child: Form(
             key: _formKey,
             child: SingleChildScrollView(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                if (widget.fixedType != null)
-                  ListTile(
+              child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 16,
+                  children: [
+                    if (widget.fixedType != null)
+                      ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Tipo'),
+                          subtitle: Text(widget.fixedType!.label))
+                    else
+                      DropdownButtonFormField<TransactionType>(
+                        isExpanded: true,
+                        initialValue: _type,
+                        decoration: const InputDecoration(labelText: 'Tipo'),
+                        items: TransactionType.values
+                            .map((type) => DropdownMenuItem(
+                                value: type, child: Text(type.label)))
+                            .toList(),
+                        onChanged: (type) {
+                          if (type != null) {
+                            setState(() {
+                              _type = type;
+                              _categoryId = null;
+                              _subcategoryId = null;
+                            });
+                          }
+                        },
+                      ),
+                    TextFormField(
+                        controller: _description,
+                        decoration:
+                            const InputDecoration(labelText: 'Descrição'),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                                ? 'Informe a descrição.'
+                                : null),
+                    TextFormField(
+                        controller: _amount,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        decoration: const InputDecoration(labelText: 'Valor'),
+                        validator: (value) {
+                          try {
+                            return MoneyMinor.parse(value ?? '') > 0
+                                ? null
+                                : 'O valor deve ser maior que zero.';
+                          } on FormatException catch (error) {
+                            return error.message;
+                          }
+                        }),
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      initialValue: _accountId,
+                      decoration: const InputDecoration(labelText: 'Conta'),
+                      items: _availableAccounts
+                          .map((account) => DropdownMenuItem(
+                                value: account.id,
+                                child: Text(
+                                    '${account.name}${account.isArchived ? ' (arquivada)' : ''}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
+                              ))
+                          .toList(),
+                      validator: (value) =>
+                          value == null ? 'Cadastre uma conta ativa.' : null,
+                      onChanged: (id) => setState(() => _accountId = id),
+                    ),
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      key: ValueKey('category-${_type.name}'),
+                      initialValue: _categoryId,
+                      decoration: const InputDecoration(labelText: 'Categoria'),
+                      items: [
+                        const DropdownMenuItem(
+                            value: '', child: Text('Sem categoria')),
+                        for (final category in roots)
+                          DropdownMenuItem(
+                              value: category.id,
+                              child: Text(
+                                  '${category.name}'
+                                  '${category.isArchived ? ' (arquivada)' : ''}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis))
+                      ],
+                      onChanged: (id) => setState(() {
+                        _categoryId = id == null || id.isEmpty ? null : id;
+                        _subcategoryId = null;
+                      }),
+                    ),
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      key: ValueKey('subcategory-${_type.name}-$_categoryId'),
+                      initialValue: _subcategoryId,
+                      decoration:
+                          const InputDecoration(labelText: 'Subcategoria'),
+                      items: [
+                        const DropdownMenuItem(
+                            value: '', child: Text('Nenhuma')),
+                        for (final category in children)
+                          DropdownMenuItem(
+                              value: category.id,
+                              child: Text(
+                                  '${category.name}'
+                                  '${category.isArchived ? ' (arquivada)' : ''}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis))
+                      ],
+                      onChanged: _categoryId == null
+                          ? null
+                          : (id) => setState(() => _subcategoryId =
+                              id == null || id.isEmpty ? null : id),
+                    ),
+                    ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Tipo'),
-                      subtitle: Text(widget.fixedType!.label))
-                else
-                  DropdownButtonFormField<TransactionType>(
-                    isExpanded: true,
-                    initialValue: _type,
-                    decoration: const InputDecoration(labelText: 'Tipo'),
-                    items: TransactionType.values
-                        .map((type) => DropdownMenuItem(
-                            value: type, child: Text(type.label)))
-                        .toList(),
-                    onChanged: (type) {
-                      if (type != null) {
-                        setState(() {
-                          _type = type;
-                          _categoryId = null;
-                          _subcategoryId = null;
-                        });
-                      }
-                    },
-                  ),
-                TextFormField(
-                    controller: _description,
-                    decoration: const InputDecoration(labelText: 'Descrição'),
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? 'Informe a descrição.'
-                        : null),
-                TextFormField(
-                    controller: _amount,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Valor'),
-                    validator: (value) {
-                      try {
-                        return MoneyMinor.parse(value ?? '') > 0
-                            ? null
-                            : 'O valor deve ser maior que zero.';
-                      } on FormatException catch (error) {
-                        return error.message;
-                      }
-                    }),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  initialValue: _accountId,
-                  decoration: const InputDecoration(labelText: 'Conta'),
-                  items: _availableAccounts
-                      .map((account) => DropdownMenuItem(
-                            value: account.id,
-                            child: Text(
-                                '${account.name}${account.isArchived ? ' (arquivada)' : ''}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis),
-                          ))
-                      .toList(),
-                  validator: (value) =>
-                      value == null ? 'Cadastre uma conta ativa.' : null,
-                  onChanged: (id) => setState(() => _accountId = id),
-                ),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  key: ValueKey('category-${_type.name}'),
-                  initialValue: _categoryId,
-                  decoration: const InputDecoration(labelText: 'Categoria'),
-                  items: [
-                    const DropdownMenuItem(
-                        value: '', child: Text('Sem categoria')),
-                    for (final category in roots)
-                      DropdownMenuItem(
-                          value: category.id,
-                          child: Text(
-                              '${category.name}'
-                              '${category.isArchived ? ' (arquivada)' : ''}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis))
-                  ],
-                  onChanged: (id) => setState(() {
-                    _categoryId = id == null || id.isEmpty ? null : id;
-                    _subcategoryId = null;
-                  }),
-                ),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  key: ValueKey('subcategory-${_type.name}-$_categoryId'),
-                  initialValue: _subcategoryId,
-                  decoration: const InputDecoration(labelText: 'Subcategoria'),
-                  items: [
-                    const DropdownMenuItem(value: '', child: Text('Nenhuma')),
-                    for (final category in children)
-                      DropdownMenuItem(
-                          value: category.id,
-                          child: Text(
-                              '${category.name}'
-                              '${category.isArchived ? ' (arquivada)' : ''}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis))
-                  ],
-                  onChanged: _categoryId == null
-                      ? null
-                      : (id) => setState(() => _subcategoryId =
-                          id == null || id.isEmpty ? null : id),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Data de lançamento'),
-                  subtitle: Text(_dateLabel(_date)),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: () => _pickDate('posted'),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Vencimento'),
-                  subtitle: Text(_dateLabel(_dueDate)),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: () => _pickDate('due'),
-                ),
-                SwitchListTile(
-                  title: const Text('Informar efetivação'),
-                  subtitle: const Text(
-                      'A data determina quando entra no saldo atual'),
-                  value: _isEffective,
-                  onChanged: (value) => setState(() => _isEffective = value),
-                ),
-                if (_isEffective)
-                  ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Data de efetivação'),
-                      subtitle:
-                          Text(_dateLabel(_effectiveDate ?? DateTime.now())),
+                      title: const Text('Data de lançamento'),
+                      subtitle: Text(_dateLabel(_date)),
                       trailing: const Icon(Icons.calendar_today),
-                      onTap: () => _pickDate('effective')),
-              ]),
+                      onTap: () => _pickDate('posted'),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Vencimento'),
+                      subtitle: Text(_dateLabel(_dueDate)),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: () => _pickDate('due'),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Informar efetivação'),
+                      subtitle: const Text(
+                          'A data determina quando entra no saldo atual'),
+                      value: _isEffective,
+                      onChanged: (value) =>
+                          setState(() => _isEffective = value),
+                    ),
+                    if (_isEffective)
+                      ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Data de efetivação'),
+                          subtitle: Text(
+                              _dateLabel(_effectiveDate ?? DateTime.now())),
+                          trailing: const Icon(Icons.calendar_today),
+                          onTap: () => _pickDate('effective')),
+                  ]),
             )),
       ),
       actions: [

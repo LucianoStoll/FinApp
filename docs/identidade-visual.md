@@ -275,3 +275,16 @@ filtros. “Limpar filtros” restaura vencimento e mês de referência.
 
 Em paisagem, a barra lateral compacta tem 104 pixels de largura útil, além
 do espaço seguro do Android, com navegação rolável para telas baixas.
+
+
+### Ajustes de conforto no mobile
+
+No dashboard, as setas de mês anterior/próximo acompanham a seleção direta
+de mês e ano. O controle ocupa uma segunda linha no cabeçalho mobile,
+preservando espaço para Somia, os alvos de toque e o nome completo do mês.
+Os formulários de contas, categorias, lançamentos e transferências usam
+16 pixels entre os campos, evitando sobreposição dos rótulos flutuantes.
+Os formulários continuam roláveis quando o teclado está aberto.
+
+Os cards das listas de contas, categorias, lançamentos e transferências
+têm 12 pixels de separação vertical.

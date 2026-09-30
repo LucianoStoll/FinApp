@@ -145,6 +145,13 @@ void main() {
       (tester) async {
     final repository = await _mount(tester, const Size(390, 900));
     final initial = repository.requestedMonths.last;
+    await tester.tap(find.byTooltip('Próximo mês'));
+    await tester.pumpAndSettle();
+    expect(repository.requestedMonths.last,
+        DateTime(initial.year, initial.month + 1));
+    await tester.tap(find.byTooltip('Mês anterior'));
+    await tester.pumpAndSettle();
+    expect(repository.requestedMonths.last, initial);
     await tester.tap(find.byKey(const ValueKey('dashboard-month-selector')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Dezembro'));

@@ -149,6 +149,7 @@ class _CategoriesViewState extends State<_CategoriesView> {
       );
 
   Widget _categoryTile(FinanceCategory category) => Card(
+        margin: const EdgeInsets.only(bottom: 12),
         child: ListTile(
           leading: Icon(_icons[category.iconKey] ?? Icons.label_outline,
               color: category.colorArgb == null
@@ -242,7 +243,8 @@ class _CategoryDialogState extends State<_CategoryDialog> {
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
+            child:
+                Column(mainAxisSize: MainAxisSize.min, spacing: 16, children: [
               TextFormField(
                 controller: _name,
                 decoration: const InputDecoration(labelText: 'Nome'),
