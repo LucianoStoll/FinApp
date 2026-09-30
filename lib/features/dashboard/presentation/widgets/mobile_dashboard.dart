@@ -420,9 +420,10 @@ class _HistoryPanel extends StatelessWidget {
       ),
       child: Column(children: [
         if (currency.history.isEmpty)
-          const SizedBox(
+          SizedBox(
               height: plotHeight,
-              child: Center(child: Text('Histórico mensal indisponível.')))
+              child:
+                  const Center(child: Text('Histórico mensal indisponível.')))
         else
           SizedBox(
               height: plotHeight,
