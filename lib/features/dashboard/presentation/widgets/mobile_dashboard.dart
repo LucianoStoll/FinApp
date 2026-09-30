@@ -11,6 +11,10 @@ import '../../../accounts/domain/money_minor.dart';
 import '../../domain/entities/dashboard_summary.dart';
 import '../dashboard_cubit.dart';
 
+String _money(int minor, String currencyCode) =>
+    MoneyMinor.display(minor, currencyCode).replaceAllMapped(
+        RegExp(r'\d{1,3}(?=(\d{3})+,)'), (match) => '${match[0]}.');
+
 const _months = [
   'Janeiro',
   'Fevereiro',
@@ -220,8 +224,8 @@ class _CurrencySection extends StatelessWidget {
         color: SomiaColors.blue,
         icon: Icons.account_balance_wallet_outlined,
         detail: future
-            ? 'Saldo efetivado: ${MoneyMinor.display(currency.currentBalanceMinor, code)}'
-            : 'Saldo projetado: ${MoneyMinor.display(currency.projectedBalanceMinor, code)}',
+            ? 'Saldo efetivado: ${_money(currency.currentBalanceMinor, code)}'
+            : 'Saldo projetado: ${_money(currency.projectedBalanceMinor, code)}',
       ),
       const SizedBox(height: 10),
       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -292,7 +296,7 @@ class _MetricCard extends StatelessWidget {
     final value = FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.centerLeft,
-      child: Text(MoneyMinor.display(amount, code),
+      child: Text(_money(amount, code),
           style:
               TextStyle(fontSize: wide ? 24 : 21, fontWeight: FontWeight.w700)),
     );
@@ -456,7 +460,7 @@ class _HistoryPanel extends StatelessWidget {
                         Expanded(
                             child: Semantics(
                           label:
-                              '${_months[item.month.month - 1]}: receitas ${MoneyMinor.display(item.incomeMinor, currency.currencyCode)}, despesas ${MoneyMinor.display(item.expenseMinor, currency.currencyCode)}',
+                              '${_months[item.month.month - 1]}: receitas ${_money(item.incomeMinor, currency.currencyCode)}, despesas ${_money(item.expenseMinor, currency.currencyCode)}',
                           child: ExcludeSemantics(
                               child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -632,7 +636,7 @@ class _RecentTile extends StatelessWidget {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                      '${item.type == DashboardActivityType.income ? '+ ' : item.type == DashboardActivityType.expense ? '- ' : ''}${MoneyMinor.display(item.amountMinor, item.currencyCode)}',
+                      '${item.type == DashboardActivityType.income ? '+ ' : item.type == DashboardActivityType.expense ? '- ' : ''}${_money(item.amountMinor, item.currencyCode)}',
                       style: TextStyle(
                           fontSize: 13,
                           color: color,

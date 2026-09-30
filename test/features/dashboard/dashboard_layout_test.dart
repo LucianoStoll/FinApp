@@ -111,6 +111,7 @@ void main() {
       final recent =
           tester.getRect(find.byKey(const ValueKey('mobile-recent')));
       expect(balance.width, closeTo(width - 32, 0.1));
+      expect(find.text('R\$ 2.350,00'), findsOneWidget);
       expect(income.top, expense.top);
       expect(income.right, lessThan(expense.left));
       expect(balance.bottom, lessThan(income.top));
@@ -179,6 +180,13 @@ void main() {
         }
       }
       await loader.load();
+      final icons = FontLoader('MaterialIcons');
+      icons.addFont(Future.value(File(
+              '$root/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf')
+          .readAsBytesSync()
+          .buffer
+          .asByteData()));
+      await icons.load();
       await _mount(tester, const Size(390, 844));
       await expectLater(find.byKey(const ValueKey('dashboard-preview')),
           matchesGoldenFile('dashboard-mobile-preview.png'));
