@@ -45,8 +45,9 @@ class DashboardCubit extends Cubit<DashboardState> {
         month: selected, summary: previousSummary, loading: true));
     try {
       final summary = await _repository.load(selected);
-      if (!isClosed && request == _request)
+      if (!isClosed && request == _request) {
         emit(DashboardState(month: selected, summary: summary));
+      }
     } catch (_) {
       if (!isClosed && request == _request) {
         emit(DashboardState(

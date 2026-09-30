@@ -407,7 +407,7 @@ class _HistoryPanel extends StatelessWidget {
                         Expanded(
                             child: Semantics(
                           label:
-                              '${_months[item.month.month - 1]}: receitas ${_money(item.incomeMinor, currency.currencyCode)}, despesas ${_money(item.expenseMinor, currency.currencyCode)}',
+                              '${monthNames[item.month.month - 1]}: receitas ${_money(item.incomeMinor, currency.currencyCode)}, despesas ${_money(item.expenseMinor, currency.currencyCode)}',
                           child: ExcludeSemantics(
                               child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
