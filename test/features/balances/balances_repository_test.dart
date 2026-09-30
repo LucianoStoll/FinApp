@@ -69,10 +69,10 @@ void main() {
         10000);
     expect(
         october.accounts.firstWhere((x) => x.accountId == a.id).projectedMinor,
-        6500);
+        9500);
     expect(
         october.accounts.firstWhere((x) => x.accountId == b.id).projectedMinor,
-        1000);
+        0);
     final november = await repo.calculate(
         asOf: DateTime.utc(2026, 11, 30), through: DateTime.utc(2026, 11, 30));
     expect(
@@ -227,7 +227,7 @@ void main() {
         4);
   });
 
-  test('liquidação posterior entra na projeção do mês original', () async {
+  test('liquidação posterior pertence ao mês agendado na projeção', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
     final accounts = SqliteAccountsRepository(db);
@@ -269,9 +269,9 @@ void main() {
       for (final account in snapshot.accounts) account.accountId: account
     };
     expect(byId[source.id]!.currentMinor, 10000);
-    expect(byId[source.id]!.projectedMinor, 7000);
+    expect(byId[source.id]!.projectedMinor, 10000);
     expect(byId[destination.id]!.currentMinor, 0);
-    expect(byId[destination.id]!.projectedMinor, 1000);
-    expect(snapshot.consolidated.single.projectedMinor, 8000);
+    expect(byId[destination.id]!.projectedMinor, 0);
+    expect(snapshot.consolidated.single.projectedMinor, 10000);
   });
 }
