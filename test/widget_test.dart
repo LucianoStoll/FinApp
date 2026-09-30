@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:finapp/app/app.dart';
+import 'package:finapp/core/widgets/somia_brand.dart';
 import 'package:finapp/core/di/injection.dart';
 import 'package:finapp/features/dashboard/domain/dashboard_repository.dart';
 import 'package:finapp/features/dashboard/domain/entities/dashboard_summary.dart';
@@ -51,7 +52,7 @@ void main() {
     await tester.pumpWidget(const FinApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Somia'), findsWidgets);
+    expect(find.byType(SomiaBrand), findsWidgets);
     expect(find.text('Saldo total'), findsOneWidget);
     expect(find.text('R\$ 120,00'), findsOneWidget);
     expect(find.text('Resultado do mês'), findsOneWidget);

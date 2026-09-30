@@ -9,6 +9,7 @@ import '../../../../core/widgets/month_selector.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/routing/somia_shell.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/somia_brand.dart';
 import '../../../accounts/domain/money_minor.dart';
 import '../../domain/dashboard_repository.dart';
 import '../../domain/entities/dashboard_summary.dart';
@@ -81,7 +82,7 @@ class _DashboardViewState extends State<_DashboardView>
         appBar: MediaQuery.sizeOf(context).width < 800
             ? const MobileDashboardAppBar()
             : AppBar(
-                title: const Text('Somia'),
+                title: const SomiaBrand(height: 32),
                 leading: somiaMenuLeading(context),
                 actions: [
                     IconButton(

@@ -25,3 +25,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/branding/somia_symbol.png
+    - assets/branding/somia_horizontal.png

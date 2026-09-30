@@ -9,6 +9,7 @@ import '../../../../core/filters/reference_month.dart';
 import '../../../../core/widgets/month_selector.dart';
 import '../../../../core/routing/somia_shell.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/somia_brand.dart';
 import '../../../accounts/domain/money_minor.dart';
 import '../../domain/entities/dashboard_summary.dart';
 import '../dashboard_cubit.dart';
@@ -49,38 +50,7 @@ class MobileDashboardAppBar extends StatelessWidget
           leadingWidth: 48,
           titleSpacing: 2,
           leading: const SomiaMenuButton(),
-          title: Row(children: [
-            Container(
-              width: 20,
-              height: 25,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFC5E4FF),
-                    SomiaColors.blue,
-                    Color(0xFF689BDB)
-                  ],
-                ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(13),
-                  bottomRight: Radius.circular(13),
-                  topRight: Radius.circular(3),
-                  bottomLeft: Radius.circular(3),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text('Somia',
-                    style:
-                        TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
-              ),
-            ),
-          ]),
+          title: const SomiaBrand(height: 36),
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(56),
             child: Padding(

@@ -1,6 +1,6 @@
 # Somia — Identidade visual e interface do MVP
 
-Versão do documento: 1.2 • 29/09/2026  
+Versão do documento: 1.3 • 30/09/2026  
 Projeto: FinApp • Marco: v0.1.0-alpha  
 Origem: chat “Definir identidade visual”, de 28/09/2026.
 
@@ -76,7 +76,7 @@ Resultado mensal significa receitas menos despesas do período. Não deve ser co
 Referência: [1000067034.png](https://chatgpt.com/api/library/files/libfile_252f52e1e7d4819182c295e9cecbc831/download), enviada pelo usuário nesta revisão.
 
 Ordem e geometria mobile:
-1. Cabeçalho compacto com menu, marca Somia e seletor do mês à direita.
+1. Cabeçalho compacto com menu e marca Somia; seletor do mês e setas em uma linha própria.
 2. Saudação e título “Resumo do mês”.
 3. Saldo do mês em cartão de largura total; projeção como informação secundária. Em mês futuro, o previsto continua em destaque.
 4. Receitas e Despesas na mesma linha, cada uma com metade da largura disponível.
@@ -180,7 +180,7 @@ Estas recomendações operacionalizam a direção aprovada; não são escolhas a
 - Em telas largas, aproveitar colunas e navegação lateral sem esticar cartões indefinidamente.
 - Evitar adicionar dependências apenas para reproduzir efeitos decorativos.
 
-Códigos HEX, família tipográfica definitiva, medidas exatas e logotipo vetorial não estão confirmados no registro recuperado. Devem ser definidos durante a implementação respeitando o protótipo; não tratar valores arbitrários como decisões do usuário.
+A logo oficial, seus códigos HEX e os arquivos vetoriais estão definidos na seção “Logo oficial — 30/09/2026”. Para os demais componentes, consultar o tema implementado e as medidas documentadas; decisões futuras devem respeitar as referências aprovadas.
 
 ## 6. Estados e regras de dados
 
@@ -288,3 +288,30 @@ Os formulários continuam roláveis quando o teclado está aberto.
 
 Os cards das listas de contas, categorias, lançamentos e transferências
 têm 12 pixels de separação vertical.
+
+
+## Logo oficial — 30/09/2026
+
+O monograma S em azul acinzentado substitui a folha usada provisoriamente.
+A assinatura horizontal combina o símbolo com Somia em branco suave.
+As versões finais foram reconstruídas em vetor, com cor sólida, transparência
+limpa e tipografia convertida em contornos (URW Gothic Demi).
+
+![Símbolo e assinatura horizontal oficiais](assets/somia-logos.png)
+
+| Uso | Arquivo |
+| --- | --- |
+| Ícone, menu recolhido e aplicações pequenas | [Símbolo SVG](../assets/branding/somia_symbol.svg) · [PNG transparente](../assets/branding/somia_symbol.png) |
+| Cabeçalho e menu aberto | [Logo horizontal SVG](../assets/branding/somia_horizontal.svg) · [PNG transparente](../assets/branding/somia_horizontal.png) |
+
+Cores: símbolo `#9FBFD6`, nome `#F1F3F6` e fundo do ícone `#10161D`.
+O fundo escuro da imagem acima é apenas de apresentação; os arquivos da marca
+têm transparência. Manter as proporções, respiro e contraste; não distorcer,
+aplicar sombras, textura ou contorno branco.
+
+No app, `SomiaBrand` centraliza o uso da identidade. O Flutter usa PNGs
+transparentes locais, sem rede ou dependência adicional. Os SVGs são as
+fontes escaláveis. Android inclui ícone adaptativo com fundo e símbolo
+separados e versões de fallback em todas as densidades. Windows utiliza
+ICO com tamanhos de 16 a 256 pixels. O identificador de instalação e a
+assinatura do APK permanecem os mesmos para permitir atualização.

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import '../widgets/somia_brand.dart';
 import 'app_router.dart';
 
 final _mobileScaffoldKey = GlobalKey<ScaffoldState>();
@@ -97,18 +98,13 @@ class _SomiaMenu extends StatelessWidget {
                             ? MainAxisAlignment.center
                             : MainAxisAlignment.start,
                         children: [
-                          const Icon(Icons.spa_rounded,
-                              color: SomiaColors.blue, size: 28),
-                          if (!compact) ...[
-                            const SizedBox(width: 9),
-                            Expanded(
-                                child: Text('Somia',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall
-                                        ?.copyWith(
-                                            fontWeight: FontWeight.bold))),
-                          ],
+                          if (compact)
+                            const SomiaBrand(symbolOnly: true, height: 32)
+                          else
+                            const Expanded(
+                                child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: SomiaBrand(height: 42))),
                           if (isDrawer)
                             IconButton(
                                 tooltip: 'Fechar menu',
