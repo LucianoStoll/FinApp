@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:finapp/core/di/injection.dart';
 import 'package:finapp/core/routing/somia_shell.dart';

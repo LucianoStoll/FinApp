@@ -278,7 +278,7 @@ class _MetricCard extends StatelessWidget {
       padding: const EdgeInsets.all(7),
       decoration: BoxDecoration(
           color: color.withValues(alpha: 0.16),
-          borderRadius: BorderRadius.circular(11)),
+          borderRadius: BorderRadius.circular(wide ? 11 : 24)),
       child: Icon(icon, size: wide ? 22 : 19, color: color),
     );
     final chartIcon = ExcludeSemantics(
@@ -373,7 +373,7 @@ class _Panel extends StatelessWidget {
                   child: action!),
             ],
           ]),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           child,
         ]),
       ));
@@ -406,6 +406,8 @@ class _HistoryPanel extends StatelessWidget {
         ? 100
         : ((maximum / 4 / magnitude).ceil() * magnitude).ceil();
     final ceiling = step * 4;
+    final plotHeight =
+        MediaQuery.textScalerOf(context).scale(10) > 14 ? 160.0 : 122.0;
     return _Panel(
       title: 'Receitas vs Despesas',
       action: Container(
@@ -419,11 +421,11 @@ class _HistoryPanel extends StatelessWidget {
       child: Column(children: [
         if (currency.history.isEmpty)
           const SizedBox(
-              height: 160,
+              height: plotHeight,
               child: Center(child: Text('Histórico mensal indisponível.')))
         else
           SizedBox(
-              height: 160,
+              height: plotHeight,
               child: Row(children: [
                 SizedBox(
                     width: 34,
@@ -482,7 +484,7 @@ class _HistoryPanel extends StatelessWidget {
                   ]),
                 ])),
               ])),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         const Wrap(
             alignment: WrapAlignment.center,
             spacing: 18,
