@@ -12,8 +12,8 @@ class SqliteAccountsRepository implements AccountsRepository {
   final AppDatabase _db;
 
   @override
-  Future<List<Account>> list() async {
-    final rows = await balanceRows(_db);
+  Future<List<Account>> list({DateTime? asOf, DateTime? through}) async {
+    final rows = await balanceRows(_db, asOf: asOf, through: through);
     return rows.map(_mapAccount).toList();
   }
 
@@ -25,8 +25,8 @@ class SqliteAccountsRepository implements AccountsRepository {
     await _db.customStatement('''
       INSERT INTO accounts
         (id, name, type, currency_code, initial_balance_minor,
-         include_in_analytics, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         include_in_analytics, include_in_balance, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', [
       id,
       draft.name.trim(),
@@ -34,6 +34,7 @@ class SqliteAccountsRepository implements AccountsRepository {
       draft.currencyCode.toUpperCase(),
       draft.initialBalanceMinor,
       draft.includeInAnalytics ? 1 : 0,
+      draft.includeInBalance ? 1 : 0,
       now,
       now
     ]);
@@ -63,7 +64,8 @@ class SqliteAccountsRepository implements AccountsRepository {
     }
     await _db.customStatement('''
       UPDATE accounts SET name = ?, type = ?, currency_code = ?,
-        initial_balance_minor = ?, include_in_analytics = ?, updated_at = ?,
+        initial_balance_minor = ?, include_in_analytics = ?,
+        include_in_balance = ?, updated_at = ?,
         sync_version = sync_version + 1
       WHERE id = ? AND deleted_at IS NULL
     ''', [
@@ -72,6 +74,7 @@ class SqliteAccountsRepository implements AccountsRepository {
       draft.currencyCode.toUpperCase(),
       draft.initialBalanceMinor,
       draft.includeInAnalytics ? 1 : 0,
+      draft.includeInBalance ? 1 : 0,
       EntityMetadata.nowUtcMillis(),
       id
     ]);
@@ -108,6 +111,7 @@ class SqliteAccountsRepository implements AccountsRepository {
             row.read<int>('pending_balance_minor'),
         isArchived: row.read<int>('is_archived') == 1,
         includeInAnalytics: row.read<int>('include_in_analytics') == 1,
+        includeInBalance: row.read<int>('include_in_balance') == 1,
       );
 
   void _validate(AccountDraft draft) {

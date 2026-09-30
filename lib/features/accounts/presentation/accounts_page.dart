@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/di/injection.dart';
+import '../../../core/filters/reference_month.dart';
+import '../../../core/widgets/month_selector.dart';
 import '../../../core/routing/somia_shell.dart';
 import '../../../core/theme/app_theme.dart';
 import '../domain/account.dart';
@@ -43,6 +45,14 @@ class _AccountsView extends StatelessWidget {
     }
   }
 
+  Future<void> _toggleBalance(BuildContext context, Account account) async {
+    try {
+      await context.read<AccountsCubit>().toggleBalance(account);
+    } catch (error) {
+      if (context.mounted) _message(context, _errorMessage(error));
+    }
+  }
+
   String _errorMessage(Object error) {
     if (error is FormatException) return error.message;
     if (error is StateError) return error.message;
@@ -67,7 +77,14 @@ class _AccountsView extends StatelessWidget {
             label: const Text('Nova conta'),
           ),
         ),
-        body: BlocBuilder<AccountsCubit, AccountsState>(
+        body: Column(children: [
+          Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: ValueListenableBuilder<DateTime>(
+                  valueListenable: referenceMonth,
+                  builder: (context, month, _) => MonthSelector(
+                      month: month, onChanged: referenceMonth.select))),
+          Expanded(child: BlocBuilder<AccountsCubit, AccountsState>(
           builder: (context, state) {
             if (state.loading && state.accounts.isEmpty) {
               return const Center(child: CircularProgressIndicator());
@@ -91,7 +108,9 @@ class _AccountsView extends StatelessWidget {
             }
             final totals = <String, (int, int)>{};
             for (final account in state.accounts) {
-              final current = totals[account.currencyCode] ?? (0, 0);
+              totals.putIfAbsent(account.currencyCode, () => (0, 0));
+              if (!account.includeInBalance) continue;
+              final current = totals[account.currencyCode]!;
               totals[account.currencyCode] = (
                 current.$1 + account.currentBalanceMinor,
                 current.$2 + account.projectedBalanceMinor,
@@ -108,15 +127,15 @@ class _AccountsView extends StatelessWidget {
                     children: [
                       Padding(
                           padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-                          child: Text('Saldos consolidados',
+                          child: Text('Saldos no fim do mês',
                               style: Theme.of(context).textTheme.titleMedium)),
                       for (final currency in currencies)
                         Card(
                             child: ListTile(
                           title: Text(currency),
                           subtitle: Text(
-                              'Atual: ${MoneyMinor.display(totals[currency]!.$1, currency)}'
-                              '\nProjetado (todas as pendências): '
+                              'Efetivado: ${MoneyMinor.display(totals[currency]!.$1, currency)}'
+                              '\nProjetado até o fim do mês: '
                               '${MoneyMinor.display(totals[currency]!.$2, currency)}'),
                           isThreeLine: true,
                         )),
@@ -134,6 +153,7 @@ class _AccountsView extends StatelessWidget {
                       '${account.type.label} · ${account.currencyCode}'
                       '${account.isArchived ? ' · Arquivada' : ''}'
                       '${account.includeInAnalytics ? '' : ' · Fora das análises'}'
+                      '${account.includeInBalance ? '' : ' · Fora do saldo consolidado'}'
                       '\nProjetado: ${MoneyMinor.display(account.projectedBalanceMinor, account.currencyCode)}',
                     ),
                     trailing: Column(
@@ -148,12 +168,15 @@ class _AccountsView extends StatelessWidget {
                           SizedBox(
                               height: 32,
                               child: PopupMenuButton<String>(
+                                key: ValueKey('account-menu-${account.id}'),
                                 tooltip: 'Ações da conta',
                                 icon: const Icon(Icons.more_horiz, size: 20),
                                 padding: EdgeInsets.zero,
                                 onSelected: (action) {
                                   if (action == 'edit') {
                                     _edit(context, account);
+                                  } else if (action == 'balance') {
+                                    _toggleBalance(context, account);
                                   } else {
                                     _archive(context, account);
                                   }
@@ -161,6 +184,12 @@ class _AccountsView extends StatelessWidget {
                                 itemBuilder: (_) => [
                                   const PopupMenuItem(
                                       value: 'edit', child: Text('Editar')),
+                                  PopupMenuItem(
+                                    value: 'balance',
+                                    child: Text(account.includeInBalance
+                                        ? 'Excluir do saldo do mês'
+                                        : 'Incluir no saldo do mês'),
+                                  ),
                                   PopupMenuItem(
                                     value: 'archive',
                                     child: Text(account.isArchived
@@ -186,7 +215,8 @@ class _AccountsView extends StatelessWidget {
               },
             );
           },
-        ),
+        )),
+        ]),
       );
 }
 
@@ -205,6 +235,7 @@ class _AccountDialogState extends State<_AccountDialog> {
   late final TextEditingController _initialBalance;
   late AccountType _type;
   late bool _includeInAnalytics;
+  late bool _includeInBalance;
 
   @override
   void initState() {
@@ -217,6 +248,7 @@ class _AccountDialogState extends State<_AccountDialog> {
     );
     _type = account?.type ?? AccountType.checking;
     _includeInAnalytics = account?.includeInAnalytics ?? true;
+    _includeInBalance = account?.includeInBalance ?? true;
   }
 
   @override
@@ -237,6 +269,7 @@ class _AccountDialogState extends State<_AccountDialog> {
         currencyCode: _currency.text.trim().toUpperCase(),
         initialBalanceMinor: MoneyMinor.parse(_initialBalance.text),
         includeInAnalytics: _includeInAnalytics,
+        includeInBalance: _includeInBalance,
       ),
     );
   }
@@ -300,6 +333,14 @@ class _AccountDialogState extends State<_AccountDialog> {
                         return error.message;
                       }
                     },
+                  ),
+                  SwitchListTile(
+                    title: const Text('Incluir no saldo do mês'),
+                    subtitle: const Text(
+                        'Somar esta conta ao saldo consolidado do resumo.'),
+                    value: _includeInBalance,
+                    onChanged: (value) =>
+                        setState(() => _includeInBalance = value),
                   ),
                   SwitchListTile(
                     title: const Text('Incluir em análises'),

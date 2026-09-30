@@ -23,7 +23,7 @@ class _DashboardStub implements DashboardRepository {
 
 class _AccountsStub implements AccountsRepository {
   @override
-  Future<List<Account>> list() async => [];
+  Future<List<Account>> list({DateTime? asOf, DateTime? through}) async => [];
   @override
   Future<Account> create(AccountDraft draft) => throw UnimplementedError();
   @override

@@ -20,6 +20,7 @@ class Account {
     required this.projectedBalanceMinor,
     required this.isArchived,
     required this.includeInAnalytics,
+    this.includeInBalance = true,
   });
 
   final String id;
@@ -31,6 +32,7 @@ class Account {
   final int projectedBalanceMinor;
   final bool isArchived;
   final bool includeInAnalytics;
+  final bool includeInBalance;
 }
 
 class AccountDraft {
@@ -40,6 +42,7 @@ class AccountDraft {
     required this.currencyCode,
     required this.initialBalanceMinor,
     required this.includeInAnalytics,
+    this.includeInBalance = true,
   });
 
   final String name;
@@ -47,4 +50,5 @@ class AccountDraft {
   final String currencyCode;
   final int initialBalanceMinor;
   final bool includeInAnalytics;
+  final bool includeInBalance;
 }

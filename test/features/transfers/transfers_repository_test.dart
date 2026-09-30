@@ -181,7 +181,7 @@ void main() {
     expect(
         (await db.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        5);
+        6);
     final old = (await SqliteTransfersRepository(db).list()).single;
     expect(old.id, 'old');
     expect(old.amountMinor, 500);

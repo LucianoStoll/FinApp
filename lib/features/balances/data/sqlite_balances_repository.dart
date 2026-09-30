@@ -87,7 +87,9 @@ class SqliteBalancesRepository implements BalancesRepository {
           currencyCode: currency,
           currentMinor: current,
           projectedMinor: projected));
-      final previous = totals[currency] ?? (0, 0);
+      totals.putIfAbsent(currency, () => (0, 0));
+      if (row.read<int>('include_in_balance') != 1) continue;
+      final previous = totals[currency]!;
       totals[currency] = (previous.$1 + current, previous.$2 + projected);
     }
     final consolidated = totals.entries

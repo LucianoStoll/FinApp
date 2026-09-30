@@ -332,3 +332,20 @@ Transferências entre contas não entram como receita ou despesa. Contas e
 movimentos excluídos das análises continuam fora dos gráficos e totais mensais.
 As listas mantêm o filtro padrão por vencimento; os filtros avançados permitem
 consultar lançamento, vencimento ou efetivação.
+
+
+### Contas: mês e participação no saldo consolidado
+
+A aba Contas compartilha o mês do Resumo, com setas, seleção direta de mês/ano
+e retorno ao mês atual. Cada conta mostra seu saldo efetivado até o último dia
+do mês e sua projeção até esse mesmo corte.
+
+O menu da conta permite “Excluir do saldo do mês” e “Incluir no saldo do mês”.
+A opção também aparece no formulário. Ela controla apenas a soma consolidada
+do Resumo e de Contas; a conta mantém seu saldo individual e seus movimentos.
+“Incluir em análises” continua independente e controla receitas, despesas e
+gráficos. Aplicações podem ficar fora do consolidado, permanecendo na lista.
+
+Contas existentes e novas começam incluídas. A migration v6 adiciona a
+preferência sem alterar registros financeiros. Backups v1 a v6 são aceitos;
+restaurar um backup antigo preserva os dados e aplica a migration.
