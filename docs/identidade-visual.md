@@ -1,6 +1,6 @@
 # Somia — Identidade visual e interface do MVP
 
-Versão do documento: 1.1 • 29/09/2026  
+Versão do documento: 1.2 • 29/09/2026  
 Projeto: FinApp • Marco: v0.1.0-alpha  
 Origem: chat “Definir identidade visual”, de 28/09/2026.
 
@@ -42,7 +42,7 @@ As referências enviadas no chat estão preservadas nos links abaixo. Esses link
 Os valores, nomes de contas e datas do protótipo são ilustrativos. Não devem ser inseridos como dados reais ou fixos no aplicativo.
 ### Referência visual de polimento aprovada em 29/09/2026
 
-A imagem [Somia — dashboard desktop](https://chatgpt.com/api/library/files/libfile_82b14d5505cc8191b345810285984adc/download) orienta o acabamento da interface: fundo azul quase preto, superfícies azul acinzentadas com bordas discretas, ícones coloridos por tipo, sidebar com item ativo, cartões de saldo/receitas/despesas/projeção, barras de seis meses, gráfico circular de categorias e painéis de lançamentos recentes e saldos por conta. Em janela intermediária a sidebar pode ficar compacta; no mobile, permanece o drawer aprovado, e os blocos se reorganizam em coluna ou grade responsiva.
+A imagem [Somia — dashboard desktop](https://chatgpt.com/api/library/files/libfile_82b14d5505cc8191b345810285984adc/download) orienta o acabamento da interface: fundo azul quase preto, superfícies azul acinzentadas com bordas discretas, ícones coloridos por tipo, sidebar com item ativo, cartões de saldo/receitas/despesas/projeção, barras de seis meses, gráfico circular de categorias e painéis de lançamentos recentes e saldos por conta. Em janela intermediária a sidebar pode ficar compacta; no mobile, permanece o drawer aprovado, e o dashboard passa a seguir a composição mobile fixa especificada abaixo.
 
 Os bancos, valores, percentuais e comparações da imagem são ilustrativos. Exibir dados reais do aplicativo, sem inserir marcas de bancos ou tendências calculadas sem histórico.
 
@@ -70,6 +70,22 @@ Os mockups foram gerados/aprovados durante a conversa de revisão do MVP em 29/0
 - Atualização após criar, editar ou excluir movimentos, sem reiniciar o aplicativo.
 
 Resultado mensal significa receitas menos despesas do período. Não deve ser confundido com o saldo acumulado das contas. Transferências entre contas não entram como receita/despesa nem no gráfico de gastos.
+
+### Composição do dashboard no Android — referência de 29/09/2026
+
+Referência: [1000067034.png](https://chatgpt.com/api/library/files/libfile_252f52e1e7d4819182c295e9cecbc831/download), enviada pelo usuário nesta revisão.
+
+Ordem e geometria mobile:
+1. Cabeçalho compacto com menu, marca Somia e seletor do mês à direita.
+2. Saudação e título “Resumo do mês”.
+3. Saldo do mês em cartão de largura total; projeção como informação secundária. Em mês futuro, o previsto continua em destaque.
+4. Receitas e Despesas na mesma linha, cada uma com metade da largura disponível.
+5. Gráfico “Receitas vs Despesas” em largura total, com seis meses, eixos, grade e legenda.
+6. “Transações recentes”, com ícones por tipo, descrição, data/conta, valor e acesso à listagem completa.
+
+No mobile não intercalar cartões extras de projeção, categorias ou saldos por conta entre esses blocos. Contas e categorias continuam disponíveis no menu; o desktop mantém sua composição atual, incluindo esses painéis. O botão + permanece acessível e o conteúdo pode rolar sem ser coberto por ele.
+
+O seletor de mês permanece no cabeçalho durante a rolagem, com mês anterior, próximo mês e retorno ao mês atual. Espaçamentos, cartões arredondados e cores seguem a imagem. Percentuais ilustrativos não são copiados para dados reais. A composição deve suportar telas estreitas, valores grandes e texto ampliado.
 
 ### Receitas
 
@@ -199,7 +215,7 @@ Preparar componentes independentes para facilitar evolução, sem implementar ag
 4. Aplicar a composição aprovada em Resumo, Lançamentos, Contas e formulários.
 5. Conectar o resumo e o gráfico aos dados locais.
 6. Validar Android/Windows, acessibilidade básica e uso offline.
-7. Rodar análise, testes e build Windows pelo GitHub Actions. A geração do APK fica pausada até a chave de assinatura da #31.
+7. Rodar análise, testes e build Windows pelo GitHub Actions. APKs são assinados com a chave persistente já configurada na #31.
 8. Após validação do usuário, concluir a issue e seguir o fluxo de PR para main.
 
 Usar branch identificada pela versão. A entrega desta documentação não significa que a interface já foi implementada ou validada.

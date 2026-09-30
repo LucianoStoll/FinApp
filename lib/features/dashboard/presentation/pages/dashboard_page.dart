@@ -11,6 +11,7 @@ import '../../../accounts/domain/money_minor.dart';
 import '../../domain/dashboard_repository.dart';
 import '../../domain/entities/dashboard_summary.dart';
 import '../dashboard_cubit.dart';
+import '../widgets/mobile_dashboard.dart';
 
 const _months = [
   'Janeiro',
@@ -88,15 +89,17 @@ class _DashboardViewState extends State<_DashboardView>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-            title: const Text('Somia'),
-            leading: somiaMenuLeading(context),
-            actions: [
-              IconButton(
-                  tooltip: 'Atualizar resumo',
-                  icon: const Icon(Icons.refresh),
-                  onPressed: context.read<DashboardCubit>().load)
-            ]),
+        appBar: MediaQuery.sizeOf(context).width < 800
+            ? const MobileDashboardAppBar()
+            : AppBar(
+                title: const Text('Somia'),
+                leading: somiaMenuLeading(context),
+                actions: [
+                    IconButton(
+                        tooltip: 'Atualizar resumo',
+                        icon: const Icon(Icons.refresh),
+                        onPressed: context.read<DashboardCubit>().load)
+                  ]),
         floatingActionButton: const SomiaQuickActions(),
         body: BlocBuilder<DashboardCubit, DashboardState>(
             builder: (context, state) {
@@ -109,6 +112,10 @@ class _DashboardViewState extends State<_DashboardView>
                     onPressed: context.read<DashboardCubit>().load,
                     child: Text(
                         '${state.error ?? 'Resumo indisponível.'} Tentar novamente')));
+          }
+          if (MediaQuery.sizeOf(context).width < 800) {
+            return MobileDashboardBody(
+                state: state, onRefresh: context.read<DashboardCubit>().load);
           }
           return RefreshIndicator(
               onRefresh: context.read<DashboardCubit>().load,
