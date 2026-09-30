@@ -89,8 +89,16 @@ void main() {
     await tester.pumpWidget(const FinApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Saldo total'), findsOneWidget);
-    expect(find.text('Gastos por categoria'), findsOneWidget);
+    expect(find.text('Saldo do mês'), findsOneWidget);
+    expect(find.text('Gastos por categoria'), findsNothing);
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('mobile-recent')), 250,
+        scrollable: find.descendant(
+            of: find.byKey(const ValueKey('dashboard-mobile-scroll')),
+            matching: find.byType(Scrollable)));
+    await tester.pumpAndSettle();
+    expect(find.text('Lançamento de mercado com uma descrição muito extensa'),
+        findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

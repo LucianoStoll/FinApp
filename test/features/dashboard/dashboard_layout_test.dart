@@ -127,7 +127,11 @@ void main() {
       (tester) async {
     await _mount(tester, const Size(320, 900), textScale: 2);
     expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.byKey(const ValueKey('mobile-recent')));
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('mobile-recent')), 250,
+        scrollable: find.descendant(
+            of: find.byKey(const ValueKey('dashboard-mobile-scroll')),
+            matching: find.byType(Scrollable)));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(
