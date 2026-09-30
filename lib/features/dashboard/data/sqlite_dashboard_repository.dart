@@ -20,21 +20,17 @@ class SqliteDashboardRepository implements DashboardRepository {
         final monthEnd = DateTime.utc(month.year, month.month + 1, 0);
         final balances = await SqliteBalancesRepository(_db)
             .calculate(asOf: monthEnd, through: monthEnd);
+        // Efetivados pertencem ao mês da efetivação; pendentes, ao vencimento.
+        // A data de lançamento não define os totais nem os gráficos.
         final totals = <String, (int, int)>{};
         final period = await _db.customSelect('''
-      SELECT a.currency_code, t.type, SUM(t.actual_amount_minor) AS amount_minor
+      SELECT a.currency_code, t.type, SUM(COALESCE(t.actual_amount_minor, t.planned_amount_minor)) AS amount_minor
       FROM transactions t JOIN accounts a ON a.id = t.account_id
-      WHERE t.deleted_at IS NULL AND t.effective_at IS NOT NULL
-        AND t.effective_at < ?
-        AND t.actual_amount_minor IS NOT NULL AND t.ignore_analytics = 0
+      WHERE t.deleted_at IS NULL AND t.ignore_analytics = 0
         AND a.deleted_at IS NULL AND a.include_in_analytics = 1
-        AND t.competence_at >= ? AND t.competence_at < ?
+        AND COALESCE(t.effective_at, t.due_at) >= ? AND COALESCE(t.effective_at, t.due_at) < ?
       GROUP BY a.currency_code, t.type
-    ''', variables: [
-          Variable.withInt(end),
-          Variable.withInt(start),
-          Variable.withInt(end)
-        ]).get();
+    ''', variables: [Variable.withInt(start), Variable.withInt(end)]).get();
         for (final row in period) {
           final currency = row.read<String>('currency_code');
           final previous = totals[currency] ?? (0, 0);
@@ -45,23 +41,17 @@ class SqliteDashboardRepository implements DashboardRepository {
         }
         final categoryRows = await _db.customSelect('''
       SELECT a.currency_code, COALESCE(parent.name, c.name, 'Sem categoria')
-        AS category_name, SUM(t.actual_amount_minor) AS amount_minor
+        AS category_name, SUM(COALESCE(t.actual_amount_minor, t.planned_amount_minor)) AS amount_minor
       FROM transactions t JOIN accounts a ON a.id = t.account_id
       LEFT JOIN categories c ON c.id = t.category_id
       LEFT JOIN categories parent ON parent.id = c.parent_id
       WHERE t.deleted_at IS NULL AND t.type = 'expense'
-        AND t.effective_at IS NOT NULL AND t.effective_at < ?
-        AND t.actual_amount_minor IS NOT NULL
         AND t.ignore_analytics = 0 AND a.deleted_at IS NULL
         AND a.include_in_analytics = 1
-        AND t.competence_at >= ? AND t.competence_at < ?
+        AND COALESCE(t.effective_at, t.due_at) >= ? AND COALESCE(t.effective_at, t.due_at) < ?
       GROUP BY a.currency_code, COALESCE(parent.name, c.name, 'Sem categoria')
       ORDER BY amount_minor DESC, category_name
-    ''', variables: [
-          Variable.withInt(end),
-          Variable.withInt(start),
-          Variable.withInt(end)
-        ]).get();
+    ''', variables: [Variable.withInt(start), Variable.withInt(end)]).get();
         final categoryTotals = <String, List<DashboardCategoryExpense>>{};
         for (final row in categoryRows) {
           categoryTotals
@@ -73,17 +63,14 @@ class SqliteDashboardRepository implements DashboardRepository {
             DateTime.utc(month.year, month.month - 5).millisecondsSinceEpoch;
         final historyRows = await _db.customSelect('''
       SELECT a.currency_code,
-        strftime('%Y-%m', t.competence_at / 1000, 'unixepoch') AS month_key,
-        t.type, SUM(t.actual_amount_minor) AS amount_minor
+        strftime('%Y-%m', COALESCE(t.effective_at, t.due_at) / 1000, 'unixepoch') AS month_key,
+        t.type, SUM(COALESCE(t.actual_amount_minor, t.planned_amount_minor)) AS amount_minor
       FROM transactions t JOIN accounts a ON a.id = t.account_id
-      WHERE t.deleted_at IS NULL AND t.effective_at IS NOT NULL
-        AND t.effective_at < ?
-        AND t.actual_amount_minor IS NOT NULL AND t.ignore_analytics = 0
+      WHERE t.deleted_at IS NULL AND t.ignore_analytics = 0
         AND a.deleted_at IS NULL AND a.include_in_analytics = 1
-        AND t.competence_at >= ? AND t.competence_at < ?
+        AND COALESCE(t.effective_at, t.due_at) >= ? AND COALESCE(t.effective_at, t.due_at) < ?
       GROUP BY a.currency_code, month_key, t.type
     ''', variables: [
-          Variable.withInt(end),
           Variable.withInt(historyStart),
           Variable.withInt(end)
         ]).get();

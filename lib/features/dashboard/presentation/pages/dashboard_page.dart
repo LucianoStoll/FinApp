@@ -428,8 +428,7 @@ class _DashboardViewState extends State<_DashboardView>
           currency.expensesByCategory.isEmpty
               ? const SizedBox(
                   height: 220,
-                  child: Center(
-                      child: Text('Nenhuma despesa efetivada neste mês.')))
+                  child: Center(child: Text('Nenhuma despesa neste mês.')))
               : LayoutBuilder(builder: (context, box) {
                   final wide = box.maxWidth >= 350 &&
                       MediaQuery.textScalerOf(context).scale(16) < 24;

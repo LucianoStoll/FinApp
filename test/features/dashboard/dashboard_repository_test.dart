@@ -14,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
-      'gráfico agrupa subcategorias e ignora pendentes e contas excluídas das análises',
+      'gráfico agrupa subcategorias, inclui pendentes e ignora contas fora das análises',
       () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
@@ -56,10 +56,10 @@ void main() {
     await expense(900, hidden.id, categoryId: market.id);
     final result =
         (await SqliteDashboardRepository(db).load(date)).currencies.single;
-    expect(result.expenseMinor, 2000);
+    expect(result.expenseMinor, 2700);
     expect(result.expensesByCategory.length, 1);
     expect(result.expensesByCategory.single.name, 'Alimentação');
-    expect(result.expensesByCategory.single.amountMinor, 2000);
+    expect(result.expensesByCategory.single.amountMinor, 2700);
   });
 
   test('resumo mensal atualiza após operações locais sem reiniciar', () async {
@@ -125,16 +125,16 @@ void main() {
     final updated = await dashboard.load(september);
     final brl = updated.currencies.firstWhere((x) => x.currencyCode == 'BRL');
     expect(brl.incomeMinor, 5000);
-    expect(brl.expenseMinor, 1000);
-    expect(brl.monthlyResultMinor, 4000);
+    expect(brl.expenseMinor, 1600);
+    expect(brl.monthlyResultMinor, 3400);
     expect(brl.expensesByCategory.single.name, 'Sem categoria');
-    expect(brl.expensesByCategory.single.amountMinor, 1000);
+    expect(brl.expensesByCategory.single.amountMinor, 1600);
     expect(brl.currentBalanceMinor, 24700);
     expect(brl.projectedBalanceMinor, 24100);
     expect(brl.history.length, 6);
     expect(brl.history.last.month, DateTime(2026, 9));
     expect(brl.history.last.incomeMinor, 5000);
-    expect(brl.history.last.expenseMinor, 1000);
+    expect(brl.history.last.expenseMinor, 1600);
     expect(brl.accounts.map((a) => a.name), containsAll(['Banco', 'Carteira']));
     expect(brl.accounts.fold<int>(0, (sum, a) => sum + a.currentMinor),
         brl.currentBalanceMinor);
@@ -172,12 +172,14 @@ void main() {
         hidden.currencies
             .firstWhere((x) => x.currencyCode == 'BRL')
             .expenseMinor,
-        0);
+        600);
     expect(
         hidden.currencies
             .firstWhere((x) => x.currencyCode == 'BRL')
-            .expensesByCategory,
-        isEmpty);
+            .expensesByCategory
+            .single
+            .amountMinor,
+        600);
     expect(
         hidden.currencies
             .firstWhere((x) => x.currencyCode == 'BRL')
@@ -236,5 +238,96 @@ void main() {
     expect(
         (await SqliteAccountsRepository(db).list()).single.currentBalanceMinor,
         10000);
+  });
+
+  test('resumo usa efetivação ou vencimento, nunca lançamento', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final account = await SqliteAccountsRepository(db).create(
+        const AccountDraft(
+            name: 'Banco',
+            type: AccountType.checking,
+            currencyCode: 'BRL',
+            initialBalanceMinor: 10000,
+            includeInAnalytics: true));
+    final transactions = SqliteTransactionsRepository(db);
+    Future<void> add(TransactionType type, int amount, DateTime posted,
+        DateTime due, DateTime? effective) async {
+      await transactions.create(TransactionDraft(
+          description: 'Teste',
+          type: type,
+          amountMinor: amount,
+          date: posted,
+          dueDate: due,
+          effectiveDate: effective,
+          isEffective: effective != null,
+          accountId: account.id));
+    }
+
+    // Casos das imagens: lançamento em fevereiro/abril, pagamento em janeiro.
+    await add(TransactionType.expense, 2239, DateTime.utc(2026, 2, 2),
+        DateTime.utc(2026, 1, 30), DateTime.utc(2026, 1, 30));
+    await add(TransactionType.expense, 10000, DateTime.utc(2026, 4, 15),
+        DateTime.utc(2026, 1, 23), DateTime.utc(2026, 1, 23));
+    // Pagamento antecipado entra em janeiro, mesmo com vencimento em fevereiro.
+    await add(TransactionType.expense, 3000, DateTime.utc(2025, 12, 1),
+        DateTime.utc(2026, 2, 1), DateTime.utc(2026, 1, 31));
+    // Pagamento atrasado sai de janeiro e entra em fevereiro.
+    await add(TransactionType.expense, 4000, DateTime.utc(2026, 1, 1),
+        DateTime.utc(2026, 1, 10), DateTime.utc(2026, 2, 1));
+    await add(TransactionType.expense, 5000, DateTime.utc(2025, 12, 1),
+        DateTime.utc(2026, 1, 31), null);
+    await add(TransactionType.income, 20000, DateTime.utc(2025, 12, 1),
+        DateTime.utc(2026, 2, 1), DateTime.utc(2026, 1, 1));
+    await add(TransactionType.income, 7000, DateTime.utc(2026, 2, 1),
+        DateTime.utc(2026, 1, 1), null);
+    final dashboard = SqliteDashboardRepository(db);
+    final jan = (await dashboard.load(DateTime.utc(2026, 1))).currencies.single;
+    expect(jan.expenseMinor, 20239);
+    expect(jan.incomeMinor, 27000);
+    expect(jan.monthlyResultMinor, 6761);
+    expect(jan.expensesByCategory.single.amountMinor, jan.expenseMinor);
+    expect(jan.history.last.expenseMinor, jan.expenseMinor);
+    expect(jan.history.last.incomeMinor, jan.incomeMinor);
+    // Saldo acumulado só inclui efetivados; projeção inclui pendentes.
+    expect(jan.currentBalanceMinor, 14761);
+    expect(jan.projectedBalanceMinor, 16761);
+    final feb = (await dashboard.load(DateTime.utc(2026, 2))).currencies.single;
+    expect(feb.expenseMinor, 4000);
+    expect(feb.incomeMinor, 0);
+    expect(feb.history[4].expenseMinor, jan.expenseMinor);
+    expect(feb.history[4].incomeMinor, jan.incomeMinor);
+  });
+
+  test('efetivação agendada após vencimento só projeta no mês agendado',
+      () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final account = await SqliteAccountsRepository(db).create(
+        const AccountDraft(
+            name: 'Banco',
+            type: AccountType.checking,
+            currencyCode: 'BRL',
+            initialBalanceMinor: 10000,
+            includeInAnalytics: true));
+    final year = DateTime.now().year + 1;
+    await SqliteTransactionsRepository(db).create(TransactionDraft(
+        description: 'Agendada',
+        type: TransactionType.expense,
+        amountMinor: 4000,
+        date: DateTime.utc(year, 1, 1),
+        dueDate: DateTime.utc(year, 1, 10),
+        effectiveDate: DateTime.utc(year, 2, 1),
+        isEffective: true,
+        accountId: account.id));
+    final dashboard = SqliteDashboardRepository(db);
+    final jan = (await dashboard.load(DateTime.utc(year, 1))).currencies.single;
+    expect(jan.expenseMinor, 0);
+    expect(jan.currentBalanceMinor, 10000);
+    expect(jan.projectedBalanceMinor, 10000);
+    final feb = (await dashboard.load(DateTime.utc(year, 2))).currencies.single;
+    expect(feb.expenseMinor, 4000);
+    expect(feb.currentBalanceMinor, 6000);
+    expect(feb.projectedBalanceMinor, 6000);
   });
 }

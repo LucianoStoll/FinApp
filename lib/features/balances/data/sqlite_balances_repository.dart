@@ -19,8 +19,10 @@ Future<List<QueryRow>> balanceRows(AppDatabase db,
   const transferEffectiveUntil = 'AND f.effective_at < ?';
   const txPending = '(t.effective_at IS NULL OR t.effective_at >= ?)';
   const transferPending = '(f.effective_at IS NULL OR f.effective_at >= ?)';
-  final txUntil = end == null ? '' : 'AND t.due_at < ?';
-  final transferUntil = end == null ? '' : 'AND f.due_at < ?';
+  final txUntil =
+      end == null ? '' : 'AND COALESCE(t.effective_at, t.due_at) < ?';
+  final transferUntil =
+      end == null ? '' : 'AND COALESCE(f.effective_at, f.due_at) < ?';
   final variables = <Variable>[
     Variable.withInt(asOfEnd),
     Variable.withInt(asOfEnd),

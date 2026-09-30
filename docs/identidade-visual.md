@@ -315,3 +315,20 @@ fontes escaláveis. Android inclui ícone adaptativo com fundo e símbolo
 separados e versões de fallback em todas as densidades. Windows utiliza
 ICO com tamanhos de 16 a 256 pixels. O identificador de instalação e a
 assinatura do APK permanecem os mesmos para permitir atualização.
+
+
+### Datas usadas no resumo mensal
+
+Receitas, despesas, distribuição por categoria e gráfico dos últimos seis meses
+usam a data de efetivação quando preenchida. Sem efetivação, usam a data de
+vencimento e o valor previsto. A data de lançamento serve como registro e não
+como referência desses totais. Pagamentos antecipados ou atrasados pertencem ao
+mês da efetivação. Assim, os totais incluem movimentos efetivados e previstos.
+
+O saldo efetivado permanece acumulado por conta, incluindo saldo inicial e
+movimentos efetivados até o fim do mês. O saldo projetado acrescenta os pendentes
+até esse corte, pela efetivação agendada quando houver, ou pelo vencimento.
+Transferências entre contas não entram como receita ou despesa. Contas e
+movimentos excluídos das análises continuam fora dos gráficos e totais mensais.
+As listas mantêm o filtro padrão por vencimento; os filtros avançados permitem
+consultar lançamento, vencimento ou efetivação.
