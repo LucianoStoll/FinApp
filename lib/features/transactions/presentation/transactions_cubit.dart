@@ -27,16 +27,24 @@ class TransactionsState {
 
 class TransactionsCubit extends Cubit<TransactionsState> {
   TransactionsCubit(this._transactions, this._accounts, this._categories,
-      {TransactionType? sectionType})
-      : super(TransactionsState(filter: TransactionFilter(type: sectionType))) {
+      {TransactionType? sectionType, DateTime? month})
+      : super(TransactionsState(
+            filter: TransactionFilter(
+                type: sectionType,
+                from: month == null ? null : DateTime(month.year, month.month),
+                to: month == null
+                    ? null
+                    : DateTime(month.year, month.month + 1, 0)))) {
     load();
   }
 
+  int _request = 0;
   final TransactionsRepository _transactions;
   final AccountsRepository _accounts;
   final CategoriesRepository _categories;
 
   Future<void> load([TransactionFilter? filter]) async {
+    final request = ++_request;
     final nextFilter = filter ?? state.filter;
     emit(TransactionsState(
         items: state.items,
@@ -48,7 +56,7 @@ class TransactionsCubit extends Cubit<TransactionsState> {
       final items = await _transactions.list(nextFilter);
       final accounts = await _accounts.list();
       final categories = await _categories.list();
-      if (!isClosed) {
+      if (!isClosed && request == _request) {
         emit(TransactionsState(
             items: items,
             accounts: accounts,
@@ -56,7 +64,7 @@ class TransactionsCubit extends Cubit<TransactionsState> {
             filter: nextFilter));
       }
     } catch (_) {
-      if (!isClosed) {
+      if (!isClosed && request == _request) {
         emit(TransactionsState(
             items: state.items,
             accounts: state.accounts,

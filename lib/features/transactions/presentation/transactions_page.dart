@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/di/injection.dart';
+import '../../../core/filters/reference_month.dart';
+import '../../../core/widgets/month_selector.dart';
 import '../../../core/routing/somia_shell.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/effectuation_date_dialog.dart';
@@ -27,7 +29,7 @@ class TransactionsPage extends StatelessWidget {
   Widget build(BuildContext context) => BlocProvider(
         create: (_) => TransactionsCubit(getIt<TransactionsRepository>(),
             getIt<AccountsRepository>(), getIt<CategoriesRepository>(),
-            sectionType: sectionType),
+            sectionType: sectionType, month: referenceMonth.value),
         child: _TransactionsView(
             initialCreateType: initialCreateType, sectionType: sectionType),
       );
@@ -52,11 +54,84 @@ class _TransactionsViewState extends State<_TransactionsView> {
   TransactionStatus _status = TransactionStatus.all;
   TransactionDateField _dateField = TransactionDateField.due;
   DateTimeRange? _range;
+  bool _customPeriod = false;
+  VoidCallback? _refreshFilters;
+  DateTimeRange get _monthRange => DateTimeRange(
+      start: referenceMonth.value,
+      end: DateTime(
+          referenceMonth.value.year, referenceMonth.value.month + 1, 0));
+
+  void _monthChanged() {
+    setState(() {
+      _range = _monthRange;
+      _customPeriod = false;
+    });
+    _apply();
+  }
+
+  @override
+  void dispose() {
+    referenceMonth.removeListener(_monthChanged);
+    super.dispose();
+  }
+
+  Future<void> _openFilters(TransactionsState state) async {
+    await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheet) => StatefulBuilder(builder: (sheet, refresh) {
+              _refreshFilters = () {
+                if (sheet.mounted) refresh(() {});
+              };
+              return SafeArea(
+                  child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Row(children: [
+                          const Expanded(
+                              child: Text('Filtros',
+                                  style: TextStyle(fontSize: 20))),
+                          TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _type = widget.sectionType;
+                                  _accountId = null;
+                                  _categoryId = null;
+                                  _subcategoryId = null;
+                                  _status = TransactionStatus.all;
+                                  _dateField = TransactionDateField.due;
+                                  _range = _monthRange;
+                                  _customPeriod = false;
+                                });
+                                _apply();
+                              },
+                              child: const Text('Limpar filtros')),
+                          IconButton(
+                              tooltip: 'Fechar filtros',
+                              onPressed: () => Navigator.pop(sheet),
+                              icon: const Icon(Icons.close)),
+                        ]),
+                        _filters(state),
+                        TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _range = null;
+                                _customPeriod = true;
+                              });
+                              _apply();
+                            },
+                            child: const Text('Todos os meses')),
+                      ])));
+            }));
+    _refreshFilters = null;
+  }
 
   @override
   void initState() {
     super.initState();
     _type = widget.sectionType;
+    _range = _monthRange;
+    referenceMonth.addListener(_monthChanged);
   }
 
   String get _sectionPath => widget.sectionType == TransactionType.income
@@ -65,15 +140,18 @@ class _TransactionsViewState extends State<_TransactionsView> {
           ? '/expenses'
           : '/transactions';
 
-  void _apply() => context.read<TransactionsCubit>().load(TransactionFilter(
-        type: _type,
-        accountId: _accountId,
-        categoryId: _subcategoryId ?? _categoryId,
-        status: _status,
-        from: _range?.start,
-        to: _range?.end,
-        dateField: _dateField,
-      ));
+  void _apply() {
+    _refreshFilters?.call();
+    context.read<TransactionsCubit>().load(TransactionFilter(
+          type: _type,
+          accountId: _accountId,
+          categoryId: _subcategoryId ?? _categoryId,
+          status: _status,
+          from: _range?.start,
+          to: _range?.end,
+          dateField: _dateField,
+        ));
+  }
 
   Future<void> _pickRange() async {
     final now = DateTime.now();
@@ -85,7 +163,10 @@ class _TransactionsViewState extends State<_TransactionsView> {
           DateTimeRange(start: DateTime(now.year, now.month, 1), end: now),
     );
     if (picked != null && mounted) {
-      setState(() => _range = picked);
+      setState(() {
+        _range = picked;
+        _customPeriod = true;
+      });
       _apply();
     }
   }
@@ -234,7 +315,31 @@ class _TransactionsViewState extends State<_TransactionsView> {
               ));
             }
             return Column(children: [
-              _filters(state),
+              Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        MonthSelector(
+                            month: referenceMonth.value,
+                            onChanged: (month) {
+                              if (month == referenceMonth.value) {
+                                _monthChanged();
+                              } else {
+                                referenceMonth.select(month);
+                              }
+                            }),
+                        OutlinedButton.icon(
+                            onPressed: () => _openFilters(state),
+                            icon: const Icon(Icons.tune),
+                            label: const Text('Filtros')),
+                        if (_customPeriod)
+                          Text(_range == null
+                              ? 'Todos os meses'
+                              : '${_dateLabel(_range!.start)} – ${_dateLabel(_range!.end)}'),
+                      ])),
               Expanded(
                   child: state.items.isEmpty
                       ? Center(
@@ -257,7 +362,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
 
   Widget _filters(TransactionsState state) => ConstrainedBox(
         constraints:
-            BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.35),
+            BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.60),
         child: SingleChildScrollView(
             padding: const EdgeInsets.all(12),
             child: Wrap(
@@ -417,7 +522,10 @@ class _TransactionsViewState extends State<_TransactionsView> {
                     tooltip: 'Limpar período',
                     icon: const Icon(Icons.clear),
                     onPressed: () {
-                      setState(() => _range = null);
+                      setState(() {
+                        _range = _monthRange;
+                        _customPeriod = false;
+                      });
                       _apply();
                     },
                   ),

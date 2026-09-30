@@ -45,3 +45,38 @@ class TransferDraft {
   final DateTime? effectiveDate;
   final bool isEffective;
 }
+
+enum TransferDateField { posted, due, effective }
+
+class TransferFilter {
+  const TransferFilter(
+      {this.from,
+      this.to,
+      this.accountId,
+      this.effective,
+      this.dateField = TransferDateField.due});
+  final DateTime? from;
+  final DateTime? to;
+  final String? accountId;
+  final bool? effective;
+  final TransferDateField dateField;
+
+  bool matches(Transfer item) {
+    final date = switch (dateField) {
+      TransferDateField.posted => item.date,
+      TransferDateField.due => item.dueDate ?? item.date,
+      TransferDateField.effective => item.effectiveDate,
+    };
+    return (accountId == null ||
+            item.sourceAccountId == accountId ||
+            item.destinationAccountId == accountId) &&
+        (effective == null || item.isEffective == effective) &&
+        ((from == null && to == null) ||
+            date != null &&
+                (from == null ||
+                    !DateTime(date.year, date.month, date.day)
+                        .isBefore(from!)) &&
+                (to == null ||
+                    !DateTime(date.year, date.month, date.day).isAfter(to!)));
+  }
+}

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../domain/dashboard_repository.dart';
+import '../../../core/filters/reference_month.dart';
 import '../domain/entities/dashboard_summary.dart';
 
 class DashboardState {
@@ -14,15 +15,27 @@ class DashboardState {
 }
 
 class DashboardCubit extends Cubit<DashboardState> {
-  DashboardCubit(this._repository)
-      : super(DashboardState(
-            month: DateTime(DateTime.now().year, DateTime.now().month))) {
+  DashboardCubit(this._repository, {ReferenceMonth? selection})
+      : _selection = selection,
+        super(DashboardState(
+            month: selection?.value ??
+                DateTime(DateTime.now().year, DateTime.now().month))) {
+    _selection?.addListener(_monthChanged);
     load();
   }
 
   final DashboardRepository _repository;
+  final ReferenceMonth? _selection;
+  int _request = 0;
+  void _monthChanged() => load(_selection!.value);
+  @override
+  Future<void> close() {
+    _selection?.removeListener(_monthChanged);
+    return super.close();
+  }
 
   Future<void> load([DateTime? month]) async {
+    final request = ++_request;
     final selected = month ?? state.month;
     final previousSummary =
         selected.year == state.month.year && selected.month == state.month.month
@@ -32,9 +45,10 @@ class DashboardCubit extends Cubit<DashboardState> {
         month: selected, summary: previousSummary, loading: true));
     try {
       final summary = await _repository.load(selected);
-      if (!isClosed) emit(DashboardState(month: selected, summary: summary));
+      if (!isClosed && request == _request)
+        emit(DashboardState(month: selected, summary: summary));
     } catch (_) {
-      if (!isClosed) {
+      if (!isClosed && request == _request) {
         emit(DashboardState(
             month: selected,
             summary: previousSummary,

@@ -256,3 +256,22 @@ As referências acima não declaram essas issues abertas, fechadas ou implementa
 - [ ] Layout funcional em Android e Windows, offline.
 - [ ] Análise, testes e build Windows aprovados; APK somente após retomada da #31.
 - [ ] Validação visual e funcional do usuário antes do encerramento.
+
+
+### Mês de referência e filtros de movimentos
+
+O mês de referência é compartilhado durante a sessão entre Resumo, Receitas,
+Despesas e Transferências. Tocar no mês abre uma grade com os doze meses e
+controles de ano, permitindo saltar de setembro para dezembro diretamente.
+Nas listas e no desktop, as setas também permitem avançar ou voltar um mês.
+A opção “Mês atual” retorna ao mês corrente.
+
+As listas abrem limitadas ao mês escolhido, usando a data de vencimento.
+O botão “Filtros” abre os controles detalhados: contas, categorias/subcategorias
+(nos lançamentos), estado e campo de data. Um período personalizado ou
+“Todos os meses” pode ampliar a consulta; essa exceção aparece na página.
+Escolher um mês novamente restaura o período mensal, mantendo os demais
+filtros. “Limpar filtros” restaura vencimento e mês de referência.
+
+Em paisagem, a barra lateral compacta tem 104 pixels de largura útil, além
+do espaço seguro do Android, com navegação rolável para telas baixas.

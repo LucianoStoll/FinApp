@@ -55,7 +55,9 @@ class SomiaShell extends StatelessWidget {
           return Scaffold(
               body: Row(children: [
             SizedBox(
-                width: constraints.maxWidth < 1060 ? 78 : 228,
+                width: constraints.maxWidth < 1060
+                    ? 104 + MediaQuery.paddingOf(context).left
+                    : 228 + MediaQuery.paddingOf(context).left,
                 child: _SomiaMenu(
                     location: location, compact: constraints.maxWidth < 1060)),
             const VerticalDivider(width: 1),
@@ -83,54 +85,61 @@ class _SomiaMenu extends StatelessWidget {
     return Material(
         color: SomiaColors.sidebar,
         child: SafeArea(
+            right: false,
             child: ListView(
-          padding:
-              EdgeInsets.fromLTRB(compact ? 10 : 14, 18, compact ? 10 : 14, 16),
-          children: [
-            Padding(
-                padding: EdgeInsets.fromLTRB(compact ? 8 : 14, 20, 8, 32),
-                child: Row(children: [
-                  const Icon(Icons.spa_rounded,
-                      color: SomiaColors.blue, size: 28),
-                  if (!compact) ...[
-                    const SizedBox(width: 9),
-                    Expanded(
-                        child: Text('Somia',
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.bold))),
-                  ],
-                  if (isDrawer)
-                    IconButton(
-                        tooltip: 'Fechar menu',
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(context).pop()),
-                ])),
-            for (final destination in _menu)
-              Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: ListTile(
-                    key: ValueKey('menu-${destination.path}'),
-                    leading: Icon(destination.icon, color: destination.color),
-                    title: compact ? null : Text(destination.label),
-                    minLeadingWidth: 0,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: compact ? 13 : 14),
-                    selected: location == destination.path,
-                    selectedTileColor: SomiaColors.surfaceHigh,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    onTap: () {
-                      final router = GoRouter.of(context);
-                      if (isDrawer) Navigator.of(context).pop();
-                      if (location != destination.path) {
-                        router.go(destination.path);
-                      }
-                    },
-                  )),
-          ],
-        )));
+              padding: EdgeInsets.fromLTRB(
+                  compact ? 10 : 14, 18, compact ? 10 : 14, 16),
+              children: [
+                Padding(
+                    padding: EdgeInsets.fromLTRB(compact ? 8 : 14, 20, 8, 32),
+                    child: Row(
+                        mainAxisAlignment: compact
+                            ? MainAxisAlignment.center
+                            : MainAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.spa_rounded,
+                              color: SomiaColors.blue, size: 28),
+                          if (!compact) ...[
+                            const SizedBox(width: 9),
+                            Expanded(
+                                child: Text('Somia',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                            fontWeight: FontWeight.bold))),
+                          ],
+                          if (isDrawer)
+                            IconButton(
+                                tooltip: 'Fechar menu',
+                                icon: const Icon(Icons.close),
+                                onPressed: () => Navigator.of(context).pop()),
+                        ])),
+                for (final destination in _menu)
+                  Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: ListTile(
+                        key: ValueKey('menu-${destination.path}'),
+                        leading:
+                            Icon(destination.icon, color: destination.color),
+                        title: compact ? null : Text(destination.label),
+                        minLeadingWidth: 0,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: compact ? 18 : 14),
+                        selected: location == destination.path,
+                        selectedTileColor: SomiaColors.surfaceHigh,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        onTap: () {
+                          final router = GoRouter.of(context);
+                          if (isDrawer) Navigator.of(context).pop();
+                          if (location != destination.path) {
+                            router.go(destination.path);
+                          }
+                        },
+                      )),
+              ],
+            )));
   }
 }
 

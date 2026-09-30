@@ -10,8 +10,10 @@ class TransfersState {
       {this.items = const [],
       this.accounts = const [],
       this.loading = false,
+      this.filter = const TransferFilter(),
       this.error});
 
+  final TransferFilter filter;
   final List<Transfer> items;
   final List<Account> accounts;
   final bool loading;
@@ -19,24 +21,41 @@ class TransfersState {
 }
 
 class TransfersCubit extends Cubit<TransfersState> {
-  TransfersCubit(this._transfers, this._accounts)
-      : super(const TransfersState()) {
+  TransfersCubit(this._transfers, this._accounts, {DateTime? month})
+      : super(TransfersState(
+            filter: TransferFilter(
+                from: month == null ? null : DateTime(month.year, month.month),
+                to: month == null
+                    ? null
+                    : DateTime(month.year, month.month + 1, 0)))) {
     load();
   }
 
+  int _request = 0;
   final TransfersRepository _transfers;
   final AccountsRepository _accounts;
 
-  Future<void> load() async {
+  Future<void> load([TransferFilter? filter]) async {
+    final request = ++_request;
+    final selected = filter ?? state.filter;
     emit(TransfersState(
-        items: state.items, accounts: state.accounts, loading: true));
+        items: state.items,
+        accounts: state.accounts,
+        filter: selected,
+        loading: true));
     try {
       final items = await _transfers.list();
       final accounts = await _accounts.list();
-      if (!isClosed) emit(TransfersState(items: items, accounts: accounts));
-    } catch (_) {
-      if (!isClosed) {
+      if (!isClosed && request == _request) {
         emit(TransfersState(
+            items: items.where(selected.matches).toList(),
+            accounts: accounts,
+            filter: selected));
+      }
+    } catch (_) {
+      if (!isClosed && request == _request) {
+        emit(TransfersState(
+            filter: selected,
             items: state.items,
             accounts: state.accounts,
             error: 'Não foi possível carregar as transferências.'));

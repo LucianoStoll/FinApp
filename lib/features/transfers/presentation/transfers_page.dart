@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/di/injection.dart';
+import '../../../core/filters/reference_month.dart';
+import '../../../core/widgets/month_selector.dart';
 import '../../../core/routing/somia_shell.dart';
 import '../../../core/widgets/effectuation_date_dialog.dart';
 import '../../accounts/domain/account.dart';
@@ -22,7 +24,8 @@ class TransfersPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => BlocProvider(
         create: (_) => TransfersCubit(
-            getIt<TransfersRepository>(), getIt<AccountsRepository>()),
+            getIt<TransfersRepository>(), getIt<AccountsRepository>(),
+            month: referenceMonth.value),
         child: _TransfersView(startCreate: startCreate),
       );
 }
@@ -37,6 +40,184 @@ class _TransfersView extends StatefulWidget {
 
 class _TransfersViewState extends State<_TransfersView> {
   bool _openedInitial = false;
+  DateTimeRange? _range;
+  bool _customPeriod = false;
+  String? _accountId;
+  bool? _effective;
+  TransferDateField _dateField = TransferDateField.due;
+  VoidCallback? _refreshFilters;
+
+  DateTimeRange get _monthRange => DateTimeRange(
+      start: referenceMonth.value,
+      end: DateTime(
+          referenceMonth.value.year, referenceMonth.value.month + 1, 0));
+
+  @override
+  void initState() {
+    super.initState();
+    _range = _monthRange;
+    referenceMonth.addListener(_monthChanged);
+  }
+
+  @override
+  void dispose() {
+    referenceMonth.removeListener(_monthChanged);
+    super.dispose();
+  }
+
+  void _monthChanged() {
+    setState(() {
+      _range = _monthRange;
+      _customPeriod = false;
+    });
+    _apply();
+  }
+
+  void _apply() {
+    _refreshFilters?.call();
+    context.read<TransfersCubit>().load(TransferFilter(
+        from: _range?.start,
+        to: _range?.end,
+        accountId: _accountId,
+        effective: _effective,
+        dateField: _dateField));
+  }
+
+  Future<void> _openFilters() async {
+    final accounts = context.read<TransfersCubit>().state.accounts;
+    await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheet) => StatefulBuilder(builder: (sheet, refresh) {
+              _refreshFilters = () {
+                if (sheet.mounted) refresh(() {});
+              };
+              return SafeArea(
+                  child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Row(children: [
+                          const Expanded(
+                              child: Text('Filtros',
+                                  style: TextStyle(fontSize: 20))),
+                          TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _accountId = null;
+                                  _effective = null;
+                                  _dateField = TransferDateField.due;
+                                  _range = _monthRange;
+                                  _customPeriod = false;
+                                });
+                                _apply();
+                              },
+                              child: const Text('Limpar filtros')),
+                          IconButton(
+                              tooltip: 'Fechar filtros',
+                              onPressed: () => Navigator.pop(sheet),
+                              icon: const Icon(Icons.close)),
+                        ]),
+                        Flexible(
+                            child: SingleChildScrollView(
+                                child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                              DropdownButton<String>(
+                                  isExpanded: true,
+                                  value: _accountId ?? '',
+                                  items: [
+                                    const DropdownMenuItem(
+                                        value: '',
+                                        child: Text('Todas as contas')),
+                                    for (final account in accounts)
+                                      DropdownMenuItem(
+                                          value: account.id,
+                                          child: Text(account.name,
+                                              overflow: TextOverflow.ellipsis))
+                                  ],
+                                  onChanged: (id) {
+                                    setState(() =>
+                                        _accountId = id == '' ? null : id);
+                                    _apply();
+                                  }),
+                              DropdownButton<String>(
+                                  isExpanded: true,
+                                  value: _effective == null
+                                      ? 'all'
+                                      : _effective!
+                                          ? 'effective'
+                                          : 'pending',
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: 'all',
+                                        child: Text('Todos os estados')),
+                                    DropdownMenuItem(
+                                        value: 'effective',
+                                        child: Text('Efetivadas')),
+                                    DropdownMenuItem(
+                                        value: 'pending',
+                                        child: Text('Pendentes'))
+                                  ],
+                                  onChanged: (status) {
+                                    setState(() => _effective = status == 'all'
+                                        ? null
+                                        : status == 'effective');
+                                    _apply();
+                                  }),
+                              DropdownButton<TransferDateField>(
+                                  isExpanded: true,
+                                  value: _dateField,
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: TransferDateField.posted,
+                                        child: Text('Filtrar lançamento')),
+                                    DropdownMenuItem(
+                                        value: TransferDateField.due,
+                                        child: Text('Filtrar vencimento')),
+                                    DropdownMenuItem(
+                                        value: TransferDateField.effective,
+                                        child: Text('Filtrar efetivação'))
+                                  ],
+                                  onChanged: (field) {
+                                    if (field != null) {
+                                      setState(() => _dateField = field);
+                                      _apply();
+                                    }
+                                  }),
+                              OutlinedButton.icon(
+                                  icon: const Icon(Icons.date_range),
+                                  label: Text(_range == null
+                                      ? 'Período'
+                                      : '${_dateLabel(_range!.start)} – ${_dateLabel(_range!.end)}'),
+                                  onPressed: () async {
+                                    final picked = await showDateRangePicker(
+                                        context: context,
+                                        firstDate: DateTime(2000),
+                                        lastDate: DateTime(2100),
+                                        initialDateRange:
+                                            _range ?? _monthRange);
+                                    if (picked != null && mounted) {
+                                      setState(() {
+                                        _range = picked;
+                                        _customPeriod = true;
+                                      });
+                                      _apply();
+                                    }
+                                  }),
+                              TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _range = null;
+                                      _customPeriod = true;
+                                    });
+                                    _apply();
+                                  },
+                                  child: const Text('Todos os meses')),
+                            ]))),
+                      ])));
+            }));
+    _refreshFilters = null;
+  }
 
   Future<void> _edit(BuildContext context, [Transfer? item]) async {
     final cubit = context.read<TransfersCubit>();
@@ -115,73 +296,101 @@ class _TransfersViewState extends State<_TransfersView> {
           icon: const Icon(Icons.add),
           label: const Text('Nova transferência'),
         ),
-        body: BlocConsumer<TransfersCubit, TransfersState>(
-            listener: (context, state) {
-          if (widget.startCreate &&
-              !_openedInitial &&
-              !state.loading &&
-              state.error == null) {
-            _openedInitial = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) _edit(context);
-            });
-          }
-        }, builder: (context, state) {
-          if (state.loading && state.accounts.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state.error != null) {
-            return Center(
-                child: TextButton(
-              onPressed: context.read<TransfersCubit>().load,
-              child: Text('${state.error} Tentar novamente'),
-            ));
-          }
-          if (state.items.isEmpty) {
-            return const Center(
-                child: Text('Nenhuma transferência cadastrada.'));
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
-            itemCount: state.items.length,
-            itemBuilder: (context, index) {
-              final item = state.items[index];
-              return Card(
-                  child: ListTile(
-                leading: const Icon(Icons.swap_horiz),
-                title: Text(
-                    '${item.sourceAccountName} → ${item.destinationAccountName}',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
-                subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Lançamento ${_dateLabel(item.date)} · '
-                          'Vencimento ${_dateLabel(item.dueDate ?? item.date)} · '
-                          '${item.effectiveDate == null ? 'Pendente' : item.isEffective ? 'Efetivada ${_dateLabel(item.effectiveDate!)}' : 'Agendada ${_dateLabel(item.effectiveDate!)}'}'),
-                      Text(MoneyMinor.display(
-                          item.amountMinor, item.currencyCode)),
-                      if (!item.isEffective)
-                        TextButton.icon(
-                            onPressed: () => _setEffective(context, item),
-                            icon: const Icon(Icons.check_circle_outline),
-                            label: const Text('Efetivar')),
-                    ]),
-                trailing: PopupMenuButton<String>(
-                    tooltip: 'Ações da transferência',
-                    onSelected: (action) => action == 'edit'
-                        ? _edit(context, item)
-                        : _delete(context, item),
-                    itemBuilder: (_) => const [
-                          PopupMenuItem(value: 'edit', child: Text('Editar')),
-                          PopupMenuItem(
-                              value: 'delete', child: Text('Excluir')),
-                        ]),
-                onTap: () => _edit(context, item),
+        body: Column(children: [
+          Padding(
+              padding: const EdgeInsets.all(12),
+              child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    MonthSelector(
+                        month: referenceMonth.value,
+                        onChanged: (month) {
+                          if (month == referenceMonth.value) {
+                            _monthChanged();
+                          } else {
+                            referenceMonth.select(month);
+                          }
+                        }),
+                    OutlinedButton.icon(
+                        onPressed: _openFilters,
+                        icon: const Icon(Icons.tune),
+                        label: const Text('Filtros')),
+                    if (_customPeriod)
+                      Text(_range == null
+                          ? 'Todos os meses'
+                          : '${_dateLabel(_range!.start)} – ${_dateLabel(_range!.end)}'),
+                  ])),
+          Expanded(
+              child: BlocConsumer<TransfersCubit, TransfersState>(
+                  listener: (context, state) {
+            if (widget.startCreate &&
+                !_openedInitial &&
+                !state.loading &&
+                state.error == null) {
+              _openedInitial = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) _edit(context);
+              });
+            }
+          }, builder: (context, state) {
+            if (state.loading && state.accounts.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state.error != null) {
+              return Center(
+                  child: TextButton(
+                onPressed: context.read<TransfersCubit>().load,
+                child: Text('${state.error} Tentar novamente'),
               ));
-            },
-          );
-        }),
+            }
+            if (state.items.isEmpty) {
+              return const Center(
+                  child: Text('Nenhuma transferência para estes filtros.'));
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
+              itemCount: state.items.length,
+              itemBuilder: (context, index) {
+                final item = state.items[index];
+                return Card(
+                    child: ListTile(
+                  leading: const Icon(Icons.swap_horiz),
+                  title: Text(
+                      '${item.sourceAccountName} → ${item.destinationAccountName}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+                  subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Lançamento ${_dateLabel(item.date)} · '
+                            'Vencimento ${_dateLabel(item.dueDate ?? item.date)} · '
+                            '${item.effectiveDate == null ? 'Pendente' : item.isEffective ? 'Efetivada ${_dateLabel(item.effectiveDate!)}' : 'Agendada ${_dateLabel(item.effectiveDate!)}'}'),
+                        Text(MoneyMinor.display(
+                            item.amountMinor, item.currencyCode)),
+                        if (!item.isEffective)
+                          TextButton.icon(
+                              onPressed: () => _setEffective(context, item),
+                              icon: const Icon(Icons.check_circle_outline),
+                              label: const Text('Efetivar')),
+                      ]),
+                  trailing: PopupMenuButton<String>(
+                      tooltip: 'Ações da transferência',
+                      onSelected: (action) => action == 'edit'
+                          ? _edit(context, item)
+                          : _delete(context, item),
+                      itemBuilder: (_) => const [
+                            PopupMenuItem(value: 'edit', child: Text('Editar')),
+                            PopupMenuItem(
+                                value: 'delete', child: Text('Excluir')),
+                          ]),
+                  onTap: () => _edit(context, item),
+                ));
+              },
+            );
+          })),
+        ]),
       );
 }
 

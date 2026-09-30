@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/filters/reference_month.dart';
+import '../../../../core/widgets/month_selector.dart';
 import '../../../../core/routing/somia_shell.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../accounts/domain/money_minor.dart';
@@ -15,20 +17,6 @@ String _money(int minor, String currencyCode) =>
     MoneyMinor.display(minor, currencyCode).replaceAllMapped(
         RegExp(r'\d{1,3}(?=(\d{3})+,)'), (match) => '${match[0]}.');
 
-const _months = [
-  'Janeiro',
-  'Fevereiro',
-  'Março',
-  'Abril',
-  'Maio',
-  'Junho',
-  'Julho',
-  'Agosto',
-  'Setembro',
-  'Outubro',
-  'Novembro',
-  'Dezembro'
-];
 const _shortMonths = [
   'Jan',
   'Fev',
@@ -96,53 +84,12 @@ class MobileDashboardAppBar extends StatelessWidget
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 16),
-              child: PopupMenuButton<String>(
+              child: MonthSelector(
                 key: const ValueKey('dashboard-month-selector'),
-                tooltip: 'Mês de referência',
-                onSelected: (action) {
-                  final cubit = context.read<DashboardCubit>();
-                  if (action == 'previous') {
-                    cubit.moveMonth(-1);
-                  } else if (action == 'next') {
-                    cubit.moveMonth(1);
-                  } else {
-                    final now = DateTime.now();
-                    cubit.load(DateTime(now.year, now.month));
-                  }
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'previous', child: Text('Mês anterior')),
-                  PopupMenuItem(value: 'next', child: Text('Próximo mês')),
-                  PopupMenuItem(value: 'current', child: Text('Mês atual')),
-                ],
-                child: Semantics(
-                  label:
-                      'Mês de referência: ${_months[state.month.month - 1]} ${state.month.year}',
-                  button: true,
-                  child: Container(
-                    constraints:
-                        const BoxConstraints(minWidth: 48, minHeight: 44),
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: SomiaColors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: SomiaColors.outline),
-                    ),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.calendar_month_outlined,
-                          size: 17, color: SomiaColors.muted),
-                      if (!compact) ...[
-                        const SizedBox(width: 7),
-                        Text(
-                            '${_months[state.month.month - 1]} ${state.month.year}',
-                            style: const TextStyle(fontSize: 12)),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.expand_more,
-                            size: 17, color: SomiaColors.muted),
-                      ],
-                    ]),
-                  ),
-                ),
+                month: state.month,
+                compact: compact,
+                arrows: false,
+                onChanged: referenceMonth.select,
               ),
             ),
           ],

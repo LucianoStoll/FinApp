@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:finapp/core/di/injection.dart';
+import 'package:finapp/core/filters/reference_month.dart';
 import 'package:finapp/core/routing/somia_shell.dart';
 import 'package:finapp/core/theme/app_theme.dart';
 import 'package:finapp/features/dashboard/domain/dashboard_repository.dart';
@@ -70,6 +71,7 @@ class _DashboardStub implements DashboardRepository {
 
 Future<_DashboardStub> _mount(WidgetTester tester, Size size,
     {double textScale = 1}) async {
+  referenceMonth.select(DateTime.now());
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   final repository = _DashboardStub();
@@ -145,10 +147,9 @@ void main() {
     final initial = repository.requestedMonths.last;
     await tester.tap(find.byKey(const ValueKey('dashboard-month-selector')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Mês anterior'));
+    await tester.tap(find.text('Dezembro'));
     await tester.pumpAndSettle();
-    expect(repository.requestedMonths.last,
-        DateTime(initial.year, initial.month - 1));
+    expect(repository.requestedMonths.last, DateTime(initial.year, 12));
     await tester.tap(find.byTooltip('Abrir menu'));
     await tester.pumpAndSettle();
     expect(find.byType(Drawer), findsOneWidget);

@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/filters/reference_month.dart';
+import '../../../../core/widgets/month_selector.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/routing/somia_shell.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -13,20 +15,6 @@ import '../../domain/entities/dashboard_summary.dart';
 import '../dashboard_cubit.dart';
 import '../widgets/mobile_dashboard.dart';
 
-const _months = [
-  'Janeiro',
-  'Fevereiro',
-  'Março',
-  'Abril',
-  'Maio',
-  'Junho',
-  'Julho',
-  'Agosto',
-  'Setembro',
-  'Outubro',
-  'Novembro',
-  'Dezembro'
-];
 const _shortMonths = [
   'Jan',
   'Fev',
@@ -55,7 +43,8 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-        create: (_) => DashboardCubit(getIt<DashboardRepository>()),
+        create: (_) => DashboardCubit(getIt<DashboardRepository>(),
+            selection: referenceMonth),
         child: const _DashboardView(),
       );
 }
@@ -187,38 +176,7 @@ class _DashboardViewState extends State<_DashboardView>
                       .headlineMedium
                       ?.copyWith(fontWeight: FontWeight.w700)),
             ]),
-            Container(
-                constraints: BoxConstraints(
-                    maxWidth: MediaQuery.sizeOf(context).width < 600
-                        ? MediaQuery.sizeOf(context).width - 32
-                        : 340),
-                decoration: BoxDecoration(
-                    color: SomiaColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: SomiaColors.outline)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  IconButton(
-                      tooltip: 'Mês anterior',
-                      icon: const Icon(Icons.chevron_left),
-                      onPressed: () =>
-                          context.read<DashboardCubit>().moveMonth(-1)),
-                  if (MediaQuery.textScalerOf(context).scale(16) < 24) ...[
-                    const Icon(Icons.calendar_month_outlined,
-                        size: 18, color: SomiaColors.blue),
-                    const SizedBox(width: 8),
-                  ],
-                  Flexible(
-                      child: Text(
-                          '${_months[state.month.month - 1]} '
-                          '${state.month.year}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis)),
-                  IconButton(
-                      tooltip: 'Próximo mês',
-                      icon: const Icon(Icons.chevron_right),
-                      onPressed: () =>
-                          context.read<DashboardCubit>().moveMonth(1)),
-                ])),
+            MonthSelector(month: state.month, onChanged: referenceMonth.select),
           ]));
 
   Widget _currencySection(
