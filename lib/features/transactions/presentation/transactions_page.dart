@@ -769,7 +769,6 @@ class TransactionFormState extends State<TransactionForm> {
               _categoryId,
               _subcategoryId
             ),
-        changes: [_description, _amount],
         builder: (context, cancel) => MovementFormFrame(
               onCancel: cancel,
               title: widget.item == null ? 'Nova $kind' : 'Editar $kind',

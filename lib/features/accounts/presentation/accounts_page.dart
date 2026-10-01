@@ -286,7 +286,6 @@ class _AccountDialogState extends State<_AccountDialog> {
             _includeInAnalytics,
             _includeInBalance
           ),
-      changes: [_name, _currency, _initialBalance],
       builder: (context, cancel) => AlertDialog(
             title: Text(widget.account == null ? 'Nova conta' : 'Editar conta'),
             content: SizedBox(

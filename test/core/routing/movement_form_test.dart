@@ -182,7 +182,11 @@ void main() {
     expect(find.text('Descartar alterações?'), findsNothing);
     expect(find.byType(MovementFormFrame), findsOneWidget);
     await tester.ensureVisible(find.text('Vencimento'));
-    await tester.tap(find.text('Vencimento'));
+    await tester.tap(find
+        .ancestor(of: find.text('Vencimento'), matching: find.byType(InkWell))
+        .first);
+    await tester.pumpAndSettle();
+    expect(find.byType(DatePickerDialog), findsOneWidget);
     await tester.pumpAndSettle();
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();

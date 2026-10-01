@@ -56,8 +56,9 @@ class SomiaSectionBackScope extends StatelessWidget {
         canPop: Theme.of(context).platform != TargetPlatform.android ||
             location == AppRoutes.dashboardPath,
         onPopInvokedWithResult: (didPop, result) {
-          if (didPop || Theme.of(context).platform != TargetPlatform.android)
+          if (didPop || Theme.of(context).platform != TargetPlatform.android) {
             return;
+          }
           final scaffold = _mobileScaffoldKey.currentState;
           if (scaffold?.isDrawerOpen ?? false) {
             scaffold!.closeDrawer();

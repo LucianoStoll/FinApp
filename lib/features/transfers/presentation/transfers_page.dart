@@ -582,7 +582,6 @@ class TransferFormState extends State<TransferForm> {
             _effectiveDate,
             _isEffective
           ),
-      changes: [_description, _amount],
       builder: (context, cancel) => MovementFormFrame(
             onCancel: cancel,
             title: widget.item == null

@@ -238,7 +238,6 @@ class _CategoryDialogState extends State<_CategoryDialog> {
         .toList();
     return UnsavedChangesGuard(
         value: () => (_name.text, _type, _parentId, _iconKey, _colorArgb),
-        changes: [_name],
         builder: (context, cancel) => AlertDialog(
               title: Text(widget.category == null
                   ? 'Nova categoria'
@@ -340,8 +339,9 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                                     ))
                                 .toList(),
                             onChanged: (color) {
-                              if (color != null)
+                              if (color != null) {
                                 setState(() => _colorArgb = color);
+                              }
                             },
                           ),
                         ]),

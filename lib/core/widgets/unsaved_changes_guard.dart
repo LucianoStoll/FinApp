@@ -3,12 +3,8 @@ import 'package:flutter/material.dart';
 /// Compara os campos com a abertura do formulário; foco não conta como edição.
 class UnsavedChangesGuard extends StatefulWidget {
   const UnsavedChangesGuard(
-      {super.key,
-      required this.value,
-      required this.changes,
-      required this.builder});
+      {super.key, required this.value, required this.builder});
   final Object Function() value;
-  final List<Listenable> changes;
   final Widget Function(BuildContext context, VoidCallback cancel) builder;
 
   @override
@@ -23,21 +19,6 @@ class _UnsavedChangesGuardState extends State<UnsavedChangesGuard> {
   void initState() {
     super.initState();
     _original = widget.value();
-    for (final change in widget.changes) {
-      change.addListener(_refresh);
-    }
-  }
-
-  @override
-  void dispose() {
-    for (final change in widget.changes) {
-      change.removeListener(_refresh);
-    }
-    super.dispose();
-  }
-
-  void _refresh() {
-    if (mounted) setState(() {});
   }
 
   Future<void> _cancel() async {
@@ -67,7 +48,9 @@ class _UnsavedChangesGuardState extends State<UnsavedChangesGuard> {
 
   @override
   Widget build(BuildContext context) => PopScope<Object?>(
-        canPop: widget.value() == _original,
+        // A decisão usa os campos no instante do Voltar, inclusive antes de
+        // um novo frame após digitar. Salvar continua usando pop com o draft.
+        canPop: false,
         onPopInvokedWithResult: (didPop, result) {
           if (!didPop) _cancel();
         },
