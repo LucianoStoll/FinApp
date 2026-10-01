@@ -59,8 +59,9 @@ Future<void> open(WidgetTester tester, Widget form,
           body: Builder(
               builder: (context) => TextButton(
                   onPressed: () async {
-                    onResult?.call(
-                        await showMovementForm<Object>(context, (_) => form));
+                    final result =
+                        await showMovementForm<Object>(context, (_) => form);
+                    onResult?.call(result);
                   },
                   child: const Text('Abrir'))))));
   await tester.tap(find.text('Abrir'));
