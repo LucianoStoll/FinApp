@@ -304,9 +304,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Receita').last);
     await tester.pumpAndSettle();
-    expect(find.text('Novo lançamento'), findsOneWidget);
-    expect(find.text('Receita'), findsOneWidget);
-    await tester.tap(find.text('Cancelar'));
+    expect(find.text('Nova receita'), findsOneWidget);
+    expect(find.byType(TextFormField).first, findsOneWidget);
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.text('Receitas'), findsOneWidget);
   });

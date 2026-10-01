@@ -137,7 +137,8 @@ void main() {
       tester.view.viewInsets = const FakeViewPadding(bottom: 100);
       await tester.pumpAndSettle();
       expect(find.text('Salvar lançamento').hitTestable(), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('Mais detalhes'), 250);
+      await tester.scrollUntilVisible(find.text('Mais detalhes'), 250,
+          scrollable: find.ancestor(of: find.text('Mais detalhes'), matching: find.byType(Scrollable)).first);
       await tester.tap(find.text('Mais detalhes'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);

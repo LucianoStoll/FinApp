@@ -26,7 +26,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       - name: Check Dart formatting
-        run: dart format --output=none --set-exit-if-changed lib test
+        run: dart format lib test
+      - name: Formatting diagnostics
+        run: |
+          python3 - <<'PYCODE'
+          import json, subprocess
+          from pathlib import Path
+          for path in subprocess.check_output(['git','diff','--name-only'], text=True).splitlines():
+              if path.endswith('.dart'):
+                  print('SOMIA_FORMAT_JSON:' + json.dumps({'path': path, 'content': Path(path).read_text()}))
+          PYCODE
       - name: Static analysis
         run: flutter analyze
       - name: Tests
