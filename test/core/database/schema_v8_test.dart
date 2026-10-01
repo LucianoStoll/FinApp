@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:finapp/core/database/app_database.dart';
 import 'package:finapp/core/database/backup_service.dart';
