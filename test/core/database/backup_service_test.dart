@@ -69,7 +69,7 @@ void main() {
     expect(
         (await restored.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        6);
+        AppDatabase.currentSchemaVersion);
     for (final entry in {
       'accounts': 2,
       'categories': 1,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/widgets/movement_form_frame.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -221,10 +223,9 @@ class _TransfersViewState extends State<_TransfersView> {
 
   Future<void> _edit(BuildContext context, [Transfer? item]) async {
     final cubit = context.read<TransfersCubit>();
-    final draft = await showDialog<TransferDraft>(
-        context: context,
-        builder: (_) =>
-            _TransferDialog(item: item, accounts: cubit.state.accounts));
+    final draft = await showMovementForm<TransferDraft>(
+        context, (_) =>
+            TransferForm(item: item, accounts: cubit.state.accounts));
     if (!context.mounted) return;
     if (draft == null) {
       if (item == null && widget.startCreate) context.go('/transfers');
@@ -358,13 +359,13 @@ class _TransfersViewState extends State<_TransfersView> {
                     margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
                       leading: const Icon(Icons.swap_horiz),
-                      title: Text(
-                          '${item.sourceAccountName} → ${item.destinationAccountName}',
+                      title: Text(item.description,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis),
                       subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Text('${item.sourceAccountName} → ${item.destinationAccountName}'),
                             Text('Lançamento ${_dateLabel(item.date)} · '
                                 'Vencimento ${_dateLabel(item.dueDate ?? item.date)} · '
                                 '${item.effectiveDate == null ? 'Pendente' : item.isEffective ? 'Efetivada ${_dateLabel(item.effectiveDate!)}' : 'Agendada ${_dateLabel(item.effectiveDate!)}'}'),
@@ -396,19 +397,22 @@ class _TransfersViewState extends State<_TransfersView> {
       );
 }
 
-class _TransferDialog extends StatefulWidget {
-  const _TransferDialog({required this.accounts, this.item});
+class TransferForm extends StatefulWidget {
+  const TransferForm({required this.accounts, this.item});
 
   final List<Account> accounts;
   final Transfer? item;
 
   @override
-  State<_TransferDialog> createState() => _TransferDialogState();
+  State<TransferForm> createState() => TransferFormState();
 }
 
-class _TransferDialogState extends State<_TransferDialog> {
+class TransferFormState extends State<TransferForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _amount;
+  late final TextEditingController _description;
+  final _descriptionFocus = FocusNode();
+  final _amountFocus = FocusNode();
   String? _sourceId;
   String? _destinationId;
   late DateTime _date;
@@ -433,6 +437,7 @@ class _TransferDialogState extends State<_TransferDialog> {
   @override
   void initState() {
     super.initState();
+    _description = TextEditingController(text: widget.item?.description ?? '');
     _amount = TextEditingController(
         text: MoneyMinor.plain(widget.item?.amountMinor ?? 0));
     _sourceId = widget.item?.sourceAccountId ?? _sources.firstOrNull?.id;
@@ -446,6 +451,9 @@ class _TransferDialogState extends State<_TransferDialog> {
 
   @override
   void dispose() {
+    _description.dispose();
+    _descriptionFocus.dispose();
+    _amountFocus.dispose();
     _amount.dispose();
     super.dispose();
   }
@@ -486,6 +494,7 @@ class _TransferDialogState extends State<_TransferDialog> {
     Navigator.pop(
         context,
         TransferDraft(
+            description: _description.text.trim(),
             sourceAccountId: _sourceId!,
             destinationAccountId: _destinationId!,
             amountMinor: MoneyMinor.parse(_amount.text),
@@ -496,19 +505,45 @@ class _TransferDialogState extends State<_TransferDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-        title: Text(widget.item == null
-            ? 'Nova transferência'
-            : 'Editar transferência'),
-        content: SizedBox(
-            width: 440,
-            child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                    child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        spacing: 16,
-                        children: [
+  Widget build(BuildContext context) => MovementFormFrame(
+        title: widget.item == null ? 'Nova transferência' : 'Editar transferência',
+        onSave: _submit,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 16,
+            children: [
+              TextFormField(
+                controller: _description,
+                focusNode: _descriptionFocus,
+                autofocus: widget.item == null && usesFullScreenMovementForm(context),
+                textInputAction: TextInputAction.next,
+                scrollPadding: const EdgeInsets.all(100),
+                decoration: const InputDecoration(labelText: 'Descrição'),
+                validator: (value) => value == null || value.trim().isEmpty ? 'Informe a descrição.' : null,
+                onFieldSubmitted: (_) {
+                  _amountFocus.requestFocus();
+                  _amount.selection = TextSelection(baseOffset: 0, extentOffset: _amount.text.length);
+                },
+              ),
+                      TextFormField(
+                          controller: _amount,
+                          focusNode: _amountFocus,
+                          scrollPadding: const EdgeInsets.all(100),
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          decoration: const InputDecoration(labelText: 'Valor'),
+                          validator: (value) {
+                            try {
+                              return MoneyMinor.parse(value ?? '') > 0
+                                  ? null
+                                  : 'O valor deve ser maior que zero.';
+                            } on FormatException catch (error) {
+                              return error.message;
+                            }
+                          }),
                       DropdownButtonFormField<String>(
                         key: ValueKey('source-$_sourceId'),
                         isExpanded: true,
@@ -555,34 +590,14 @@ class _TransferDialogState extends State<_TransferDialog> {
                             : null,
                         onChanged: (id) => setState(() => _destinationId = id),
                       ),
-                      TextFormField(
-                          controller: _amount,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          decoration: const InputDecoration(labelText: 'Valor'),
-                          validator: (value) {
-                            try {
-                              return MoneyMinor.parse(value ?? '') > 0
-                                  ? null
-                                  : 'O valor deve ser maior que zero.';
-                            } on FormatException catch (error) {
-                              return error.message;
-                            }
-                          }),
-                      ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Data de lançamento'),
-                          subtitle: Text(_dateLabel(_date)),
-                          trailing: const Icon(Icons.calendar_today),
-                          onTap: () => _pickDate('posted')),
-                      ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Vencimento'),
-                          subtitle: Text(_dateLabel(_dueDate)),
-                          trailing: const Icon(Icons.calendar_today),
-                          onTap: () => _pickDate('due')),
+                      MovementDateFields(
+                        posted: _date,
+                        due: _dueDate,
+                        onPosted: () => _pickDate('posted'),
+                        onDue: () => _pickDate('due'),
+                      ),
                       SwitchListTile(
-                          title: const Text('Informar efetivação'),
+                          title: const Text('Efetivada'),
                           subtitle:
                               const Text('A data movimenta as duas contas'),
                           value: _isEffective,
@@ -596,12 +611,8 @@ class _TransferDialogState extends State<_TransferDialog> {
                                 _dateLabel(_effectiveDate ?? DateTime.now())),
                             trailing: const Icon(Icons.calendar_today),
                             onTap: () => _pickDate('effective')),
-                    ])))),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar')),
-          FilledButton(onPressed: _submit, child: const Text('Salvar')),
-        ],
+            ],
+          ),
+        ),
       );
 }

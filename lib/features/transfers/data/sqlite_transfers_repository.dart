@@ -11,7 +11,7 @@ class SqliteTransfersRepository implements TransfersRepository {
   final AppDatabase _db;
 
   static const _select = '''
-    SELECT f.id, f.source_account_id, f.destination_account_id,
+    SELECT f.id, f.description, f.source_account_id, f.destination_account_id,
       f.amount_minor, f.posted_at, f.due_at, f.effective_at,
       source.name AS source_name, destination.name AS destination_name,
       source.currency_code AS currency_code
@@ -45,8 +45,8 @@ class SqliteTransfersRepository implements TransfersRepository {
         await _db.customStatement('''
       INSERT INTO transfers (id, source_account_id, destination_account_id,
         amount_minor, planned_at, posted_at, due_at, effective_at,
-        created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        created_at, updated_at, description)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', [
           id,
           draft.sourceAccountId,
@@ -59,7 +59,8 @@ class SqliteTransfersRepository implements TransfersRepository {
               ? _dayMillis(draft.effectiveDate ?? draft.date)
               : null,
           now,
-          now
+          now,
+          draft.description.trim()
         ]);
         return _find(id);
       });
@@ -75,6 +76,7 @@ class SqliteTransfersRepository implements TransfersRepository {
         await _validateAccounts(draft,
             checkSource: sourceChanged, checkDestination: destinationChanged);
         final fields = <String>[
+          'description = ?',
           'amount_minor = ?',
           'planned_at = ?',
           'posted_at = ?',
@@ -84,6 +86,7 @@ class SqliteTransfersRepository implements TransfersRepository {
           'sync_version = sync_version + 1'
         ];
         final values = <Object?>[
+          draft.description.trim(),
           draft.amountMinor,
           _dayMillis(draft.date),
           _dayMillis(draft.date),
@@ -150,6 +153,9 @@ class SqliteTransfersRepository implements TransfersRepository {
   }
 
   void _validateDraft(TransferDraft draft) {
+    if (draft.description.trim().isEmpty) {
+      throw const FormatException('Informe a descrição.');
+    }
     if (draft.sourceAccountId.isEmpty || draft.destinationAccountId.isEmpty) {
       throw StateError('Selecione as contas de origem e destino.');
     }
@@ -196,6 +202,7 @@ class SqliteTransfersRepository implements TransfersRepository {
 
   Transfer _map(QueryRow row) => Transfer(
         id: row.read<String>('id'),
+        description: row.read<String>('description'),
         sourceAccountId: row.read<String>('source_account_id'),
         sourceAccountName: row.read<String>('source_name'),
         destinationAccountId: row.read<String>('destination_account_id'),

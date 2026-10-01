@@ -360,3 +360,16 @@ o mesmo componente e os mesmos dados do desktop, separados por moeda e mês.
 Em telas estreitas ou com texto ampliado, a legenda fica abaixo do gráfico.
 Sem despesas, exibe uma mensagem; os filtros e cálculos financeiros permanecem
 os mesmos. A inclusão deste gráfico atualiza a composição mobile anterior.
+
+
+## Revisão #35 — cabeçalho e formulários Android (01/10/2026)
+
+Esta revisão substitui a linha exclusiva do mês no dashboard: menu, marca e seletor compacto `‹ Out 2026 ›` ficam na mesma linha. Mantém setas e seleção direta de mês/ano; em telas estreitas ou com texto ampliado utiliza o símbolo Somia para preservar espaço e alvos de toque. O mês continua compartilhado entre seções.
+
+Receitas, despesas e transferências passam a abrir uma rota em tela cheia no Android, na criação e edição, com voltar, título específico, formulário rolável e botão “Salvar lançamento” no rodapé da área disponível. O teclado redimensiona essa área, mantendo campos e ação acessíveis. No Windows permanece uma janela central.
+
+Ordem: Descrição → Valor → Conta (ou origem/destino) → Categoria → Subcategoria → Lançamento/Vencimento → Pago/Recebido/Efetivada → data de efetivação. As datas ficam em duas colunas quando couberem e empilhadas em telas estreitas/texto ampliado. Descrição recebe foco ao criar; Próximo vai para Valor com teclado decimal, sem salvar. O valor recebe destaque visual.
+
+“Mais detalhes” reúne o seletor de tipo no formulário genérico de lançamentos. Nos formulários com tipo fixo e nas transferências, não há outros campos opcionais existentes para apresentar, portanto a seção não é exibida vazia. A descrição de transferências é persistida e aparece na lista e nas transações recentes.
+
+Referências consultadas: `1000067405.jpg` e `1000067409.jpg`, além dos requisitos completos na issue #35. Calculadora integrada permanece pós-MVP.

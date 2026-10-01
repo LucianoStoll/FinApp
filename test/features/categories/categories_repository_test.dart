@@ -141,7 +141,7 @@ void main() {
     final db = AppDatabase(NativeDatabase(file));
     addTearDown(db.close);
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 6);
+    expect(version.read<int>('user_version'), AppDatabase.currentSchemaVersion);
     final category = (await SqliteCategoriesRepository(db).list()).single;
     expect(category.id, 'category');
     expect(category.iconKey, isNull);

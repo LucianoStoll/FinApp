@@ -1,6 +1,7 @@
 class Transfer {
   const Transfer({
     required this.id,
+    this.description = 'Transferência',
     required this.sourceAccountId,
     required this.sourceAccountName,
     required this.destinationAccountId,
@@ -14,6 +15,7 @@ class Transfer {
   });
 
   final String id;
+  final String description;
   final String sourceAccountId;
   final String sourceAccountName;
   final String destinationAccountId;
@@ -28,6 +30,7 @@ class Transfer {
 
 class TransferDraft {
   const TransferDraft({
+    this.description = 'Transferência',
     required this.sourceAccountId,
     required this.destinationAccountId,
     required this.amountMinor,
@@ -37,6 +40,7 @@ class TransferDraft {
     required this.isEffective,
   });
 
+  final String description;
   final String sourceAccountId;
   final String destinationAccountId;
   final int amountMinor;

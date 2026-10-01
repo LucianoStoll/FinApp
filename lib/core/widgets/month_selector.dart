@@ -23,10 +23,12 @@ class MonthSelector extends StatelessWidget {
       required this.month,
       required this.onChanged,
       this.compact = false,
+      this.header = false,
       this.arrows = true});
   final DateTime month;
   final ValueChanged<DateTime> onChanged;
   final bool compact;
+  final bool header;
   final bool arrows;
 
   Future<void> _choose(BuildContext context) async {
@@ -55,13 +57,14 @@ class MonthSelector extends StatelessWidget {
               child: TextButton(
             onPressed: () => _choose(context),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.calendar_month_outlined, size: 18),
-              if (!compact) ...[
-                const SizedBox(width: 8),
+              if (!header)
+                const Icon(Icons.calendar_month_outlined, size: 18),
+              if (!compact || header) ...[
+                if (!header) const SizedBox(width: 8),
                 Flexible(
-                    child: Text('${monthNames[month.month - 1]} ${month.year}',
+                    child: Text('${header ? monthNames[month.month - 1].substring(0, 3) : monthNames[month.month - 1]} ${month.year}',
                         maxLines: 1, overflow: TextOverflow.ellipsis)),
-                const Icon(Icons.expand_more, size: 18),
+                if (!header) const Icon(Icons.expand_more, size: 18),
               ],
             ]),
           )),

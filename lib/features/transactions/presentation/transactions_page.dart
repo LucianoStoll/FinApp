@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/widgets/movement_form_frame.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -174,9 +176,8 @@ class _TransactionsViewState extends State<_TransactionsView> {
   Future<void> _edit([FinancialTransaction? item]) async {
     final cubit = context.read<TransactionsCubit>();
     final state = cubit.state;
-    final draft = await showDialog<TransactionDraft>(
-      context: context,
-      builder: (_) => _TransactionDialog(
+    final draft = await showMovementForm<TransactionDraft>(
+      context, (_) => TransactionForm(
           item: item,
           fixedType: widget.sectionType,
           initialType: (widget.sectionType == TransactionType.income ||
@@ -606,8 +607,8 @@ class _TransactionsViewState extends State<_TransactionsView> {
       );
 }
 
-class _TransactionDialog extends StatefulWidget {
-  const _TransactionDialog(
+class TransactionForm extends StatefulWidget {
+  const TransactionForm(
       {required this.accounts,
       required this.categories,
       this.item,
@@ -620,13 +621,15 @@ class _TransactionDialog extends StatefulWidget {
   final List<FinanceCategory> categories;
 
   @override
-  State<_TransactionDialog> createState() => _TransactionDialogState();
+  State<TransactionForm> createState() => TransactionFormState();
 }
 
-class _TransactionDialogState extends State<_TransactionDialog> {
+class TransactionFormState extends State<TransactionForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _description;
   late final TextEditingController _amount;
+  final _descriptionFocus = FocusNode();
+  final _amountFocus = FocusNode();
   late TransactionType _type;
   late DateTime _date;
   late DateTime _dueDate;
@@ -663,6 +666,8 @@ class _TransactionDialogState extends State<_TransactionDialog> {
 
   @override
   void dispose() {
+    _descriptionFocus.dispose();
+    _amountFocus.dispose();
     _description.dispose();
     _amount.dispose();
     super.dispose();
@@ -730,44 +735,26 @@ class _TransactionDialogState extends State<_TransactionDialog> {
             _categoryId != null &&
             (!category.isArchived || category.id == _subcategoryId))
         .toList();
-    return AlertDialog(
-      title:
-          Text(widget.item == null ? 'Novo lançamento' : 'Editar lançamento'),
-      content: SizedBox(
-        width: 440,
-        child: Form(
+    final kind = _type == TransactionType.income ? 'receita' : 'despesa';
+    return MovementFormFrame(
+      title: widget.item == null ? 'Nova $kind' : 'Editar $kind',
+      onSave: _submit,
+      child: Form(
             key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
+            child: Column(
                   mainAxisSize: MainAxisSize.min,
                   spacing: 16,
                   children: [
-                    if (widget.fixedType != null)
-                      ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Tipo'),
-                          subtitle: Text(widget.fixedType!.label))
-                    else
-                      DropdownButtonFormField<TransactionType>(
-                        isExpanded: true,
-                        initialValue: _type,
-                        decoration: const InputDecoration(labelText: 'Tipo'),
-                        items: TransactionType.values
-                            .map((type) => DropdownMenuItem(
-                                value: type, child: Text(type.label)))
-                            .toList(),
-                        onChanged: (type) {
-                          if (type != null) {
-                            setState(() {
-                              _type = type;
-                              _categoryId = null;
-                              _subcategoryId = null;
-                            });
-                          }
-                        },
-                      ),
                     TextFormField(
                         controller: _description,
+                        focusNode: _descriptionFocus,
+                        autofocus: widget.item == null && usesFullScreenMovementForm(context),
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) {
+                          _amountFocus.requestFocus();
+                          _amount.selection = TextSelection(baseOffset: 0, extentOffset: _amount.text.length);
+                        },
+                        scrollPadding: const EdgeInsets.all(100),
                         decoration:
                             const InputDecoration(labelText: 'Descrição'),
                         validator: (value) =>
@@ -776,6 +763,9 @@ class _TransactionDialogState extends State<_TransactionDialog> {
                                 : null),
                     TextFormField(
                         controller: _amount,
+                        focusNode: _amountFocus,
+                        scrollPadding: const EdgeInsets.all(100),
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
                         decoration: const InputDecoration(labelText: 'Valor'),
@@ -850,22 +840,14 @@ class _TransactionDialogState extends State<_TransactionDialog> {
                           : (id) => setState(() => _subcategoryId =
                               id == null || id.isEmpty ? null : id),
                     ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Data de lançamento'),
-                      subtitle: Text(_dateLabel(_date)),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: () => _pickDate('posted'),
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Vencimento'),
-                      subtitle: Text(_dateLabel(_dueDate)),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: () => _pickDate('due'),
+                    MovementDateFields(
+                      posted: _date,
+                      due: _dueDate,
+                      onPosted: () => _pickDate('posted'),
+                      onDue: () => _pickDate('due'),
                     ),
                     SwitchListTile(
-                      title: const Text('Informar efetivação'),
+                      title: Text(_type == TransactionType.income ? 'Recebido' : 'Pago'),
                       subtitle: const Text(
                           'A data determina quando entra no saldo atual'),
                       value: _isEffective,
@@ -880,15 +862,33 @@ class _TransactionDialogState extends State<_TransactionDialog> {
                               _dateLabel(_effectiveDate ?? DateTime.now())),
                           trailing: const Icon(Icons.calendar_today),
                           onTap: () => _pickDate('effective')),
+                    if (widget.fixedType == null)
+                      ExpansionTile(
+                        title: const Text('Mais detalhes'),
+                        tilePadding: EdgeInsets.zero,
+                        children: [
+                          DropdownButtonFormField<TransactionType>(
+                        isExpanded: true,
+                        initialValue: _type,
+                        decoration: const InputDecoration(labelText: 'Tipo'),
+                        items: TransactionType.values
+                            .map((type) => DropdownMenuItem(
+                                value: type, child: Text(type.label)))
+                            .toList(),
+                        onChanged: (type) {
+                          if (type != null) {
+                            setState(() {
+                              _type = type;
+                              _categoryId = null;
+                              _subcategoryId = null;
+                            });
+                          }
+                        },
+                      ),
+                        ],
+                      ),
                   ]),
-            )),
-      ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar')),
-        FilledButton(onPressed: _submit, child: const Text('Salvar')),
-      ],
+            ),
     );
   }
 }

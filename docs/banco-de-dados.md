@@ -215,3 +215,8 @@ de Contas). A projeção acrescenta movimentos ainda não realizados cuja
 do mês como corte e não inclui efetivações posteriores nos totais realizados
 daquele mês. O filtro de período da lista pode usar lançamento, vencimento ou
 efetivação; por padrão usa vencimento.
+
+
+## Schema v7 — descrição de transferências
+
+A migration v7 adiciona `transfers.description`, texto obrigatório não vazio, com padrão “Transferência” para preservar os registros anteriores. Não altera valores, contas ou datas. O formulário novo permite criar/editar a descrição e o dashboard usa esse texto nas atividades recentes. Backups anteriores continuam migrando até a versão atual; backup/restauração v7 preserva a descrição e as preferências de saldo.

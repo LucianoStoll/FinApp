@@ -42,31 +42,35 @@ class MobileDashboardAppBar extends StatelessWidget
   const MobileDashboardAppBar({super.key});
 
   @override
-  Size get preferredSize => const Size.fromHeight(128);
+  Size get preferredSize => const Size.fromHeight(64);
 
   @override
   Widget build(BuildContext context) =>
       BlocBuilder<DashboardCubit, DashboardState>(builder: (context, state) {
-        final compact = MediaQuery.textScalerOf(context).scale(14) > 19;
+        final width = MediaQuery.sizeOf(context).width;
+        final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+        final symbolOnly = width < 390 || scale > 1.3;
         return AppBar(
-          toolbarHeight: 72,
+          toolbarHeight: 64,
           leadingWidth: 48,
-          titleSpacing: 2,
+          titleSpacing: 4,
           leading: const SomiaMenuButton(),
-          title: const SomiaBrand(height: 36),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(56),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: MonthSelector(
-                key: const ValueKey('dashboard-month-selector'),
-                month: state.month,
-                compact: compact,
-                arrows: true,
-                onChanged: referenceMonth.select,
+          title: Row(children: [
+            SomiaBrand(symbolOnly: symbolOnly, height: 30),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: MonthSelector(
+                  key: const ValueKey('dashboard-month-selector'),
+                  month: state.month,
+                  header: true,
+                  arrows: true,
+                  onChanged: referenceMonth.select,
+                ),
               ),
             ),
-          ),
+          ]),
         );
       });
 }

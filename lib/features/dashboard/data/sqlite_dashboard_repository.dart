@@ -152,7 +152,7 @@ class SqliteDashboardRepository implements DashboardRepository {
         FROM transactions t JOIN accounts a ON a.id = t.account_id
         WHERE t.deleted_at IS NULL AND a.deleted_at IS NULL
         UNION ALL
-        SELECT f.id, 'transfer' AS type, 'Transferência' AS description,
+        SELECT f.id, 'transfer' AS type, f.description AS description,
           source.name || ' → ' || destination.name AS account_label,
           source.currency_code, f.amount_minor, f.due_at AS event_at,
           f.effective_at, f.created_at

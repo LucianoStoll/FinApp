@@ -63,7 +63,7 @@ void main() {
     expect(
         (await db.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        6);
+        AppDatabase.currentSchemaVersion);
     final transaction = (await SqliteTransactionsRepository(db).list()).single;
     final transfer = (await SqliteTransfersRepository(db).list()).single;
     expect(transaction.description, 'Legado');

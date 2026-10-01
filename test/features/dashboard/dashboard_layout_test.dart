@@ -111,6 +111,11 @@ void main() {
       await _mount(tester, Size(width, 900));
       expect(find.byTooltip('Entender os saldos'), findsOneWidget);
       expect(find.text('Efetivados e previstos'), findsNWidgets(2));
+      final selector = tester.getRect(find.byKey(const ValueKey('dashboard-month-selector')));
+      final menu = tester.getRect(find.byTooltip('Abrir menu'));
+      expect(selector.center.dy, closeTo(menu.center.dy, 2));
+      expect(selector.left, greaterThan(menu.right));
+      expect(selector.right, lessThanOrEqualTo(width));
       final balance =
           tester.getRect(find.byKey(const ValueKey('mobile-balance-BRL')));
       final income =

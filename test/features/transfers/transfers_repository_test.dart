@@ -53,12 +53,14 @@ void main() {
     final transfers = SqliteTransfersRepository(db);
     final date = DateTime.utc(2026, 9, 29);
     final draft = TransferDraft(
+        description: 'Para reserva',
         sourceAccountId: source.id,
         destinationAccountId: destination.id,
         amountMinor: 2500,
         date: date,
         isEffective: false);
     final pending = await transfers.create(draft);
+    expect(pending.description, 'Para reserva');
     expect(pending.isEffective, isFalse);
     expect(pending.date, date);
     expect((await accounts.list()).map((a) => a.currentBalanceMinor).toList(),
@@ -67,6 +69,7 @@ void main() {
     final paid = await transfers.update(
         pending.id,
         TransferDraft(
+            description: 'Aplicação mensal',
             sourceAccountId: source.id,
             destinationAccountId: destination.id,
             amountMinor: 2500,
@@ -86,6 +89,7 @@ void main() {
     addTearDown(db.close);
     final restored = SqliteTransfersRepository(db);
     expect((await restored.list()).single.date, date);
+    expect((await restored.list()).single.description, 'Aplicação mensal');
     await restored.delete(paid.id);
     expect(await restored.list(), isEmpty);
     final finalBalances = {
@@ -181,9 +185,10 @@ void main() {
     expect(
         (await db.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        6);
+        AppDatabase.currentSchemaVersion);
     final old = (await SqliteTransfersRepository(db).list()).single;
     expect(old.id, 'old');
+    expect(old.description, 'Transferência');
     expect(old.amountMinor, 500);
     expect(old.date.millisecondsSinceEpoch, 1000);
     expect(old.isEffective, isFalse);

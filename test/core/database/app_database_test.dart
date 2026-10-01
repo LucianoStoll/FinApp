@@ -10,7 +10,7 @@ void main() {
     addTearDown(db.close);
 
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 6);
+    expect(version.read<int>('user_version'), AppDatabase.currentSchemaVersion);
 
     final tables = await db
         .customSelect(
