@@ -1,4 +1,4 @@
-# Roadmap — FinApp
+# Roadmap — Somia
 
 ## Estratégia
 
@@ -14,54 +14,58 @@ A branch `main` representa somente versões concluídas/estáveis dentro do marc
 
 Antes de qualquer implementação, verificar qual é a branch de versão ativa e manter controle das branches existentes para evitar trabalho divergente ou abandonado.
 
+## Situação do MVP
+
+O ciclo `v0.1.0-alpha` foi aprovado em 01/10/2026, sem bugs relatados no checklist #33. #30, #31, #32 e #35 estão concluídas. A #10 consolida documentação, PR para `main` e publicação dos pacotes Android/Windows.
+
 ## Fase 0 — Fundação
 - [x] Visão, questionário e escopo
 - [x] Offline-first e preparação para sync
 - [x] Stack e arquitetura alvo
 - [x] Criar branch de versão `v0.1.0-alpha`
-- [ ] Reorganizar Flutter em core + features
-- [ ] Configurar Drift, BLoC/Cubit, go_router e get_it
-- [ ] Ambientes dev/test/prod
-- [ ] GitHub Actions: format + flutter analyze
-- [ ] Guidelines, branches/commits e PR template
+- [x] Reorganizar Flutter em core + features
+- [x] Configurar Drift, BLoC/Cubit, go_router e get_it
+- [ ] Ambientes dev/test/prod (próximo ciclo)
+- [x] GitHub Actions: formatação, análise, testes, prévias mobile, builds e publicação
+- [x] Guidelines, branches/commits e PR template
 
 ## Fase 1 — Persistência do núcleo
-- [ ] Drift/SQLite
-- [ ] UUID e metadados sync-ready
-- [ ] Valores monetários inteiros
-- [ ] Migrations versionadas
-- [ ] Conta
-- [ ] Categoria/Subcategoria
-- [ ] Transação
-- [ ] Transferência
-- [ ] Arquivamento/soft delete
-- [ ] Saldo atual/projetado
+- [x] Drift/SQLite
+- [x] UUID e metadados sync-ready
+- [x] Valores monetários inteiros
+- [x] Migrations versionadas
+- [x] Conta
+- [x] Categoria/Subcategoria
+- [x] Transação
+- [x] Transferência
+- [x] Arquivamento/soft delete
+- [x] Saldo atual/projetado
 
 ## Fase 2 — MVP / v0.1.0-alpha
-- [ ] CRUD e arquivamento de contas
-- [ ] CRUD e arquivamento de categorias/subcategorias
-- [ ] Receitas e despesas
-- [ ] Transferências sem duplicidade
-- [ ] Lista/filtros essenciais
-- [ ] Dashboard básico
-- [ ] UI Android/Windows
-- [ ] Claro/escuro/sistema
-- [ ] 100% offline
-- [ ] Validação manual
+- [x] CRUD e arquivamento de contas
+- [x] CRUD e arquivamento de categorias/subcategorias
+- [x] Receitas e despesas
+- [x] Transferências sem duplicidade
+- [x] Lista/filtros essenciais
+- [x] Dashboard básico
+- [x] UI Android/Windows
+- [x] Tema escuro aprovado; tema claro/sistema nos próximos ciclos
+- [x] 100% offline
+- [x] Validação manual
 
 ### Revisão final antes da conclusão do MVP
-- [ ] receitas, despesas e transferências com data de lançamento, vencimento e efetivação;
-- [ ] saldo realizado baseado na data de efetivação e projeções baseadas no vencimento;
-- [ ] aviso ao efetivar compromisso futuro: contabilizar hoje ou no vencimento;
-- [ ] migration Drift/SQLite não destrutiva para preservar bases já usadas;
-- [ ] APK Android atualizável sobre a instalação anterior, com assinatura persistente e build number crescente;
-- [ ] teste de atualização preservando os dados locais;
-- [ ] backup/exportação e importação simples como proteção durante os testes;
-- [ ] remover barra inferior no mobile e adotar drawer/menu lateral;
-- [ ] Receitas e Despesas como áreas independentes no menu;
-- [ ] manter tema escuro no MVP e preparar os componentes para tema claro futuro.
+- [x] receitas, despesas e transferências com data de lançamento, vencimento e efetivação;
+- [x] saldo realizado baseado na data de efetivação e projeções baseadas no vencimento;
+- [x] aviso ao efetivar compromisso passado ou futuro: contabilizar hoje ou no vencimento;
+- [x] migration Drift/SQLite não destrutiva para preservar bases já usadas;
+- [x] APK Android atualizável sobre a instalação anterior, com assinatura persistente e build number crescente;
+- [x] teste de atualização preservando os dados locais;
+- [x] backup/exportação e importação simples como proteção durante os testes;
+- [x] remover barra inferior no mobile e adotar drawer/menu lateral;
+- [x] Receitas e Despesas como áreas independentes no menu;
+- [x] manter tema escuro no MVP e preparar os componentes para tema claro futuro.
 
-Issues de acompanhamento: #30, #31 e #32.
+Issues de acompanhamento concluídas: #30, #31, #32, #35 e #33. Fechamento/release: #10.
 
 ## Pós-MVP — UX financeira
 - [ ] Calculadora monetária integrada como entrada padrão para campos de valor
@@ -72,8 +76,8 @@ Issues de acompanhamento: #30, #31 e #32.
 - [ ] Componente global reutilizável em lançamentos e módulos futuros
 
 ## Fase 3 — Núcleo financeiro avançado
-- [ ] Competência/vencimento/efetivação
-- [ ] Previsto x realizado
+- [ ] Competência e regras contábeis avançadas (lançamento/vencimento/efetivação já disponíveis no MVP)
+- [ ] Análises avançadas de previsto x realizado (saldo básico já disponível)
 - [ ] Recorrências e parcelamentos
 - [ ] Liquidações parciais
 - [ ] Rateio
@@ -121,12 +125,12 @@ Issues de acompanhamento: #30, #31 e #32.
 - [ ] Conciliação
 - [ ] Pacote portátil
 - [ ] Favoritos/atalhos
-- [ ] Ajuda contextual
+- [ ] Ampliar ajuda contextual (explicação dos saldos disponível no MVP)
 
 ## Fase 8 — Robustez
 - [ ] Anexos (20 MB)
 - [ ] Backup diário/3 versões
-- [ ] Restauração validada
+- [x] Restauração local validada no MVP; evoluir proteção e automação nos próximos ciclos
 - [ ] Logs/diagnóstico
 - [ ] Telemetria opt-in
 - [ ] Cache/agregações
