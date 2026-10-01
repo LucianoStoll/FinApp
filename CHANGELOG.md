@@ -2,6 +2,11 @@
 
 ## v0.2.0-alpha — em desenvolvimento (pós-MVP)
 
+- #42: listas compactas de receitas, despesas e transferências com status à esquerda, conta, descrição, datas, valor e etiquetas de categoria/subcategoria.
+- Efetivar hoje pelo ícone; desfazer conserva a data anterior (inclusive agendamento), e ajustar data está disponível no feedback e no menu.
+- Alteração restrita à efetivação, proteção contra repetição e comparação da data esperada para rejeitar ações antigas. Os dois saldos de transferências continuam calculados a partir do mesmo registro.
+- #34 validada pelo usuário em 01/10/2026.
+
 - #34: calculadora monetária reutilizável como entrada de valores em receitas, despesas e transferências, incluindo avanço da descrição por Enter.
 - Entrada direta, `00`, vírgula, limpar/apagar, soma, subtração, multiplicação, divisão, resultado e confirmação; cancelar/voltar preserva o valor anterior.
 - Operações com precedência convencional e frações exatas de `BigInt`; arredondamento final para centavos, metade para fora de zero. Divisão por zero, operações incompletas, valores fora do limite e valores não positivos nos lançamentos são rejeitados.

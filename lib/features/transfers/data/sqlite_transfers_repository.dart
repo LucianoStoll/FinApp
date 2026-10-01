@@ -144,6 +144,27 @@ class SqliteTransfersRepository implements TransfersRepository {
     }
   }
 
+  @override
+  Future<void> changeEffectiveDate(String id,
+      {required DateTime expectedDate, DateTime? effectiveDate}) async {
+    final changed = await _db.customUpdate('''
+      UPDATE transfers SET effective_at = ?,
+        updated_at = ?, sync_version = sync_version + 1
+      WHERE id = ? AND deleted_at IS NULL AND effective_at = ?
+    ''', variables: [
+      effectiveDate == null
+          ? const Variable<int>(null)
+          : Variable.withInt(_dayMillis(effectiveDate)),
+      Variable.withInt(EntityMetadata.nowUtcMillis()),
+      Variable.withString(id),
+      Variable.withInt(_dayMillis(expectedDate)),
+    ]);
+    if (changed != 1) {
+      throw StateError(
+          'O movimento já mudou. Atualize a lista antes de tentar novamente.');
+    }
+  }
+
   Future<Transfer> _find(String id) async {
     final rows = await _db.customSelect('''
       $_select WHERE f.id = ? AND f.deleted_at IS NULL

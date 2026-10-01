@@ -70,7 +70,8 @@ Issues de acompanhamento concluídas: #30, #31, #32, #35 e #33. Fechamento/relea
 ## Pós-MVP — UX financeira / v0.2.0-alpha
 
 Branch ativa: `v0.2.0-alpha`, iniciada a partir do MVP validado em `main`.
-A #34 está implementada; validação manual Android/Windows pendente.
+A #34 foi validada pelo usuário e concluída em 01/10/2026.
+A #42 está implementada, com validação manual pendente.
 O fechamento do ciclo e a PR para `main` acontecem após essa validação.
 - [x] Calculadora monetária integrada como entrada padrão para campos de valor
 - [x] Operações básicas: soma, subtração, multiplicação e divisão
@@ -78,6 +79,14 @@ O fechamento do ciclo e a PR para `main` acontecem após essa validação.
 - [x] Preservar valor anterior ao cancelar/voltar
 - [x] Precisão monetária sem erros de ponto flutuante
 - [x] Componente global reutilizável em lançamentos e módulos futuros
+
+### Entrega #42 — listas e efetivação rápida
+- [x] Linhas compactas com status, conta, descrição, valor, datas e etiquetas
+- [x] Receber/pagar/transferir hoje pelo ícone
+- [x] Desfazer restaura a efetivação anterior, incluindo agendamentos
+- [x] Ajustar data pelo feedback ou menu
+- [x] Áreas independentes e proteção contra repetição/ação antiga
+- [ ] Validação manual pelo usuário
 
 ## Fase 3 — Núcleo financeiro avançado
 - [ ] Competência e regras contábeis avançadas (lançamento/vencimento/efetivação já disponíveis no MVP)

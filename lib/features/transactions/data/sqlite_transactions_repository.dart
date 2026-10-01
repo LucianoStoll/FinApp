@@ -196,6 +196,27 @@ class SqliteTransactionsRepository implements TransactionsRepository {
     }
   }
 
+  @override
+  Future<void> changeEffectiveDate(String id,
+      {required DateTime expectedDate, DateTime? effectiveDate}) async {
+    final changed = await _db.customUpdate('''
+      UPDATE transactions SET effective_at = ?, actual_amount_minor = ${effectiveDate == null ? 'NULL' : 'planned_amount_minor'},
+        updated_at = ?, sync_version = sync_version + 1
+      WHERE id = ? AND deleted_at IS NULL AND effective_at = ?
+    ''', variables: [
+      effectiveDate == null
+          ? const Variable<int>(null)
+          : Variable.withInt(_dayMillis(effectiveDate)),
+      Variable.withInt(EntityMetadata.nowUtcMillis()),
+      Variable.withString(id),
+      Variable.withInt(_dayMillis(expectedDate)),
+    ]);
+    if (changed != 1) {
+      throw StateError(
+          'O movimento já mudou. Atualize a lista antes de tentar novamente.');
+    }
+  }
+
   Future<FinancialTransaction> _find(String id) async {
     final rows = await _db.customSelect('''
       $_select WHERE t.id = ? AND t.deleted_at IS NULL

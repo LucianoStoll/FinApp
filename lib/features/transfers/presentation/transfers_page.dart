@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/movement_form_frame.dart';
+import '../../../core/widgets/movement_list_row.dart';
+import '../../../core/widgets/effectuation_feedback.dart';
 import '../../../core/widgets/monetary_calculator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +11,7 @@ import '../../../core/di/injection.dart';
 import '../../../core/filters/reference_month.dart';
 import '../../../core/widgets/month_selector.dart';
 import '../../../core/routing/somia_shell.dart';
-import '../../../core/widgets/effectuation_date_dialog.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../accounts/domain/account.dart';
 import '../../accounts/domain/accounts_repository.dart';
 import '../../accounts/domain/money_minor.dart';
@@ -43,6 +45,7 @@ class _TransfersView extends StatefulWidget {
 
 class _TransfersViewState extends State<_TransfersView> {
   bool _openedInitial = false;
+  final _changingStatus = <String>{};
   DateTimeRange? _range;
   bool _customPeriod = false;
   String? _accountId;
@@ -264,16 +267,51 @@ class _TransfersViewState extends State<_TransfersView> {
     }
   }
 
-  Future<void> _setEffective(BuildContext context, Transfer item) async {
-    final chosen =
-        await chooseEffectuationDate(context, item.dueDate ?? item.date);
-    if (chosen == null || !context.mounted) return;
+  Future<void> _markPending(Transfer item) async {
+    if (_changingStatus.contains(item.id) || item.effectiveDate == null) return;
+    await _changeDate(item.id, item.effectiveDate!);
+  }
+
+  Future<void> _quickEffective(Transfer item) async {
+    if (!mounted || item.isEffective || _changingStatus.contains(item.id))
+      return;
+    setState(() => _changingStatus.add(item.id));
+    final today = DateUtils.dateOnly(DateTime.now());
     try {
       await context
           .read<TransfersCubit>()
-          .setEffective(item.id, effective: true, effectiveDate: chosen);
+          .setEffective(item.id, effective: true, effectiveDate: today);
+      if (!mounted) return;
+      showEffectuationFeedback(context,
+          message: 'Transferência efetivada hoje.',
+          undo: () => _changeDate(item.id, today, restore: item.effectiveDate),
+          adjustDate: () => _changeDate(item.id, today, pick: true));
     } catch (error) {
-      if (context.mounted) _showError(context, error);
+      if (mounted) _showError(context, error);
+    } finally {
+      if (mounted) setState(() => _changingStatus.remove(item.id));
+    }
+  }
+
+  Future<void> _changeDate(String id, DateTime expected,
+      {DateTime? restore, bool pick = false}) async {
+    if (!mounted || _changingStatus.contains(id)) return;
+    setState(() => _changingStatus.add(id));
+    try {
+      final chosen = pick
+          ? await showDatePicker(
+              context: context,
+              initialDate: expected,
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100))
+          : restore;
+      if (!mounted || (pick && chosen == null)) return;
+      await context.read<TransfersCubit>().changeEffectiveDate(id,
+          expectedDate: expected, effectiveDate: chosen);
+    } catch (error) {
+      if (mounted) _showError(context, error);
+    } finally {
+      if (mounted) setState(() => _changingStatus.remove(id));
     }
   }
 
@@ -355,41 +393,46 @@ class _TransfersViewState extends State<_TransfersView> {
               itemCount: state.items.length,
               itemBuilder: (context, index) {
                 final item = state.items[index];
-                return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: const Icon(Icons.swap_horiz),
-                      title: Text(item.description,
-                          maxLines: 2, overflow: TextOverflow.ellipsis),
-                      subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                '${item.sourceAccountName} → ${item.destinationAccountName}'),
-                            Text('Lançamento ${_dateLabel(item.date)} · '
-                                'Vencimento ${_dateLabel(item.dueDate ?? item.date)} · '
-                                '${item.effectiveDate == null ? 'Pendente' : item.isEffective ? 'Efetivada ${_dateLabel(item.effectiveDate!)}' : 'Agendada ${_dateLabel(item.effectiveDate!)}'}'),
-                            Text(MoneyMinor.display(
-                                item.amountMinor, item.currencyCode)),
-                            if (!item.isEffective)
-                              TextButton.icon(
-                                  onPressed: () => _setEffective(context, item),
-                                  icon: const Icon(Icons.check_circle_outline),
-                                  label: const Text('Efetivar')),
-                          ]),
-                      trailing: PopupMenuButton<String>(
-                          tooltip: 'Ações da transferência',
-                          onSelected: (action) => action == 'edit'
-                              ? _edit(context, item)
-                              : _delete(context, item),
-                          itemBuilder: (_) => const [
-                                PopupMenuItem(
-                                    value: 'edit', child: Text('Editar')),
-                                PopupMenuItem(
-                                    value: 'delete', child: Text('Excluir')),
-                              ]),
-                      onTap: () => _edit(context, item),
-                    ));
+                return MovementListRow(
+                  id: item.id,
+                  description: item.description,
+                  account:
+                      '${item.sourceAccountName} → ${item.destinationAccountName}',
+                  amount:
+                      MoneyMinor.display(item.amountMinor, item.currencyCode),
+                  dueDate: item.dueDate ?? item.date,
+                  effectiveDate: item.effectiveDate,
+                  effective: item.isEffective,
+                  busy: _changingStatus.contains(item.id),
+                  color: SomiaColors.blue,
+                  onEdit: () => _edit(context, item),
+                  onEffective: () => _quickEffective(item),
+                  menu: PopupMenuButton<String>(
+                    key: ValueKey('movement-menu-${item.id}'),
+                    enabled: !_changingStatus.contains(item.id),
+                    tooltip: 'Ações da transferência',
+                    icon: const Icon(Icons.more_vert, size: 20),
+                    onSelected: (action) {
+                      if (action == 'edit') _edit(context, item);
+                      if (action == 'delete') _delete(context, item);
+                      if (action == 'pending') _markPending(item);
+                      if (action == 'date' && item.effectiveDate != null)
+                        _changeDate(item.id, item.effectiveDate!, pick: true);
+                    },
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(value: 'edit', child: Text('Editar')),
+                      if (item.effectiveDate != null) ...[
+                        const PopupMenuItem(
+                            value: 'date', child: Text('Ajustar data')),
+                        const PopupMenuItem(
+                            value: 'pending',
+                            child: Text('Marcar como pendente')),
+                      ],
+                      const PopupMenuItem(
+                          value: 'delete', child: Text('Excluir')),
+                    ],
+                  ),
+                );
               },
             );
           })),

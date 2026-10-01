@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/movement_form_frame.dart';
+import '../../../core/widgets/movement_list_row.dart';
+import '../../../core/widgets/effectuation_feedback.dart';
 import '../../../core/widgets/monetary_calculator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -270,6 +272,51 @@ class _TransactionsViewState extends State<_TransactionsView> {
     }
   }
 
+  Future<void> _quickEffective(FinancialTransaction item) async {
+    if (!mounted || item.isEffective || _changingStatus.contains(item.id))
+      return;
+    setState(() => _changingStatus.add(item.id));
+    final today = DateUtils.dateOnly(DateTime.now());
+    try {
+      await context
+          .read<TransactionsCubit>()
+          .setEffective(item.id, effective: true, effectiveDate: today);
+      if (!mounted) return;
+      showEffectuationFeedback(context,
+          message: item.type == TransactionType.income
+              ? 'Receita recebida hoje.'
+              : 'Despesa paga hoje.',
+          undo: () => _changeDate(item.id, today, restore: item.effectiveDate),
+          adjustDate: () => _changeDate(item.id, today, pick: true));
+    } catch (error) {
+      if (mounted) _showError(error);
+    } finally {
+      if (mounted) setState(() => _changingStatus.remove(item.id));
+    }
+  }
+
+  Future<void> _changeDate(String id, DateTime expected,
+      {DateTime? restore, bool pick = false}) async {
+    if (!mounted || _changingStatus.contains(id)) return;
+    setState(() => _changingStatus.add(id));
+    try {
+      final chosen = pick
+          ? await showDatePicker(
+              context: context,
+              initialDate: expected,
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100))
+          : restore;
+      if (!mounted || (pick && chosen == null)) return;
+      await context.read<TransactionsCubit>().changeEffectiveDate(id,
+          expectedDate: expected, effectiveDate: chosen);
+    } catch (error) {
+      if (mounted) _showError(error);
+    } finally {
+      if (mounted) setState(() => _changingStatus.remove(id));
+    }
+  }
+
   void _showError(Object error) {
     final message = error is FormatException
         ? error.message
@@ -536,77 +583,58 @@ class _TransactionsViewState extends State<_TransactionsView> {
             )),
       );
 
-  Widget _itemTile(FinancialTransaction item) => Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        child: ListTile(
-          leading: CircleAvatar(
-              backgroundColor: (item.type == TransactionType.income
-                      ? SomiaColors.green
-                      : SomiaColors.red)
-                  .withValues(alpha: 0.16),
-              child: Icon(
-                  item.type == TransactionType.income
-                      ? Icons.arrow_upward
-                      : Icons.arrow_downward,
-                  color: item.type == TransactionType.income
-                      ? SomiaColors.green
-                      : SomiaColors.red)),
-          title: Text(item.description,
-              maxLines: 2, overflow: TextOverflow.ellipsis),
-          subtitle:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Lançamento ${_dateLabel(item.date)} · '
-                'Vencimento ${_dateLabel(item.dueDate ?? item.date)} · '
-                '${item.effectiveDate == null ? 'Pendente' : item.isEffective ? 'Efetivada ${_dateLabel(item.effectiveDate!)}' : 'Agendada ${_dateLabel(item.effectiveDate!)}'}'
-                ' · ${item.accountName}'
-                '${item.categoryName == null ? '' : ' · ${item.categoryName}'}'),
-            if (!item.isEffective)
-              TextButton.icon(
-                onPressed: _changingStatus.contains(item.id)
-                    ? null
-                    : () => _setEffective(item, true),
-                icon: const Icon(Icons.check_circle_outline),
-                label: const Text('Efetivar'),
-              ),
-          ]),
-          trailing: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                    '${item.type == TransactionType.income ? '+' : '-'}'
-                    '${MoneyMinor.display(item.amountMinor, item.currencyCode)}',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: item.type == TransactionType.income
-                            ? SomiaColors.green
-                            : SomiaColors.red)),
-                SizedBox(
-                    height: 32,
-                    child: PopupMenuButton<String>(
-                      tooltip: 'Ações do lançamento',
-                      icon: const Icon(Icons.more_horiz, size: 20),
-                      padding: EdgeInsets.zero,
-                      onSelected: (action) {
-                        if (action == 'edit') _edit(item);
-                        if (action == 'delete') _delete(item);
-                        if (action == 'pending') _setEffective(item, false);
-                      },
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(
-                            value: 'edit', child: Text('Editar')),
-                        if (item.isEffective)
-                          const PopupMenuItem(
-                              value: 'pending',
-                              child: Text('Marcar como pendente')),
-                        const PopupMenuItem(
-                            value: 'delete', child: Text('Excluir')),
-                      ],
-                    )),
-              ]),
-          onTap: () => _edit(item),
-        ),
-      );
+  Widget _itemTile(FinancialTransaction item) {
+    final categories = context.read<TransactionsCubit>().state.categories;
+    final category =
+        categories.where((c) => c.id == item.categoryId).firstOrNull;
+    final parent =
+        categories.where((c) => c.id == category?.parentId).firstOrNull;
+    final busy = _changingStatus.contains(item.id);
+    return MovementListRow(
+      id: item.id,
+      description: item.description,
+      account: item.accountName,
+      amount:
+          '${item.type == TransactionType.income ? '+' : '-'}${MoneyMinor.display(item.amountMinor, item.currencyCode)}',
+      dueDate: item.dueDate ?? item.date,
+      effectiveDate: item.effectiveDate,
+      effective: item.isEffective,
+      busy: busy,
+      color: item.type == TransactionType.income
+          ? SomiaColors.green
+          : SomiaColors.red,
+      effectiveLabel:
+          item.type == TransactionType.income ? 'Receber hoje' : 'Pagar hoje',
+      tags: [
+        if (parent != null) parent.name,
+        if (item.categoryName != null) item.categoryName!
+      ],
+      onEffective: () => _quickEffective(item),
+      onEdit: () => _edit(item),
+      menu: PopupMenuButton<String>(
+        key: ValueKey('movement-menu-${item.id}'),
+        enabled: !busy,
+        tooltip: 'Ações do lançamento',
+        icon: const Icon(Icons.more_vert, size: 20),
+        onSelected: (action) {
+          if (action == 'edit') _edit(item);
+          if (action == 'delete') _delete(item);
+          if (action == 'pending') _setEffective(item, false);
+          if (action == 'date' && item.effectiveDate != null)
+            _changeDate(item.id, item.effectiveDate!, pick: true);
+        },
+        itemBuilder: (_) => [
+          const PopupMenuItem(value: 'edit', child: Text('Editar')),
+          if (item.effectiveDate != null) ...[
+            const PopupMenuItem(value: 'date', child: Text('Ajustar data')),
+            const PopupMenuItem(
+                value: 'pending', child: Text('Marcar como pendente')),
+          ],
+          const PopupMenuItem(value: 'delete', child: Text('Excluir')),
+        ],
+      ),
+    );
+  }
 }
 
 class TransactionForm extends StatefulWidget {

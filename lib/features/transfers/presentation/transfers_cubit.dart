@@ -83,4 +83,11 @@ class TransfersCubit extends Cubit<TransfersState> {
         effective: effective, effectiveDate: effectiveDate);
     if (!isClosed) await load();
   }
+
+  Future<void> changeEffectiveDate(String id,
+      {required DateTime expectedDate, DateTime? effectiveDate}) async {
+    await _transfers.changeEffectiveDate(id,
+        expectedDate: expectedDate, effectiveDate: effectiveDate);
+    if (!isClosed) await load();
+  }
 }
