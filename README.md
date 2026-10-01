@@ -2,6 +2,13 @@
 
 Seu dinheiro, mais claro. Aplicativo de finanças pessoais para Android e Windows, com dados locais e funcionamento offline.
 
+## Em desenvolvimento — v0.2.0-alpha (pós-MVP)
+
+Branch ativa: `v0.2.0-alpha`. A calculadora da #34 substitui o teclado monetário
+nos formulários de receitas, despesas e transferências. Veja o comportamento,
+as regras de precisão e o checklist em [Calculadora monetária](docs/calculadora-monetaria.md).
+A validação manual deste ciclo precede a PR para `main`.
+
 ## MVP — v0.1.0-alpha
 
 Primeiro ciclo implementado e validado pelo usuário em 01/10/2026, incluindo o checklist final #33 e os ajustes #35. A versão é uma pré-release para uso e evolução do MVP.
