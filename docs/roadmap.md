@@ -71,7 +71,7 @@ Issues de acompanhamento concluídas: #30, #31, #32, #35 e #33. Fechamento/relea
 
 Branch ativa: `v0.2.0-alpha`, iniciada a partir do MVP validado em `main`.
 A #34 foi validada pelo usuário e concluída em 01/10/2026.
-A #42 está implementada, com validação manual pendente.
+As #42 e #43 estão implementadas, com validação manual pendente.
 O fechamento do ciclo e a PR para `main` acontecem após essa validação.
 - [x] Calculadora monetária integrada como entrada padrão para campos de valor
 - [x] Operações básicas: soma, subtração, multiplicação e divisão
@@ -180,3 +180,11 @@ O fechamento do ciclo e a PR para `main` acontecem após essa validação.
 ## Releases
 
 Semantic Versioning: 0.x-alpha para desenvolvimento inicial, 0.x-beta para estabilização e 1.0.0 para primeira versão estável. Cada release terá tag, changelog e issues/PRs relacionados.
+
+### Entrega #43 — editar valor na lista
+
+- [x] Calculadora integrada ao toque no valor de receita, despesa e transferência.
+- [x] Atualização isolada do valor, preservando vínculos, datas e efetivação.
+- [x] Cancelar/voltar mantém o original; ações de valor e status independentes.
+- [x] Ajustes #42: feedback por 5 segundos, remover efetivação pelo ícone de receita/despesa e efetivados no topo.
+- [ ] Validação manual Android e Windows — roteiro em `docs/edicao-valor-lista.md`.

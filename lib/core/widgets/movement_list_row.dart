@@ -20,6 +20,7 @@ class MovementListRow extends StatelessWidget {
       this.tags = const [],
       this.busy = false,
       this.onAmount,
+      this.onPending,
       this.effectiveLabel = 'Efetivar hoje'});
   final String id, description, account, amount, effectiveLabel;
   final DateTime dueDate;
@@ -28,7 +29,7 @@ class MovementListRow extends StatelessWidget {
   final Color color;
   final List<String> tags;
   final VoidCallback onEdit, onEffective;
-  final VoidCallback? onAmount;
+  final VoidCallback? onAmount, onPending;
   final Widget menu;
 
   String _date(DateTime date) => '${date.day.toString().padLeft(2, '0')}/'
@@ -47,9 +48,13 @@ class MovementListRow extends StatelessWidget {
       tooltip: busy
           ? 'Salvando'
           : effective
-              ? status
+              ? (onPending == null ? status : 'Marcar como pendente')
               : effectiveLabel,
-      onPressed: busy || effective ? null : onEffective,
+      onPressed: busy
+          ? null
+          : effective
+              ? onPending
+              : onEffective,
       style: IconButton.styleFrom(
           backgroundColor: statusColor.withValues(alpha: 0.12),
           disabledBackgroundColor: statusColor.withValues(alpha: 0.12)),
@@ -99,7 +104,6 @@ class MovementListRow extends StatelessWidget {
         label: 'Valor $amount',
         child: InkWell(
             key: ValueKey('movement-amount-$id'),
-            // #43 liga a calculadora nesta área; por enquanto mantém a edição.
             onTap: busy ? null : onAmount ?? onEdit,
             child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),

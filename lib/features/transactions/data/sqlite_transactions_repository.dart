@@ -64,9 +64,10 @@ class SqliteTransactionsRepository implements TransactionsRepository {
           DateTime.utc(filter.to!.year, filter.to!.month, filter.to!.day + 1);
       variables.add(Variable.withInt(day.millisecondsSinceEpoch));
     }
+    variables.add(Variable.withInt(todayEnd));
     final rows = await _db.customSelect('''
       $_select WHERE ${where.join(' AND ')}
-      ORDER BY t.due_at DESC, t.created_at DESC, t.id DESC
+      ORDER BY CASE WHEN t.effective_at < ? THEN 0 ELSE 1 END, t.due_at DESC, t.created_at DESC, t.id DESC
     ''', variables: variables).get();
     return rows.map(_map).toList();
   }
@@ -160,6 +161,30 @@ class SqliteTransactionsRepository implements TransactionsRepository {
       WHERE id = ? AND deleted_at IS NULL
     ''', args);
     return _find(id);
+  }
+
+  @override
+  Future<void> updateAmount(String id,
+      {required int expectedAmountMinor, required int amountMinor}) async {
+    if (amountMinor <= 0 || amountMinor > 9000000000000000) {
+      throw const FormatException(
+          'Informe um valor maior que zero e dentro do limite.');
+    }
+    final changed = await _db.customUpdate('''
+      UPDATE transactions SET planned_amount_minor = ?,
+        actual_amount_minor = CASE WHEN effective_at IS NULL THEN NULL ELSE ? END,
+        updated_at = ?, sync_version = sync_version + 1
+      WHERE id = ? AND deleted_at IS NULL AND planned_amount_minor = ?
+    ''', variables: [
+      Variable.withInt(amountMinor),
+      Variable.withInt(amountMinor),
+      Variable.withInt(EntityMetadata.nowUtcMillis()),
+      Variable.withString(id),
+      Variable.withInt(expectedAmountMinor),
+    ]);
+    if (changed != 1) {
+      throw StateError('O valor já mudou. Atualize a lista e tente novamente.');
+    }
   }
 
   @override

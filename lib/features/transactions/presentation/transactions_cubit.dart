@@ -86,6 +86,13 @@ class TransactionsCubit extends Cubit<TransactionsState> {
     }
   }
 
+  Future<void> updateAmount(String id,
+      {required int expectedAmountMinor, required int amountMinor}) async {
+    await _transactions.updateAmount(id,
+        expectedAmountMinor: expectedAmountMinor, amountMinor: amountMinor);
+    if (!isClosed) await load();
+  }
+
   Future<void> delete(String id) async {
     await _transactions.delete(id);
     if (!isClosed) {

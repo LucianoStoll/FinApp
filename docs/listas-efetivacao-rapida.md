@@ -13,8 +13,9 @@ mais linhas para manter controles separados e valores legíveis.
 
 O ícone pendente/agendado efetiva com a data local de hoje: recebe, paga ou
 transfere, sem alterar lançamento, vencimento, valor ou outros vínculos.
-O ícone efetivado fica inativo. Uma ação em andamento desativa os controles da
-linha. O feedback oferece Desfazer e Ajustar data por 12 segundos. Ajustar data
+Em receitas e despesas, tocar o ícone efetivado remove a efetivação e volta a pendente.
+Transferências permitem retornar a pendente pelo menu. Uma ação em andamento desativa os controles da
+linha. O feedback oferece Desfazer e Ajustar data por 5 segundos. Ajustar data
 também fica no menu de três pontos, junto da edição, exclusão e retorno a pendente.
 
 Desfazer restaura a efetivação anterior (null ou data agendada). A troca/restauração
@@ -24,15 +25,18 @@ Transferências preservam um registro único, usado no cálculo de ambas as cont
 A categoria, a descrição, as contas e demais datas não são regravadas nesse fluxo.
 Não há migration ou nova dependência.
 
-Ícone, descrição, valor e menu têm áreas independentes. Nesta entrega o valor
-continua abrindo a edição completa; a #43 conectará a calculadora diretamente
-à área já preparada. O formulário completo mantém seu fluxo anterior de datas.
+Os itens efetivados ficam no topo, preservando a ordem por vencimento dentro
+de cada grupo. Agendamentos futuros permanecem junto dos pendentes.
+
+Ícone, descrição, valor e menu têm áreas independentes. Com a #43, tocar o valor
+abre a calculadora diretamente com o valor atual. O formulário completo mantém seu fluxo anterior de datas.
 
 ## Validação manual
 
 - Criar uma receita, despesa e transferência pendentes com vencimento diferente
   de hoje. Tocar o ícone e conferir status, data de hoje e saldos das contas.
-- Tocar novamente: não deve duplicar ou abrir edição.
+- Em receitas/despesas, tocar novamente: deve remover a efetivação, sem abrir edição.
+- Aguardar 5 segundos: o feedback desaparece; a ação continua disponível na linha/menu.
 - Desfazer: conferir volta ao estado anterior e saldos; repetir com agendamento.
 - Ajustar para uma data passada/futura pelo feedback e pelo menu; conferir saldos.
 - Cancelar o seletor de data: manter efetivação atual.

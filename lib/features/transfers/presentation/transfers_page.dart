@@ -273,6 +273,24 @@ class _TransfersViewState extends State<_TransfersView> {
     await _changeDate(item.id, item.effectiveDate!);
   }
 
+  Future<void> _editAmount(Transfer item) async {
+    if (!mounted || _changingStatus.contains(item.id)) return;
+    setState(() => _changingStatus.add(item.id));
+    try {
+      final amount = await showMonetaryCalculator(context,
+          initialMinor: item.amountMinor,
+          currencyCode: item.currencyCode,
+          minimumMinor: 1);
+      if (!mounted || amount == null || amount == item.amountMinor) return;
+      await context.read<TransfersCubit>().updateAmount(item.id,
+          expectedAmountMinor: item.amountMinor, amountMinor: amount);
+    } catch (error) {
+      if (mounted) _showError(context, error);
+    } finally {
+      if (mounted) setState(() => _changingStatus.remove(item.id));
+    }
+  }
+
   Future<void> _quickEffective(Transfer item) async {
     if (!mounted || item.isEffective || _changingStatus.contains(item.id)) {
       return;
@@ -409,6 +427,7 @@ class _TransfersViewState extends State<_TransfersView> {
                   color: SomiaColors.blue,
                   onEdit: () => _edit(context, item),
                   onEffective: () => _quickEffective(item),
+                  onAmount: () => _editAmount(item),
                   menu: PopupMenuButton<String>(
                     key: ValueKey('movement-menu-${item.id}'),
                     enabled: !_changingStatus.contains(item.id),

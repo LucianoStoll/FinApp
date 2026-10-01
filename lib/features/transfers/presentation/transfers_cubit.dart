@@ -72,6 +72,13 @@ class TransfersCubit extends Cubit<TransfersState> {
     if (!isClosed) await load();
   }
 
+  Future<void> updateAmount(String id,
+      {required int expectedAmountMinor, required int amountMinor}) async {
+    await _transfers.updateAmount(id,
+        expectedAmountMinor: expectedAmountMinor, amountMinor: amountMinor);
+    if (!isClosed) await load();
+  }
+
   Future<void> delete(String id) async {
     await _transfers.delete(id);
     if (!isClosed) await load();

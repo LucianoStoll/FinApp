@@ -232,39 +232,23 @@ class _TransactionsViewState extends State<_TransactionsView> {
     }
   }
 
-  Future<void> _setEffective(FinancialTransaction item, bool effective) async {
-    if (_changingStatus.contains(item.id)) return;
-    final chosen = effective
-        ? await chooseEffectuationDate(context, item.dueDate ?? item.date)
-        : null;
-    if (effective && chosen == null || !mounted) return;
+  Future<void> _markPending(FinancialTransaction item) async {
+    if (item.effectiveDate == null) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    await _changeDate(item.id, item.effectiveDate!);
+  }
+
+  Future<void> _editAmount(FinancialTransaction item) async {
+    if (!mounted || _changingStatus.contains(item.id)) return;
     setState(() => _changingStatus.add(item.id));
-    final cubit = context.read<TransactionsCubit>();
     try {
-      await cubit.setEffective(item.id,
-          effective: effective, effectiveDate: chosen);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(effective
-            ? (chosen!.isAfter(DateUtils.dateOnly(DateTime.now()))
-                ? 'Lançamento agendado.'
-                : 'Lançamento efetivado.')
-            : 'Lançamento voltou a pendente.'),
-        action: item.effectiveDate != null && effective
-            ? null
-            : SnackBarAction(
-                label: 'Desfazer',
-                onPressed: () async {
-                  try {
-                    await cubit.setEffective(item.id,
-                        effective: !effective,
-                        effectiveDate: item.effectiveDate);
-                  } catch (error) {
-                    if (mounted) _showError(error);
-                  }
-                }),
-      ));
+      final amount = await showMonetaryCalculator(context,
+          initialMinor: item.amountMinor,
+          currencyCode: item.currencyCode,
+          minimumMinor: 1);
+      if (!mounted || amount == null || amount == item.amountMinor) return;
+      await context.read<TransactionsCubit>().updateAmount(item.id,
+          expectedAmountMinor: item.amountMinor, amountMinor: amount);
     } catch (error) {
       if (mounted) _showError(error);
     } finally {
@@ -611,6 +595,8 @@ class _TransactionsViewState extends State<_TransactionsView> {
         if (item.categoryName != null) item.categoryName!
       ],
       onEffective: () => _quickEffective(item),
+      onPending: () => _markPending(item),
+      onAmount: () => _editAmount(item),
       onEdit: () => _edit(item),
       menu: PopupMenuButton<String>(
         key: ValueKey('movement-menu-${item.id}'),
@@ -620,7 +606,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
         onSelected: (action) {
           if (action == 'edit') _edit(item);
           if (action == 'delete') _delete(item);
-          if (action == 'pending') _setEffective(item, false);
+          if (action == 'pending') _markPending(item);
           if (action == 'date' && item.effectiveDate != null) {
             _changeDate(item.id, item.effectiveDate!, pick: true);
           }

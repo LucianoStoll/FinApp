@@ -104,6 +104,10 @@ class _TransactionsStub implements TransactionsRepository {
   Future<void> changeEffectiveDate(String id,
       {required DateTime expectedDate, DateTime? effectiveDate}) async {}
   @override
+  Future<void> updateAmount(String id,
+      {required int expectedAmountMinor, required int amountMinor}) async {}
+
+  @override
   Future<void> delete(String id) => throw UnimplementedError();
 }
 
@@ -144,6 +148,10 @@ class _TransfersStub implements TransfersRepository {
   @override
   Future<void> changeEffectiveDate(String id,
       {required DateTime expectedDate, DateTime? effectiveDate}) async {}
+  @override
+  Future<void> updateAmount(String id,
+      {required int expectedAmountMinor, required int amountMinor}) async {}
+
   @override
   Future<void> delete(String id) => throw UnimplementedError();
 }

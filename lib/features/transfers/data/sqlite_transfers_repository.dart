@@ -25,14 +25,14 @@ class SqliteTransfersRepository implements TransfersRepository {
     final rows = await _db.customSelect('''
       $_select WHERE f.deleted_at IS NULL
       ${accountId == null ? '' : 'AND (f.source_account_id = ? OR f.destination_account_id = ?)'}
-      ORDER BY f.due_at DESC, f.id DESC
-    ''',
-        variables: accountId == null
-            ? const []
-            : [
-                Variable.withString(accountId),
-                Variable.withString(accountId),
-              ]).get();
+      ORDER BY CASE WHEN f.effective_at < ? THEN 0 ELSE 1 END, f.due_at DESC, f.id DESC
+    ''', variables: [
+      if (accountId != null) ...[
+        Variable.withString(accountId),
+        Variable.withString(accountId),
+      ],
+      Variable.withInt(_dayMillis(DateTime.now().add(const Duration(days: 1)))),
+    ]).get();
     return rows.map(_map).toList();
   }
 
@@ -111,6 +111,28 @@ class SqliteTransfersRepository implements TransfersRepository {
     ''', values);
         return _find(id);
       });
+
+  @override
+  Future<void> updateAmount(String id,
+      {required int expectedAmountMinor, required int amountMinor}) async {
+    if (amountMinor <= 0 || amountMinor > 9000000000000000) {
+      throw const FormatException(
+          'Informe um valor maior que zero e dentro do limite.');
+    }
+    final changed = await _db.customUpdate('''
+      UPDATE transfers SET amount_minor = ?,
+        updated_at = ?, sync_version = sync_version + 1
+      WHERE id = ? AND deleted_at IS NULL AND amount_minor = ?
+    ''', variables: [
+      Variable.withInt(amountMinor),
+      Variable.withInt(EntityMetadata.nowUtcMillis()),
+      Variable.withString(id),
+      Variable.withInt(expectedAmountMinor),
+    ]);
+    if (changed != 1) {
+      throw StateError('O valor já mudou. Atualize a lista e tente novamente.');
+    }
+  }
 
   @override
   Future<void> delete(String id) => _db.transaction(() async {

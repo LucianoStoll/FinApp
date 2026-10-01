@@ -2,6 +2,9 @@
 
 ## v0.2.0-alpha — em desenvolvimento (pós-MVP)
 
+- #43: tocar no valor de receitas, despesas ou transferências abre a calculadora com o valor atual; confirmar atualiza apenas o valor e os totais, cancelar mantém o original.
+- Ajustes #42: feedback de efetivação desaparece em 5 segundos; ícone de receita/despesa efetivada permite voltar a pendente; efetivados ficam no topo.
+
 - #42: listas compactas de receitas, despesas e transferências com status à esquerda, conta, descrição, datas, valor e etiquetas de categoria/subcategoria.
 - Efetivar hoje pelo ícone; desfazer conserva a data anterior (inclusive agendamento), e ajustar data está disponível no feedback e no menu.
 - Alteração restrita à efetivação, proteção contra repetição e comparação da data esperada para rejeitar ações antigas. Os dois saldos de transferências continuam calculados a partir do mesmo registro.

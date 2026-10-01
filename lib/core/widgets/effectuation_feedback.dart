@@ -18,7 +18,7 @@ void showEffectuationFeedback(
 
   messenger.hideCurrentSnackBar();
   messenger.showSnackBar(SnackBar(
-      duration: const Duration(seconds: 12),
+      duration: const Duration(seconds: 5),
       content: Wrap(
           alignment: WrapAlignment.spaceBetween,
           crossAxisAlignment: WrapCrossAlignment.center,

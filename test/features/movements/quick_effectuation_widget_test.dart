@@ -35,6 +35,14 @@ class _Transactions implements TransactionsRepository {
   DateTime? changed;
   bool hasChanged = false;
   int writes = 0;
+  int amount = 12345;
+  @override
+  Future<void> updateAmount(String id,
+      {required int expectedAmountMinor, required int amountMinor}) async {
+    expect(amount, expectedAmountMinor);
+    amount = amountMinor;
+  }
+
   DateTime? get date => hasChanged
       ? changed
       : scheduled
@@ -48,7 +56,7 @@ class _Transactions implements TransactionsRepository {
             id: 'a',
             description: 'Teste',
             type: type,
-            amountMinor: 12345,
+            amountMinor: amount,
             date: today.subtract(const Duration(days: 2)),
             dueDate: today.add(const Duration(days: 5)),
             effectiveDate: date,
@@ -84,6 +92,14 @@ class _Transfers implements TransfersRepository {
   final today = DateUtils.dateOnly(DateTime.now());
   DateTime? date;
   int writes = 0;
+  int amount = 12345;
+  @override
+  Future<void> updateAmount(String id,
+      {required int expectedAmountMinor, required int amountMinor}) async {
+    expect(amount, expectedAmountMinor);
+    amount = amountMinor;
+  }
+
   @override
   Future<List<Transfer>> list({String? accountId}) async => [
         Transfer(
@@ -93,7 +109,7 @@ class _Transfers implements TransfersRepository {
             sourceAccountName: 'Origem',
             destinationAccountId: 'd',
             destinationAccountName: 'Destino',
-            amountMinor: 12345,
+            amountMinor: amount,
             currencyCode: 'BRL',
             date: today.subtract(const Duration(days: 2)),
             dueDate: today.add(const Duration(days: 5)),
@@ -139,8 +155,7 @@ void main() {
   tearDown(() => getIt.reset());
   for (final type in TransactionType.values) {
     for (final scheduled in [false, true]) {
-      testWidgets('$type agendado=$scheduled: hoje, repetir toque, desfazer',
-          (tester) async {
+      testWidgets('$type agendado=$scheduled: hoje, desfazer', (tester) async {
         final repo = _Transactions(type, scheduled: scheduled);
         final original = (await repo.list()).single;
         getIt.registerSingleton<TransactionsRepository>(repo);
@@ -151,8 +166,6 @@ void main() {
         expect(find.text('Desfazer'), findsOneWidget);
         expect(find.text('Ajustar data'), findsOneWidget);
         expect(find.byType(AlertDialog), findsNothing);
-        await tester.tap(find.byKey(const ValueKey('movement-status-a')));
-        await tester.pumpAndSettle();
         expect(repo.writes, 1);
         await tester.tap(find.text('Desfazer'));
         await tester.pumpAndSettle();
@@ -161,6 +174,90 @@ void main() {
         expect(undone.amountMinor, original.amountMinor);
         expect(undone.date, original.date);
         expect(undone.dueDate, original.dueDate);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+  for (final type in TransactionType.values) {
+    testWidgets('$type: ícone permite remover efetivação após feedback expirar',
+        (tester) async {
+      final repo = _Transactions(type);
+      getIt.registerSingleton<TransactionsRepository>(repo);
+      await open(tester, TransactionsPage(sectionType: type));
+      await tester.tap(find.byKey(const ValueKey('movement-status-a')));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pumpAndSettle();
+      expect(find.text('Desfazer'), findsNothing);
+      expect(find.text('Ajustar data'), findsNothing);
+      expect(find.byTooltip('Marcar como pendente'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('movement-status-a')));
+      await tester.pumpAndSettle();
+      expect(repo.date, isNull);
+      expect(repo.writes, 2);
+      expect((await repo.list()).single.amountMinor, 12345);
+    });
+  }
+  for (final movement in ['income', 'expense', 'transfer']) {
+    for (final platform in [TargetPlatform.android, TargetPlatform.windows]) {
+      testWidgets(
+          '$movement $platform: valor abre calculadora, confirma e cancela',
+          (tester) async {
+        final transactions = _Transactions(movement == 'income'
+            ? TransactionType.income
+            : TransactionType.expense);
+        final transfers = _Transfers();
+        getIt.registerSingleton<TransactionsRepository>(transactions);
+        getIt.registerSingleton<TransfersRepository>(transfers);
+        tester.view.physicalSize = const Size(1280, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        final page = movement == 'transfer'
+            ? const TransfersPage()
+            : TransactionsPage(sectionType: transactions.type);
+        await tester.pumpWidget(MaterialApp(
+            theme: AppTheme.dark.copyWith(platform: platform), home: page));
+        await tester.pumpAndSettle();
+        Future<void> openCalculator() async {
+          await tester.tap(find.byKey(const ValueKey('movement-amount-a')));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 400));
+          expect(find.text('Calculadora'), findsOneWidget);
+          expect(find.text('123,45'), findsOneWidget);
+          expect(find.byType(TransactionForm), findsNothing);
+          expect(find.byType(TransferForm), findsNothing);
+        }
+
+        Future<void> press(String key) async {
+          await tester.tap(find.byKey(ValueKey('calculator-key-$key')));
+          await tester.pump();
+        }
+
+        int amount() =>
+            movement == 'transfer' ? transfers.amount : transactions.amount;
+        await openCalculator();
+        await press('9');
+        await tester.tap(find.byTooltip('Cancelar'));
+        await tester.pumpAndSettle();
+        expect(amount(), 12345);
+        await openCalculator();
+        await press('8');
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(amount(), 12345);
+        await openCalculator();
+        await press('+');
+        await press('1');
+        await tester.tap(find.text('Confirmar valor'));
+        await tester.pumpAndSettle();
+        expect(amount(), 12445);
+        expect(transactions.writes, 0);
+        expect(transfers.writes, 0);
+        expect(find.text('Calculadora'), findsNothing);
+        expect(find.textContaining('124,45'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
     }
