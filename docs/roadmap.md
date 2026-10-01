@@ -63,6 +63,14 @@ Antes de qualquer implementação, verificar qual é a branch de versão ativa e
 
 Issues de acompanhamento: #30, #31 e #32.
 
+## Pós-MVP — UX financeira
+- [ ] Calculadora monetária integrada como entrada padrão para campos de valor
+- [ ] Operações básicas: soma, subtração, multiplicação e divisão
+- [ ] Teclas numéricas, `00`, separador decimal, limpar, apagar e confirmar
+- [ ] Preservar valor anterior ao cancelar/voltar
+- [ ] Precisão monetária sem erros de ponto flutuante
+- [ ] Componente global reutilizável em lançamentos e módulos futuros
+
 ## Fase 3 — Núcleo financeiro avançado
 - [ ] Competência/vencimento/efetivação
 - [ ] Previsto x realizado
