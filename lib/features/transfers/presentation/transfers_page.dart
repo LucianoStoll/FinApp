@@ -12,6 +12,7 @@ import '../../../core/filters/reference_month.dart';
 import '../../../core/widgets/month_selector.dart';
 import '../../../core/routing/somia_shell.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/effectuation_date_dialog.dart';
 import '../../accounts/domain/account.dart';
 import '../../accounts/domain/accounts_repository.dart';
 import '../../accounts/domain/money_minor.dart';
@@ -273,8 +274,9 @@ class _TransfersViewState extends State<_TransfersView> {
   }
 
   Future<void> _quickEffective(Transfer item) async {
-    if (!mounted || item.isEffective || _changingStatus.contains(item.id))
+    if (!mounted || item.isEffective || _changingStatus.contains(item.id)) {
       return;
+    }
     setState(() => _changingStatus.add(item.id));
     final today = DateUtils.dateOnly(DateTime.now());
     try {

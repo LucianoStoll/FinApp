@@ -273,8 +273,9 @@ class _TransactionsViewState extends State<_TransactionsView> {
   }
 
   Future<void> _quickEffective(FinancialTransaction item) async {
-    if (!mounted || item.isEffective || _changingStatus.contains(item.id))
+    if (!mounted || item.isEffective || _changingStatus.contains(item.id)) {
       return;
+    }
     setState(() => _changingStatus.add(item.id));
     final today = DateUtils.dateOnly(DateTime.now());
     try {
