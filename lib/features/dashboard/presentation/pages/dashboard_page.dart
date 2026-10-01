@@ -221,10 +221,22 @@ class _DashboardViewState extends State<_DashboardView>
               future
                   ? 'Saldo efetivado: ${MoneyMinor.display(currency.currentBalanceMinor, code)}'
                   : 'Saldo projetado: ${MoneyMinor.display(currency.projectedBalanceMinor, code)}'),
-          _metric(context, 'Receitas', currency.incomeMinor, code,
-              Icons.arrow_upward_rounded, SomiaColors.green, 'Efetivados e previstos'),
-          _metric(context, 'Despesas', currency.expenseMinor, code,
-              Icons.arrow_downward_rounded, SomiaColors.red, 'Efetivados e previstos'),
+          _metric(
+              context,
+              'Receitas',
+              currency.incomeMinor,
+              code,
+              Icons.arrow_upward_rounded,
+              SomiaColors.green,
+              'Efetivados e previstos'),
+          _metric(
+              context,
+              'Despesas',
+              currency.expenseMinor,
+              code,
+              Icons.arrow_downward_rounded,
+              SomiaColors.red,
+              'Efetivados e previstos'),
           _metric(
               context,
               'Saldo projetado',
