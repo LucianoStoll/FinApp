@@ -304,7 +304,7 @@ void main() {
     expect(find.text('Mercado'), findsOneWidget);
     expect(find.text('Salário'), findsNothing);
     expect(transactions.requestedTypes.last, TransactionType.expense);
-    expect(find.text('Efetivar'), findsOneWidget);
+    expect(find.byTooltip('Pagar hoje'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Adicionar lançamento ou transferência'));
     await tester.pumpAndSettle();

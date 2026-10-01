@@ -175,7 +175,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(DateUtils.isSameDay(repo.date, repo.today), true);
     await tester.tap(find.text('Ajustar data'));
-    await tester.pumpAndSettle();
+    // A linha segue ocupada enquanto o seletor aguarda uma escolha.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     expect(find.byType(DatePickerDialog), findsOneWidget);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
@@ -183,7 +185,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('movement-menu-a')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ajustar data'));
-    await tester.pumpAndSettle();
+    // A linha segue ocupada enquanto o seletor aguarda uma escolha.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.text('OK'));
     await tester.pumpAndSettle();
     expect(repo.writes, 2);
