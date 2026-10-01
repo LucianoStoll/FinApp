@@ -37,7 +37,7 @@ class DashboardCategoryChart extends StatelessWidget {
                     size: const Size(160, 160),
                     painter: _DonutPainter(currency.expensesByCategory)),
                 Padding(
-                    padding: const EdgeInsets.all(30),
+                    padding: const EdgeInsets.all(24),
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       FittedBox(
                           child: Text(

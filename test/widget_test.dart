@@ -91,7 +91,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Saldo do mês'), findsOneWidget);
-    expect(find.text('Gastos por categoria'), findsNothing);
+    expect(find.text('Gastos por categoria'), findsOneWidget);
     await tester.scrollUntilVisible(
         find.byKey(const ValueKey('mobile-recent')), 250,
         scrollable: find.descendant(
