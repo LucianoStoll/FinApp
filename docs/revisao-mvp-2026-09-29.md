@@ -80,3 +80,23 @@ Documentos relacionados:
 - `docs/especificacao-produto.md`;
 - `docs/identidade-visual.md`;
 - `docs/roadmap.md`.
+
+
+## Clareza dos saldos e identificação da versão — 01/10/2026
+
+- Ajustes mostram versão e número da compilação, sincronizados nos pacotes Android e Windows da CI.
+- O botão “Entender os saldos” fica junto ao título do resumo no Android e desktop, e também nos Ajustes. A explicação é rolável para telas pequenas e texto ampliado.
+- A ajuda explica saldo acumulado efetivado, saldo projetado, data de referência, contas incluídas e efeito das transferências para contas excluídas.
+- Cartões de receitas e despesas indicam “Efetivados e previstos”. Os gráficos de histórico e categorias mostram “Inclui efetivados e previstos”: os valores exibidos somam os dois estados.
+- Não há alteração nas regras de cálculo já implementadas.
+
+### Validação final no dispositivo
+
+- [ ] Conferir o número da compilação em Ajustes após atualizar por cima da instalação existente.
+- [ ] Abrir e fechar a ajuda no resumo e nos Ajustes, incluindo texto ampliado.
+- [ ] Comparar meses anteriores e futuros com efetivação/vencimento em meses diferentes.
+- [ ] Conferir transferência entre conta incluída e aplicação excluída, tanto individual quanto consolidado.
+- [ ] Exportar backup, restaurar e conferir as contas/lançamentos após reiniciar.
+- [ ] Usar o app offline e revisar gráficos no Android em retrato e paisagem.
+
+A validação física do Android e a aprovação da publicação continuam pendentes nas issues #10 e #33.

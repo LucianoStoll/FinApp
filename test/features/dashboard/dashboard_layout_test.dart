@@ -109,6 +109,8 @@ void main() {
     testWidgets('mobile $width mantém a ordem e receitas/despesas lado a lado',
         (tester) async {
       await _mount(tester, Size(width, 900));
+      expect(find.byTooltip('Entender os saldos'), findsOneWidget);
+      expect(find.text('Efetivados e previstos'), findsNWidgets(2));
       final balance =
           tester.getRect(find.byKey(const ValueKey('mobile-balance-BRL')));
       final income =

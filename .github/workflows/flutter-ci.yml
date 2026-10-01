@@ -26,7 +26,19 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       - name: Check Dart formatting
+        id: dart-format
         run: dart format --output=none --set-exit-if-changed lib test
+      - name: Formatting diagnostics
+        if: failure() && steps.dart-format.outcome == 'failure'
+        run: |
+          dart format lib test
+          python3 - <<'PYCODE'
+          import json, subprocess
+          from pathlib import Path
+          for path in subprocess.check_output(['git','diff','--name-only'], text=True).splitlines():
+              if path.endswith('.dart'):
+                  print('SOMIA_FORMAT_JSON:' + json.dumps({'path': path, 'content': Path(path).read_text()}))
+          PYCODE
       - name: Static analysis
         run: flutter analyze
       - name: Tests
@@ -53,8 +65,18 @@ jobs:
         run: flutter pub get
       - name: Tests on Windows
         run: flutter test
+      - name: Read app version
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          version = re.search(r'^version:\s*(\S+)', Path('pubspec.yaml').read_text(), re.MULTILINE).group(1).split('+')[0]
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('SOMIA_VERSION=' + version + '\n')
+          PY
       - name: Build Windows debug
-        run: flutter build windows --debug
+        run: flutter build windows --debug --build-name=${{ env.SOMIA_VERSION }} --build-number=${{ github.run_number }} --dart-define=SOMIA_VERSION=${{ env.SOMIA_VERSION }} --dart-define=SOMIA_BUILD_NUMBER=${{ github.run_number }}
       - name: Publish Windows build
         uses: actions/upload-artifact@v4
         with:
@@ -124,8 +146,18 @@ jobs:
                                 encoding='ascii')
           properties.chmod(0o600)
           PY
+      - name: Read app version
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          version = re.search(r'^version:\s*(\S+)', Path('pubspec.yaml').read_text(), re.MULTILINE).group(1).split('+')[0]
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('SOMIA_VERSION=' + version + '\n')
+          PY
       - name: Build signed APK
-        run: flutter build apk --release --build-number=${{ github.run_number }}
+        run: flutter build apk --release --build-name=${{ env.SOMIA_VERSION }} --build-number=${{ github.run_number }} --dart-define=SOMIA_VERSION=${{ env.SOMIA_VERSION }} --dart-define=SOMIA_BUILD_NUMBER=${{ github.run_number }}
       - name: Verify signing and version
         env:
           SOMIA_KEYSTORE_PASSWORD: ${{ secrets.SOMIA_KEYSTORE_PASSWORD }}

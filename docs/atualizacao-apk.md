@@ -63,3 +63,16 @@ Valide no Android: criar conta, categoria, receita, despesa e transferência;
 exportar; instalar dois APKs assinados consecutivos; conferir os dados; e
 restaurar o backup em uma instalação de teste. Repita o fluxo de backup no
 Windows.
+
+
+## Identificar a instalação
+
+Em Ajustes, “Versão do aplicativo” mostra a versão e o número da compilação. Os pacotes Android e Windows gerados pela CI usam a versão do `pubspec.yaml` e o número da execução, sincronizados com os metadados do pacote. Execuções locais sem parâmetros mostram “Compilação local”.
+
+Para gerar manualmente um APK com identificação, use o mesmo nome e número nos parâmetros do pacote e do app:
+
+```sh
+flutter build apk --release --build-name=0.1.0-alpha --build-number=110 --dart-define=SOMIA_VERSION=0.1.0-alpha --dart-define=SOMIA_BUILD_NUMBER=110
+```
+
+Escolha um número superior ao da instalação atual. A CI faz essa escolha automaticamente.

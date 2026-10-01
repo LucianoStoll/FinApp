@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../../core/app_version.dart';
+import '../../../core/widgets/balance_help_button.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/backup_service.dart';
 import '../../../core/di/injection.dart';
@@ -89,6 +91,17 @@ class _SettingsPageState extends State<SettingsPage> {
                   Text('Somia',
                       style: Theme.of(context).textTheme.headlineMedium),
                   const SizedBox(height: 16),
+                  const Card(
+                      child: ListTile(
+                          leading: Icon(Icons.info_outline),
+                          title: Text('Versão do aplicativo'),
+                          subtitle: SelectableText(AppVersion.label))),
+                  Card(
+                      child: ListTile(
+                          leading: const Icon(Icons.help_outline),
+                          title: const Text('Entender os saldos'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => showBalanceHelp(context))),
                   const Card(
                       child: ListTile(
                           title: Text('Seus dados'),

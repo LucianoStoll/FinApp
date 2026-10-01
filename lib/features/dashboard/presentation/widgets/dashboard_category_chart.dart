@@ -21,7 +21,17 @@ class DashboardCategoryChart extends StatelessWidget {
   final DashboardCurrencySummary currency;
 
   @override
-  Widget build(BuildContext context) => currency.expensesByCategory.isEmpty
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('Inclui efetivados e previstos',
+              style: TextStyle(fontSize: 11, color: SomiaColors.muted)),
+          const SizedBox(height: 10),
+          _chart(context),
+        ],
+      );
+
+  Widget _chart(BuildContext context) => currency.expensesByCategory.isEmpty
       ? const SizedBox(
           height: 220, child: Center(child: Text('Nenhuma despesa neste mês.')))
       : LayoutBuilder(builder: (context, box) {

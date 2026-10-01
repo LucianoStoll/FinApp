@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/filters/reference_month.dart';
 import '../../../../core/widgets/month_selector.dart';
+import '../../../../core/widgets/balance_help_button.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/routing/somia_shell.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -172,11 +173,15 @@ class _DashboardViewState extends State<_DashboardView>
               Text('Olá, bem-vindo ao Somia!',
                   style: const TextStyle(color: SomiaColors.muted)),
               const SizedBox(height: 3),
-              Text('Resumo do mês',
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineMedium
-                      ?.copyWith(fontWeight: FontWeight.w700)),
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                Flexible(
+                    child: Text('Resumo do mês',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.w700))),
+                const BalanceHelpButton(),
+              ]),
             ]),
             MonthSelector(month: state.month, onChanged: referenceMonth.select),
           ]));
@@ -217,9 +222,9 @@ class _DashboardViewState extends State<_DashboardView>
                   ? 'Saldo efetivado: ${MoneyMinor.display(currency.currentBalanceMinor, code)}'
                   : 'Saldo projetado: ${MoneyMinor.display(currency.projectedBalanceMinor, code)}'),
           _metric(context, 'Receitas', currency.incomeMinor, code,
-              Icons.arrow_upward_rounded, SomiaColors.green, 'Neste mês'),
+              Icons.arrow_upward_rounded, SomiaColors.green, 'Efetivados e previstos'),
           _metric(context, 'Despesas', currency.expenseMinor, code,
-              Icons.arrow_downward_rounded, SomiaColors.red, 'Neste mês'),
+              Icons.arrow_downward_rounded, SomiaColors.red, 'Efetivados e previstos'),
           _metric(
               context,
               'Saldo projetado',
@@ -348,6 +353,9 @@ class _DashboardViewState extends State<_DashboardView>
           context,
           'Receitas vs Despesas',
           Column(children: [
+            const Text('Inclui efetivados e previstos',
+                style: TextStyle(color: SomiaColors.muted)),
+            const SizedBox(height: 12),
             if (currency.history.isEmpty)
               const SizedBox(
                   height: 190,

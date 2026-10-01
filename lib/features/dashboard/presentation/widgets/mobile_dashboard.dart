@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/filters/reference_month.dart';
 import '../../../../core/widgets/month_selector.dart';
+import '../../../../core/widgets/balance_help_button.dart';
 import '../../../../core/routing/somia_shell.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/somia_brand.dart';
@@ -88,8 +89,13 @@ class MobileDashboardBody extends StatelessWidget {
             const Text('Olá, bem-vindo ao Somia!',
                 style: TextStyle(color: SomiaColors.muted, fontSize: 14)),
             const SizedBox(height: 4),
-            const Text('Resumo do mês',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
+            const Row(children: [
+              Expanded(
+                  child: Text('Resumo do mês',
+                      style: TextStyle(
+                          fontSize: 26, fontWeight: FontWeight.w700))),
+              BalanceHelpButton(),
+            ]),
             const SizedBox(height: 18),
             if (state.loading) const LinearProgressIndicator(),
             if (state.error != null)
@@ -157,7 +163,7 @@ class _CurrencySection extends StatelessWidget {
           code: code,
           color: SomiaColors.green,
           icon: Icons.arrow_upward_rounded,
-          detail: 'Neste mês',
+          detail: 'Efetivados e previstos',
         )),
         const SizedBox(width: 10),
         Expanded(
@@ -168,7 +174,7 @@ class _CurrencySection extends StatelessWidget {
           code: code,
           color: SomiaColors.red,
           icon: Icons.arrow_downward_rounded,
-          detail: 'Neste mês',
+          detail: 'Efetivados e previstos',
         )),
       ]),
       const SizedBox(height: 12),
@@ -348,6 +354,9 @@ class _HistoryPanel extends StatelessWidget {
             style: TextStyle(fontSize: 10, color: SomiaColors.muted)),
       ),
       child: Column(children: [
+        const Text('Inclui efetivados e previstos',
+            style: TextStyle(fontSize: 11, color: SomiaColors.muted)),
+        const SizedBox(height: 10),
         if (currency.history.isEmpty)
           SizedBox(
               height: plotHeight,
