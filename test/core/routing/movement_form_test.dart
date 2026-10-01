@@ -13,13 +13,25 @@ import 'package:flutter_test/flutter_test.dart';
 
 const _accounts = [
   Account(
-      id: 'a', name: 'Banco', type: AccountType.checking, currencyCode: 'BRL',
-      initialBalanceMinor: 0, currentBalanceMinor: 0, projectedBalanceMinor: 0,
-      isArchived: false, includeInAnalytics: true),
+      id: 'a',
+      name: 'Banco',
+      type: AccountType.checking,
+      currencyCode: 'BRL',
+      initialBalanceMinor: 0,
+      currentBalanceMinor: 0,
+      projectedBalanceMinor: 0,
+      isArchived: false,
+      includeInAnalytics: true),
   Account(
-      id: 'b', name: 'Reserva', type: AccountType.savings, currencyCode: 'BRL',
-      initialBalanceMinor: 0, currentBalanceMinor: 0, projectedBalanceMinor: 0,
-      isArchived: false, includeInAnalytics: true),
+      id: 'b',
+      name: 'Reserva',
+      type: AccountType.savings,
+      currencyCode: 'BRL',
+      initialBalanceMinor: 0,
+      currentBalanceMinor: 0,
+      projectedBalanceMinor: 0,
+      isArchived: false,
+      includeInAnalytics: true),
 ];
 
 Future<void> _open(WidgetTester tester, Widget form,
@@ -37,16 +49,20 @@ Future<void> _open(WidgetTester tester, Widget form,
   await tester.pumpWidget(MaterialApp(
     theme: AppTheme.dark.copyWith(platform: platform),
     builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
+      data:
+          MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
       child: child!,
     ),
-    home: Scaffold(body: Builder(builder: (context) => TextButton(
-      onPressed: () async {
-        final result = await showMovementForm<Object>(context, (_) => form);
-        onResult?.call(result);
-      },
-      child: const Text('Abrir'),
-    ))),
+    home: Scaffold(
+        body: Builder(
+            builder: (context) => TextButton(
+                  onPressed: () async {
+                    final result =
+                        await showMovementForm<Object>(context, (_) => form);
+                    onResult?.call(result);
+                  },
+                  child: const Text('Abrir'),
+                ))),
   ));
   await tester.tap(find.text('Abrir'));
   await tester.pumpAndSettle();
@@ -60,17 +76,24 @@ void main() {
       final form = type == 'transferência'
           ? const TransferForm(accounts: _accounts)
           : TransactionForm(
-              accounts: _accounts, categories: const [],
-              fixedType: type == 'receita' ? TransactionType.income : TransactionType.expense,
-              initialType: type == 'receita' ? TransactionType.income : TransactionType.expense);
+              accounts: _accounts,
+              categories: const [],
+              fixedType: type == 'receita'
+                  ? TransactionType.income
+                  : TransactionType.expense,
+              initialType: type == 'receita'
+                  ? TransactionType.income
+                  : TransactionType.expense);
       await _open(tester, form, onResult: (value) => result = value);
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.text('Nova $type'), findsOneWidget);
       final description = find.byType(TextFormField).at(0);
       final amount = find.byType(TextFormField).at(1);
-      expect(tester.widget<TextFormField>(description).focusNode!.hasFocus, true);
+      expect(
+          tester.widget<TextFormField>(description).focusNode!.hasFocus, true);
       expect(tester.testTextInput.isVisible, true);
-      expect(tester.getTopLeft(description).dy, lessThan(tester.getTopLeft(amount).dy));
+      expect(tester.getTopLeft(description).dy,
+          lessThan(tester.getTopLeft(amount).dy));
       await tester.enterText(description, 'Teste $type');
       await tester.testTextInput.receiveAction(TextInputAction.next);
       await tester.pumpAndSettle();
@@ -103,9 +126,10 @@ void main() {
   }
 
   for (final size in [const Size(320, 640), const Size(780, 360)]) {
-    testWidgets('formulário em $size com texto ampliado e teclado', (tester) async {
-      await _open(tester,
-          const TransactionForm(accounts: _accounts, categories: []),
+    testWidgets('formulário em $size com texto ampliado e teclado',
+        (tester) async {
+      await _open(
+          tester, const TransactionForm(accounts: _accounts, categories: []),
           size: size, scale: 2);
       tester.view.viewInsets = const FakeViewPadding(bottom: 100);
       await tester.pumpAndSettle();
@@ -117,21 +141,39 @@ void main() {
     });
   }
 
-  testWidgets('Windows mantém janela central e edição preserva valores', (tester) async {
+  testWidgets('Windows mantém janela central e edição preserva valores',
+      (tester) async {
     Object? result;
     final date = DateTime(2026, 1, 23);
-    await _open(tester, TransferForm(accounts: _accounts,
-      item: Transfer(id: 't', description: 'Aplicação',
-          sourceAccountId: 'a', sourceAccountName: 'Banco',
-          destinationAccountId: 'b', destinationAccountName: 'Reserva',
-          currencyCode: 'BRL', amountMinor: 45000, date: date,
-          dueDate: date, effectiveDate: date, isEffective: true)),
-      platform: TargetPlatform.windows, size: const Size(1280, 900),
-      onResult: (value) => result = value);
+    await _open(
+        tester,
+        TransferForm(
+            accounts: _accounts,
+            item: Transfer(
+                id: 't',
+                description: 'Aplicação',
+                sourceAccountId: 'a',
+                sourceAccountName: 'Banco',
+                destinationAccountId: 'b',
+                destinationAccountName: 'Reserva',
+                currencyCode: 'BRL',
+                amountMinor: 45000,
+                date: date,
+                dueDate: date,
+                effectiveDate: date,
+                isEffective: true)),
+        platform: TargetPlatform.windows,
+        size: const Size(1280, 900),
+        onResult: (value) => result = value);
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.byKey(const ValueKey('movement-full-screen')), findsNothing);
     expect(find.text('Editar transferência'), findsOneWidget);
-    expect(tester.widget<TextFormField>(find.byType(TextFormField).first).focusNode!.hasFocus, false);
+    expect(
+        tester
+            .widget<TextFormField>(find.byType(TextFormField).first)
+            .focusNode!
+            .hasFocus,
+        false);
     await tester.tap(find.text('Salvar lançamento'));
     await tester.pumpAndSettle();
     final draft = result as TransferDraft;
@@ -148,16 +190,24 @@ void main() {
       final fonts = Directory('$root/bin/cache/artifacts/material_fonts');
       final loader = FontLoader('Roboto');
       for (final file in fonts.listSync().whereType<File>()) {
-        if (file.path.endsWith('Roboto-Regular.ttf') || file.path.endsWith('Roboto-Bold.ttf')) {
-          loader.addFont(Future.value(ByteData.sublistView(file.readAsBytesSync())));
+        if (file.path.endsWith('Roboto-Regular.ttf') ||
+            file.path.endsWith('Roboto-Bold.ttf')) {
+          loader.addFont(
+              Future.value(ByteData.sublistView(file.readAsBytesSync())));
         }
       }
       await loader.load();
       final icons = FontLoader('MaterialIcons');
-      icons.addFont(Future.value(ByteData.sublistView(File('$root/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf').readAsBytesSync())));
+      icons.addFont(Future.value(ByteData.sublistView(File(
+              '$root/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf')
+          .readAsBytesSync())));
       await icons.load();
-      await _open(tester, const TransactionForm(accounts: _accounts, categories: [],
-          fixedType: TransactionType.expense));
+      await _open(
+          tester,
+          const TransactionForm(
+              accounts: _accounts,
+              categories: [],
+              fixedType: TransactionType.expense));
       await tester.enterText(find.byType(TextFormField).first, 'Supermercado');
       await tester.testTextInput.receiveAction(TextInputAction.next);
       await tester.enterText(find.byType(TextFormField).at(1), '320,50');

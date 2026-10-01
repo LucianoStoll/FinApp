@@ -223,9 +223,8 @@ class _TransfersViewState extends State<_TransfersView> {
 
   Future<void> _edit(BuildContext context, [Transfer? item]) async {
     final cubit = context.read<TransfersCubit>();
-    final draft = await showMovementForm<TransferDraft>(
-        context, (_) =>
-            TransferForm(item: item, accounts: cubit.state.accounts));
+    final draft = await showMovementForm<TransferDraft>(context,
+        (_) => TransferForm(item: item, accounts: cubit.state.accounts));
     if (!context.mounted) return;
     if (draft == null) {
       if (item == null && widget.startCreate) context.go('/transfers');
@@ -360,12 +359,12 @@ class _TransfersViewState extends State<_TransfersView> {
                     child: ListTile(
                       leading: const Icon(Icons.swap_horiz),
                       title: Text(item.description,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis),
+                          maxLines: 2, overflow: TextOverflow.ellipsis),
                       subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('${item.sourceAccountName} → ${item.destinationAccountName}'),
+                            Text(
+                                '${item.sourceAccountName} → ${item.destinationAccountName}'),
                             Text('Lançamento ${_dateLabel(item.date)} · '
                                 'Vencimento ${_dateLabel(item.dueDate ?? item.date)} · '
                                 '${item.effectiveDate == null ? 'Pendente' : item.isEffective ? 'Efetivada ${_dateLabel(item.effectiveDate!)}' : 'Agendada ${_dateLabel(item.effectiveDate!)}'}'),
@@ -506,7 +505,8 @@ class TransferFormState extends State<TransferForm> {
 
   @override
   Widget build(BuildContext context) => MovementFormFrame(
-        title: widget.item == null ? 'Nova transferência' : 'Editar transferência',
+        title:
+            widget.item == null ? 'Nova transferência' : 'Editar transferência',
         onSave: _submit,
         child: Form(
           key: _formKey,
@@ -517,100 +517,99 @@ class TransferFormState extends State<TransferForm> {
               TextFormField(
                 controller: _description,
                 focusNode: _descriptionFocus,
-                autofocus: widget.item == null && usesFullScreenMovementForm(context),
+                autofocus:
+                    widget.item == null && usesFullScreenMovementForm(context),
                 textInputAction: TextInputAction.next,
                 scrollPadding: const EdgeInsets.all(100),
                 decoration: const InputDecoration(labelText: 'Descrição'),
-                validator: (value) => value == null || value.trim().isEmpty ? 'Informe a descrição.' : null,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Informe a descrição.'
+                    : null,
                 onFieldSubmitted: (_) {
                   _amountFocus.requestFocus();
-                  _amount.selection = TextSelection(baseOffset: 0, extentOffset: _amount.text.length);
+                  _amount.selection = TextSelection(
+                      baseOffset: 0, extentOffset: _amount.text.length);
                 },
               ),
-                      TextFormField(
-                          controller: _amount,
-                          focusNode: _amountFocus,
-                          scrollPadding: const EdgeInsets.all(100),
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          decoration: const InputDecoration(labelText: 'Valor'),
-                          validator: (value) {
-                            try {
-                              return MoneyMinor.parse(value ?? '') > 0
-                                  ? null
-                                  : 'O valor deve ser maior que zero.';
-                            } on FormatException catch (error) {
-                              return error.message;
-                            }
-                          }),
-                      DropdownButtonFormField<String>(
-                        key: ValueKey('source-$_sourceId'),
-                        isExpanded: true,
-                        initialValue: _sourceId,
-                        decoration:
-                            const InputDecoration(labelText: 'Conta de origem'),
-                        items: _sources
-                            .map((a) => DropdownMenuItem(
-                                value: a.id,
-                                child: Text(
-                                    '${a.name} (${a.currencyCode})'
-                                    '${a.isArchived ? ' · arquivada' : ''}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis)))
-                            .toList(),
-                        validator: (id) => id == null
-                            ? 'Selecione uma conta de origem.'
-                            : null,
-                        onChanged: (id) => setState(() {
-                          _sourceId = id;
-                          if (!_destinations
-                              .any((a) => a.id == _destinationId)) {
-                            _destinationId = _destinations.firstOrNull?.id;
-                          }
-                        }),
-                      ),
-                      DropdownButtonFormField<String>(
-                        key: ValueKey('destination-$_sourceId'),
-                        isExpanded: true,
-                        initialValue: _destinationId,
-                        decoration: const InputDecoration(
-                            labelText: 'Conta de destino'),
-                        items: _destinations
-                            .map((a) => DropdownMenuItem(
-                                value: a.id,
-                                child: Text(
-                                    '${a.name} (${a.currencyCode})'
-                                    '${a.isArchived ? ' · arquivada' : ''}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis)))
-                            .toList(),
-                        validator: (id) => id == null
-                            ? 'Selecione outra conta da mesma moeda.'
-                            : null,
-                        onChanged: (id) => setState(() => _destinationId = id),
-                      ),
-                      MovementDateFields(
-                        posted: _date,
-                        due: _dueDate,
-                        onPosted: () => _pickDate('posted'),
-                        onDue: () => _pickDate('due'),
-                      ),
-                      SwitchListTile(
-                          title: const Text('Efetivada'),
-                          subtitle:
-                              const Text('A data movimenta as duas contas'),
-                          value: _isEffective,
-                          onChanged: (value) =>
-                              setState(() => _isEffective = value)),
-                      if (_isEffective)
-                        ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('Data de efetivação'),
-                            subtitle: Text(
-                                _dateLabel(_effectiveDate ?? DateTime.now())),
-                            trailing: const Icon(Icons.calendar_today),
-                            onTap: () => _pickDate('effective')),
+              TextFormField(
+                  controller: _amount,
+                  focusNode: _amountFocus,
+                  scrollPadding: const EdgeInsets.all(100),
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.w600),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Valor'),
+                  validator: (value) {
+                    try {
+                      return MoneyMinor.parse(value ?? '') > 0
+                          ? null
+                          : 'O valor deve ser maior que zero.';
+                    } on FormatException catch (error) {
+                      return error.message;
+                    }
+                  }),
+              DropdownButtonFormField<String>(
+                key: ValueKey('source-$_sourceId'),
+                isExpanded: true,
+                initialValue: _sourceId,
+                decoration: const InputDecoration(labelText: 'Conta de origem'),
+                items: _sources
+                    .map((a) => DropdownMenuItem(
+                        value: a.id,
+                        child: Text(
+                            '${a.name} (${a.currencyCode})'
+                            '${a.isArchived ? ' · arquivada' : ''}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis)))
+                    .toList(),
+                validator: (id) =>
+                    id == null ? 'Selecione uma conta de origem.' : null,
+                onChanged: (id) => setState(() {
+                  _sourceId = id;
+                  if (!_destinations.any((a) => a.id == _destinationId)) {
+                    _destinationId = _destinations.firstOrNull?.id;
+                  }
+                }),
+              ),
+              DropdownButtonFormField<String>(
+                key: ValueKey('destination-$_sourceId'),
+                isExpanded: true,
+                initialValue: _destinationId,
+                decoration:
+                    const InputDecoration(labelText: 'Conta de destino'),
+                items: _destinations
+                    .map((a) => DropdownMenuItem(
+                        value: a.id,
+                        child: Text(
+                            '${a.name} (${a.currencyCode})'
+                            '${a.isArchived ? ' · arquivada' : ''}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis)))
+                    .toList(),
+                validator: (id) =>
+                    id == null ? 'Selecione outra conta da mesma moeda.' : null,
+                onChanged: (id) => setState(() => _destinationId = id),
+              ),
+              MovementDateFields(
+                posted: _date,
+                due: _dueDate,
+                onPosted: () => _pickDate('posted'),
+                onDue: () => _pickDate('due'),
+              ),
+              SwitchListTile(
+                  title: const Text('Efetivada'),
+                  subtitle: const Text('A data movimenta as duas contas'),
+                  value: _isEffective,
+                  onChanged: (value) => setState(() => _isEffective = value)),
+              if (_isEffective)
+                ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Data de efetivação'),
+                    subtitle:
+                        Text(_dateLabel(_effectiveDate ?? DateTime.now())),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () => _pickDate('effective')),
             ],
           ),
         ),

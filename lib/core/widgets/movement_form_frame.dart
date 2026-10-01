@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 bool usesFullScreenMovementForm(BuildContext context) =>
     Theme.of(context).platform == TargetPlatform.android;
 
-Future<T?> showMovementForm<T>(
-        BuildContext context, WidgetBuilder builder) =>
+Future<T?> showMovementForm<T>(BuildContext context, WidgetBuilder builder) =>
     usesFullScreenMovementForm(context)
         ? Navigator.of(context, rootNavigator: true).push<T>(
             MaterialPageRoute(builder: builder, fullscreenDialog: true))
@@ -63,8 +62,7 @@ class MovementFormFrame extends StatelessWidget {
             child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                    onPressed: onSave,
-                    child: const Text('Salvar lançamento'))),
+                    onPressed: onSave, child: const Text('Salvar lançamento'))),
           ),
         ]),
       ),

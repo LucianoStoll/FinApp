@@ -57,13 +57,14 @@ class MonthSelector extends StatelessWidget {
               child: TextButton(
             onPressed: () => _choose(context),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (!header)
-                const Icon(Icons.calendar_month_outlined, size: 18),
+              if (!header) const Icon(Icons.calendar_month_outlined, size: 18),
               if (!compact || header) ...[
                 if (!header) const SizedBox(width: 8),
                 Flexible(
-                    child: Text('${header ? monthNames[month.month - 1].substring(0, 3) : monthNames[month.month - 1]} ${month.year}',
-                        maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    child: Text(
+                        '${header ? monthNames[month.month - 1].substring(0, 3) : monthNames[month.month - 1]} ${month.year}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis)),
                 if (!header) const Icon(Icons.expand_more, size: 18),
               ],
             ]),

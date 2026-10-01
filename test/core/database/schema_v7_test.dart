@@ -26,8 +26,12 @@ class _LegacyV6 extends GeneratedDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(onCreate: (_) async {
         for (final statement in [
-          ...schemaV1, ...schemaV2, ...schemaV3,
-          ...schemaV4, ...schemaV5, ...schemaV6,
+          ...schemaV1,
+          ...schemaV2,
+          ...schemaV3,
+          ...schemaV4,
+          ...schemaV5,
+          ...schemaV6,
         ]) {
           await customStatement(statement);
         }
@@ -35,7 +39,8 @@ class _LegacyV6 extends GeneratedDatabase {
 }
 
 void main() {
-  test('v6 migra sem mudar saldos e backup preserva descrição da transferência', () async {
+  test('v6 migra sem mudar saldos e backup preserva descrição da transferência',
+      () async {
     final directory = await Directory.systemTemp.createTemp('somia-v7-');
     addTearDown(() => directory.delete(recursive: true));
     final file = File('${directory.path}/finapp.sqlite');
@@ -58,20 +63,31 @@ void main() {
     final accounts = await SqliteAccountsRepository(db).list();
     expect(accounts.map((a) => a.currentBalanceMinor), [500, 500]);
     expect(accounts.last.includeInBalance, false);
-    await transfers.update('t', TransferDraft(
-      description: 'Aplicação de janeiro',
-      sourceAccountId: 'a', destinationAccountId: 'b', amountMinor: 500,
-      date: migrated.date, dueDate: migrated.dueDate,
-      effectiveDate: migrated.effectiveDate, isEffective: true));
+    await transfers.update(
+        't',
+        TransferDraft(
+            description: 'Aplicação de janeiro',
+            sourceAccountId: 'a',
+            destinationAccountId: 'b',
+            amountMinor: 500,
+            date: migrated.date,
+            dueDate: migrated.dueDate,
+            effectiveDate: migrated.effectiveDate,
+            isEffective: true));
     final bytes = await BackupService.export(db, directory);
     await db.close();
     await BackupService.stageRestore(bytes, directory);
     await BackupService.applyPendingRestore(directory);
     final restored = AppDatabase(NativeDatabase(file));
     addTearDown(restored.close);
-    expect((await SqliteTransfersRepository(restored).list()).single.description,
+    expect(
+        (await SqliteTransfersRepository(restored).list()).single.description,
         'Aplicação de janeiro');
-    expect((await SqliteAccountsRepository(restored).list()).map((a) => a.currentBalanceMinor), [500, 500]);
-    expect(await restored.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
+    expect(
+        (await SqliteAccountsRepository(restored).list())
+            .map((a) => a.currentBalanceMinor),
+        [500, 500]);
+    expect(
+        await restored.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
   });
 }
