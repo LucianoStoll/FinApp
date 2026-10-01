@@ -33,8 +33,9 @@ final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.dashboardPath,
   routes: [
     ShellRoute(
-        builder: (context, state, child) =>
-            SomiaShell(location: state.uri.path, child: child),
+        builder: (context, state, child) => SomiaSectionBackScope(
+            location: state.uri.path,
+            child: SomiaShell(location: state.uri.path, child: child)),
         routes: [
           GoRoute(
             path: AppRoutes.transfersPath,

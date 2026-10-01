@@ -2,6 +2,8 @@
 
 ## v0.2.0-alpha — em desenvolvimento (pós-MVP)
 
+- Correção após teste da #39: proteção do Voltar também no navegador principal; ícone de transferência efetivada permite retornar a pendente, atualizando os dois saldos.
+
 - #39: Voltar no Android fecha primeiro sobreposições, retorna das seções ao Resumo e só permite saída padrão no Resumo. Formulários alterados pedem confirmação de descarte.
 
 - #43: tocar no valor de receitas, despesas ou transferências abre a calculadora com o valor atual; confirmar atualiza apenas o valor e os totais, cancelar mantém o original.

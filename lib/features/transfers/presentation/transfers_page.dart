@@ -271,6 +271,7 @@ class _TransfersViewState extends State<_TransfersView> {
 
   Future<void> _markPending(Transfer item) async {
     if (_changingStatus.contains(item.id) || item.effectiveDate == null) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     await _changeDate(item.id, item.effectiveDate!);
   }
 
@@ -428,6 +429,7 @@ class _TransfersViewState extends State<_TransfersView> {
                   color: SomiaColors.blue,
                   onEdit: () => _edit(context, item),
                   onEffective: () => _quickEffective(item),
+                  onPending: () => _markPending(item),
                   onAmount: () => _editAmount(item),
                   menu: PopupMenuButton<String>(
                     key: ValueKey('movement-menu-${item.id}'),

@@ -13,8 +13,8 @@ mais linhas para manter controles separados e valores legíveis.
 
 O ícone pendente/agendado efetiva com a data local de hoje: recebe, paga ou
 transfere, sem alterar lançamento, vencimento, valor ou outros vínculos.
-Em receitas e despesas, tocar o ícone efetivado remove a efetivação e volta a pendente.
-Transferências permitem retornar a pendente pelo menu. Uma ação em andamento desativa os controles da
+Em receitas, despesas e transferências, tocar o ícone efetivado remove a efetivação
+e volta a pendente. O retorno também está disponível pelo menu. Uma ação em andamento desativa os controles da
 linha. O feedback oferece Desfazer e Ajustar data por 5 segundos. Ajustar data
 também fica no menu de três pontos, junto da edição, exclusão e retorno a pendente.
 
@@ -35,7 +35,7 @@ abre a calculadora diretamente com o valor atual. O formulário completo mantém
 
 - Criar uma receita, despesa e transferência pendentes com vencimento diferente
   de hoje. Tocar o ícone e conferir status, data de hoje e saldos das contas.
-- Em receitas/despesas, tocar novamente: deve remover a efetivação, sem abrir edição.
+- Em receitas/despesas/transferências, tocar novamente: deve remover a efetivação, sem abrir edição.
 - Aguardar 5 segundos: o feedback desaparece; a ação continua disponível na linha/menu.
 - Desfazer: conferir volta ao estado anterior e saldos; repetir com agendamento.
 - Ajustar para uma data passada/futura pelo feedback e pelo menu; conferir saldos.

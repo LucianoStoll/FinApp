@@ -8,7 +8,8 @@ Nas seções Receitas, Despesas, Transferências, Contas, Categorias, Configura�
 e na rota legada Lançamentos, sem sobreposição ativa, retorna diretamente ao
 Resumo. No Resumo, a saída fica a cargo do comportamento padrão do Android.
 A regra considera a plataforma, inclusive Android em paisagem com sidebar;
-Windows mantém sua navegação anterior.
+Windows mantém sua navegação anterior. A proteção está também no navegador
+principal, mantendo o sinal nativo de tratamento do Voltar ao alternar as seções.
 
 Receitas, despesas, transferências, contas e categorias/subcategorias com
 campos alterados pedem confirmação antes de voltar ou cancelar. Continuar

@@ -14,6 +14,7 @@ import 'package:finapp/features/dashboard/domain/entities/dashboard_summary.dart
 import 'package:finapp/features/transactions/domain/financial_transaction.dart';
 import 'package:finapp/features/transactions/domain/transactions_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _DashboardStub implements DashboardRepository {
@@ -241,6 +242,43 @@ void main() {
     expect(appRouter.routeInformationProvider.value.uri.path, '/');
     expect(tester.takeException(), isNull);
   });
+  testWidgets(
+      'Android: navegador principal mantém tratamento nativo do Voltar ao alternar seções',
+      (tester) async {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    final signals = <bool>[];
+    tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'SystemNavigator.setFrameworkHandlesBack') {
+        signals.add(call.arguments as bool);
+      }
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null));
+    await openBackTest(tester);
+    for (final path in [
+      '/income',
+      '/transfers',
+      '/expenses',
+      '/transfers',
+      '/accounts',
+      '/transfers'
+    ]) {
+      appRouter.go(path);
+      await tester.pumpAndSettle();
+      expect(signals, isNotEmpty);
+      expect(signals.last, true,
+          reason: 'O Android deve entregar Voltar ao Flutter em $path');
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(appRouter.routeInformationProvider.value.uri.path, '/');
+      expect(signals.last, false,
+          reason: 'O Resumo deve liberar a saída nativa');
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Windows mantém navegação sem retorno automático ao Resumo',
       (tester) async {
     await openBackTest(tester,

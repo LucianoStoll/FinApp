@@ -263,6 +263,31 @@ void main() {
     }
   }
   testWidgets(
+      'transferência: ícone efetivado remove efetivação mesmo depois do feedback expirar',
+      (tester) async {
+    final repo = _Transfers();
+    getIt.registerSingleton<TransfersRepository>(repo);
+    await open(tester, const TransfersPage());
+    final original = (await repo.list()).single;
+    await tester.tap(find.byKey(const ValueKey('movement-status-a')));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pumpAndSettle();
+    expect(find.text('Desfazer'), findsNothing);
+    expect(find.byTooltip('Marcar como pendente'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('movement-status-a')));
+    await tester.pumpAndSettle();
+    expect(repo.date, isNull);
+    expect(repo.writes, 2);
+    final pending = (await repo.list()).single;
+    expect(pending.isEffective, false);
+    expect(pending.amountMinor, original.amountMinor);
+    expect(pending.sourceAccountId, original.sourceAccountId);
+    expect(pending.destinationAccountId, original.destinationAccountId);
+    expect(pending.dueDate, original.dueDate);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets(
       'transferência: efetivar, cancelar ajuste, ajustar pelo menu e desfazer',
       (tester) async {
     final repo = _Transfers();
