@@ -34,4 +34,4 @@ próprias rotas e fecham sem descartar o formulário por baixo.
 - Testar Android em paisagem e Windows, incluindo Cancelar nos diálogos.
 
 Não há migration, novas dependências ou alteração das regras financeiras.
-Validação manual do usuário pendente.
+Validação manual aprovada pelo usuário em 01/10/2026, incluindo as correções em Transferências.

@@ -1,3 +1,4 @@
+import '../../accounts/presentation/account_identity.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/movement_form_frame.dart';
@@ -443,8 +444,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
                         for (final account in state.accounts)
                           DropdownMenuItem(
                               value: account.id,
-                              child: Text(account.name,
-                                  maxLines: 1, overflow: TextOverflow.ellipsis))
+                              child: AccountOption(account: account))
                       ],
                       onChanged: (id) {
                         setState(() => _accountId = id == '' ? null : id);
@@ -813,10 +813,7 @@ class TransactionFormState extends State<TransactionForm> {
                         items: _availableAccounts
                             .map((account) => DropdownMenuItem(
                                   value: account.id,
-                                  child: Text(
-                                      '${account.name}${account.isArchived ? ' (arquivada)' : ''}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis),
+                                  child: AccountOption(account: account),
                                 ))
                             .toList(),
                         validator: (value) =>

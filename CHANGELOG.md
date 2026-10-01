@@ -2,6 +2,9 @@
 
 ## v0.2.0-alpha — em desenvolvimento (pós-MVP)
 
+- #41: catálogo offline com busca e logos de instituições na criação/edição de contas, lista e seletores dos lançamentos; nome personalizado independente, opção de ícone padrão e migration v8 preservando contas antigas e backups.
+- #39 e #40 validadas pelo usuário em 01/10/2026, incluindo as correções em Transferências.
+
 - #40: cadastros de contas, categorias e subcategorias no mesmo formulário dos lançamentos, tela cheia no Android e janela adaptada no Windows; saldo inicial usa calculadora com suporte a zero e valores negativos.
 
 - Correção após teste da #39: proteção do Voltar também no navegador principal; ícone de transferência efetivada permite retornar a pendente, atualizando os dois saldos.

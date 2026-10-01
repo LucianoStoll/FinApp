@@ -28,4 +28,4 @@ O catálogo de bancos/logos continua na entrega #41.
 - Conferir rolagem e Salvar com teclado aberto em tela pequena/paisagem/texto ampliado.
 - No Windows, conferir janela central, rolagem, Salvar e Cancelar.
 
-Validação manual pelo usuário pendente.
+Validação manual aprovada pelo usuário em 01/10/2026.

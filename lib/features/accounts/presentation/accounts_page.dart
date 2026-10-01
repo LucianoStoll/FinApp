@@ -8,7 +8,9 @@ import '../../../core/widgets/monetary_calculator.dart';
 import '../../../core/filters/reference_month.dart';
 import '../../../core/widgets/month_selector.dart';
 import '../../../core/routing/somia_shell.dart';
-import '../../../core/theme/app_theme.dart';
+import '../domain/bank_institution.dart';
+import 'account_identity.dart';
+import 'bank_selector.dart';
 import '../domain/account.dart';
 import '../domain/accounts_repository.dart';
 import '../domain/money_minor.dart';
@@ -204,14 +206,9 @@ class _AccountsView extends StatelessWidget {
                                 )),
                           ]),
                       isThreeLine: true,
-                      leading: CircleAvatar(
-                          backgroundColor:
-                              SomiaColors.blue.withValues(alpha: 0.17),
-                          child: Icon(
-                              account.type == AccountType.cash
-                                  ? Icons.account_balance_wallet_outlined
-                                  : Icons.account_balance_outlined,
-                              color: SomiaColors.blue)),
+                      leading: AccountAvatar(
+                          institutionId: account.institutionId,
+                          type: account.type),
                       dense: false,
                       onTap: () => _edit(context, account),
                     ),
@@ -240,6 +237,7 @@ class AccountFormState extends State<AccountForm> {
   late AccountType _type;
   late bool _includeInAnalytics;
   late bool _includeInBalance;
+  String? _institutionId;
 
   @override
   void initState() {
@@ -250,6 +248,7 @@ class AccountFormState extends State<AccountForm> {
     _initialBalance = TextEditingController(
       text: MoneyMinor.plain(account?.initialBalanceMinor ?? 0),
     );
+    _institutionId = account?.institutionId;
     _type = account?.type ?? AccountType.checking;
     _includeInAnalytics = account?.includeInAnalytics ?? true;
     _includeInBalance = account?.includeInBalance ?? true;
@@ -274,6 +273,7 @@ class AccountFormState extends State<AccountForm> {
         initialBalanceMinor: MoneyMinor.parse(_initialBalance.text),
         includeInAnalytics: _includeInAnalytics,
         includeInBalance: _includeInBalance,
+        institutionId: _institutionId,
       ),
     );
   }
@@ -286,7 +286,8 @@ class AccountFormState extends State<AccountForm> {
             _initialBalance.text,
             _type,
             _includeInAnalytics,
-            _includeInBalance
+            _includeInBalance,
+            _institutionId
           ),
       builder: (context, cancel) => MovementFormFrame(
             onCancel: cancel,
@@ -309,6 +310,22 @@ class AccountFormState extends State<AccountForm> {
                     validator: (value) => value == null || value.trim().isEmpty
                         ? 'Informe o nome.'
                         : null,
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: AccountAvatar(
+                        institutionId: _institutionId, type: _type),
+                    title: const Text('Instituição'),
+                    subtitle: Text(BankInstitution.find(_institutionId)?.name ??
+                        'Ícone padrão'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      FocusScope.of(context).unfocus();
+                      final id =
+                          await showBankSelector(context, _institutionId);
+                      if (id == null || !mounted) return;
+                      setState(() => _institutionId = id.isEmpty ? null : id);
+                    },
                   ),
                   DropdownButtonFormField<AccountType>(
                     isExpanded: true,

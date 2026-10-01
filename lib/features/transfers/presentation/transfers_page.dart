@@ -1,3 +1,4 @@
+import '../../accounts/presentation/account_identity.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/movement_form_frame.dart';
@@ -140,8 +141,8 @@ class _TransfersViewState extends State<_TransfersView> {
                                     for (final account in accounts)
                                       DropdownMenuItem(
                                           value: account.id,
-                                          child: Text(account.name,
-                                              overflow: TextOverflow.ellipsis))
+                                          child:
+                                              AccountOption(account: account))
                                   ],
                                   onChanged: (id) {
                                     setState(() =>
@@ -630,11 +631,8 @@ class TransferFormState extends State<TransferForm> {
                     items: _sources
                         .map((a) => DropdownMenuItem(
                             value: a.id,
-                            child: Text(
-                                '${a.name} (${a.currencyCode})'
-                                '${a.isArchived ? ' · arquivada' : ''}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis)))
+                            child:
+                                AccountOption(account: a, showCurrency: true)))
                         .toList(),
                     validator: (id) =>
                         id == null ? 'Selecione uma conta de origem.' : null,
@@ -654,11 +652,8 @@ class TransferFormState extends State<TransferForm> {
                     items: _destinations
                         .map((a) => DropdownMenuItem(
                             value: a.id,
-                            child: Text(
-                                '${a.name} (${a.currencyCode})'
-                                '${a.isArchived ? ' · arquivada' : ''}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis)))
+                            child:
+                                AccountOption(account: a, showCurrency: true)))
                         .toList(),
                     validator: (id) => id == null
                         ? 'Selecione outra conta da mesma moeda.'

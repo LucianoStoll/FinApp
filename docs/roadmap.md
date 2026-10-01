@@ -72,7 +72,8 @@ Issues de acompanhamento concluídas: #30, #31, #32, #35 e #33. Fechamento/relea
 Branch ativa: `v0.2.0-alpha`, iniciada a partir do MVP validado em `main`.
 A #34 foi validada pelo usuário e concluída em 01/10/2026.
 As #42 e #43 foram validadas pelo usuário e concluídas em 01/10/2026.
-A #39 é a próxima entrega autorizada, implementada com validação manual pendente.
+As #39 e #40 foram validadas pelo usuário e concluídas em 01/10/2026.
+A #41 é a entrega atual autorizada, com catálogo offline de instituições.
 O fechamento do ciclo e a PR para `main` acontecem após concluir e validar o escopo da versão.
 - [x] Calculadora monetária integrada como entrada padrão para campos de valor
 - [x] Operações básicas: soma, subtração, multiplicação e divisão
@@ -103,7 +104,7 @@ O fechamento do ciclo e a PR para `main` acontecem após concluir e validar o es
 - [x] Seções retornam ao Resumo; somente o Resumo libera saída padrão.
 - [x] Confirmação de descarte em receitas, despesas, transferências, contas e categorias.
 - [x] Cancelar descarte mantém os campos; salvar mantém o fluxo de persistência.
-- [ ] Validação manual Android/Windows — `docs/voltar-android.md`.
+- [x] Validação manual Android/Windows aprovada em 01/10/2026 — `docs/voltar-android.md`.
 
 ### Entrega #40 — formulários de contas e categorias
 
@@ -111,7 +112,15 @@ O fechamento do ciclo e a PR para `main` acontecem após concluir e validar o es
 - [x] Android em tela cheia; Windows com janela adaptada.
 - [x] Preservar campos, validações e confirmação de descarte da #39.
 - [x] Calculadora no saldo inicial, permitindo zero e valores negativos.
-- [ ] Validação manual — `docs/formularios-contas-categorias.md`.
+- [x] Validação manual aprovada em 01/10/2026 — `docs/formularios-contas-categorias.md`.
+
+### Entrega #41 — instituições e logos offline
+
+- [x] Busca e seleção de banco na criação/edição, com nome personalizado.
+- [x] Assets locais e ícone padrão para dinheiro/carteira/banco ausente.
+- [x] Logo na lista de contas e nos seletores de receitas, despesas e transferências.
+- [x] Migration v8 e backup preservando a instituição escolhida.
+- [ ] Validação manual — `docs/catalogo-bancos.md`.
 
 ## Fase 3 — Núcleo financeiro avançado
 - [ ] Competência e regras contábeis avançadas (lançamento/vencimento/efetivação já disponíveis no MVP)
