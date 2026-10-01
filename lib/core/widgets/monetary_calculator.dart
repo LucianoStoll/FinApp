@@ -5,31 +5,34 @@ import '../money/monetary_calculator.dart';
 import '../../features/accounts/domain/money_minor.dart';
 
 /// Retorna centavos ao confirmar e null ao cancelar, voltar ou tocar fora.
-Future<int?> showMonetaryCalculator(
-  BuildContext context, {
-  required int initialMinor,
-  String currencyCode = 'BRL',
-  int? minimumMinor,
-}) {
+Future<int?> showMonetaryCalculator(BuildContext context,
+    {required int initialMinor,
+    String currencyCode = 'BRL',
+    int? minimumMinor}) async {
   final panel = _CalculatorPanel(
-    initialMinor: initialMinor,
-    currencyCode: currencyCode,
-    minimumMinor: minimumMinor,
-  );
-  if (Theme.of(context).platform == TargetPlatform.android ||
-      Theme.of(context).platform == TargetPlatform.iOS) {
-    return showModalBottomSheet<int>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => panel,
-    );
-  }
-  return showDialog<int>(
-    context: context,
-    builder: (_) => Dialog(child: SizedBox(width: 420, child: panel)),
-  );
+      initialMinor: initialMinor,
+      currencyCode: currencyCode,
+      minimumMinor: minimumMinor);
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final mobile = Theme.of(context).platform == TargetPlatform.android ||
+      Theme.of(context).platform == TargetPlatform.iOS;
+  final TransitionRoute<int> route = mobile
+      ? ModalBottomSheetRoute<int>(
+          builder: (_) => panel,
+          capturedThemes:
+              InheritedTheme.capture(from: context, to: navigator.context),
+          barrierLabel:
+              MaterialLocalizations.of(context).modalBarrierDismissLabel,
+          isScrollControlled: true,
+          useSafeArea: true)
+      : DialogRoute<int>(
+          context: context,
+          builder: (_) => Dialog(child: SizedBox(width: 420, child: panel)));
+  final result = await navigator.push<int>(route);
+  // A restauração de foco ocorre durante a animação de saída. Só liberar
+  // a próxima abertura quando a rota tiver sido removida por completo.
+  await route.completed;
+  return result;
 }
 
 /// Campo global: teclado nativo desativado e calculadora também no avanço
@@ -92,6 +95,7 @@ class _MonetaryCalculatorFieldState extends State<MonetaryCalculatorField> {
     if (result != null) {
       widget.controller.text = MoneyMinor.plain(result);
     }
+    _focus.unfocus();
     _opening = false;
   }
 
