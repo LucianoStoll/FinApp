@@ -2,6 +2,8 @@
 
 ## v0.2.0-alpha — em desenvolvimento (pós-MVP)
 
+- #40: cadastros de contas, categorias e subcategorias no mesmo formulário dos lançamentos, tela cheia no Android e janela adaptada no Windows; saldo inicial usa calculadora com suporte a zero e valores negativos.
+
 - Correção após teste da #39: proteção do Voltar também no navegador principal; ícone de transferência efetivada permite retornar a pendente, atualizando os dois saldos.
 
 - #39: Voltar no Android fecha primeiro sobreposições, retorna das seções ao Resumo e só permite saída padrão no Resumo. Formulários alterados pedem confirmação de descarte.

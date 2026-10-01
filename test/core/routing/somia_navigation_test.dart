@@ -307,7 +307,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Novo nome'), findsOneWidget);
       expect(appRouter.routeInformationProvider.value.uri.path, path);
-      await tester.tap(find.text('Cancelar'));
+      await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Descartar'));
       await tester.pumpAndSettle();

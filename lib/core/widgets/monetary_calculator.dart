@@ -43,11 +43,12 @@ class MonetaryCalculatorField extends StatefulWidget {
     required this.controller,
     this.focusNode,
     this.currencyCode = 'BRL',
+    this.labelText = 'Valor',
     this.minimumMinor = 1,
   });
   final TextEditingController controller;
   final FocusNode? focusNode;
-  final String currencyCode;
+  final String currencyCode, labelText;
   final int? minimumMinor;
 
   @override
@@ -116,9 +117,9 @@ class _MonetaryCalculatorFieldState extends State<MonetaryCalculatorField> {
         onTapAlwaysCalled: true,
         onTap: _open,
         style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-        decoration: const InputDecoration(
-          labelText: 'Valor',
-          suffixIcon: Icon(Icons.calculate_outlined),
+        decoration: InputDecoration(
+          labelText: widget.labelText,
+          suffixIcon: const Icon(Icons.calculate_outlined),
         ),
         validator: (value) {
           try {

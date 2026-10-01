@@ -16,8 +16,9 @@ class MovementFormFrame extends StatelessWidget {
       required this.title,
       required this.child,
       required this.onSave,
-      this.onCancel});
-  final String title;
+      this.onCancel,
+      this.saveLabel = 'Salvar lançamento'});
+  final String title, saveLabel;
   final Widget child;
   final VoidCallback onSave;
   final VoidCallback? onCancel;
@@ -45,8 +46,7 @@ class MovementFormFrame extends StatelessWidget {
           TextButton(
               onPressed: onCancel ?? () => Navigator.maybePop(context),
               child: const Text('Cancelar')),
-          FilledButton(
-              onPressed: onSave, child: const Text('Salvar lançamento')),
+          FilledButton(onPressed: onSave, child: Text(saveLabel)),
         ],
       );
     }
@@ -64,8 +64,7 @@ class MovementFormFrame extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: SizedBox(
                 width: double.infinity,
-                child: FilledButton(
-                    onPressed: onSave, child: const Text('Salvar lançamento'))),
+                child: FilledButton(onPressed: onSave, child: Text(saveLabel))),
           ),
         ]),
       ),

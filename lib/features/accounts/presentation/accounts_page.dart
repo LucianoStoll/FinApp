@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../core/widgets/unsaved_changes_guard.dart';
+import '../../../core/widgets/movement_form_frame.dart';
+import '../../../core/widgets/monetary_calculator.dart';
 import '../../../core/filters/reference_month.dart';
 import '../../../core/widgets/month_selector.dart';
 import '../../../core/routing/somia_shell.dart';
@@ -26,9 +28,9 @@ class _AccountsView extends StatelessWidget {
   const _AccountsView();
 
   Future<void> _edit(BuildContext context, [Account? account]) async {
-    final draft = await showDialog<AccountDraft>(
-      context: context,
-      builder: (_) => _AccountDialog(account: account),
+    final draft = await showMovementForm<AccountDraft>(
+      context,
+      (_) => AccountForm(account: account),
     );
     if (draft == null || !context.mounted) return;
     try {
@@ -222,15 +224,15 @@ class _AccountsView extends StatelessWidget {
       );
 }
 
-class _AccountDialog extends StatefulWidget {
-  const _AccountDialog({this.account});
+class AccountForm extends StatefulWidget {
+  const AccountForm({super.key, this.account});
   final Account? account;
 
   @override
-  State<_AccountDialog> createState() => _AccountDialogState();
+  State<AccountForm> createState() => AccountFormState();
 }
 
-class _AccountDialogState extends State<_AccountDialog> {
+class AccountFormState extends State<AccountForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
   late final TextEditingController _currency;
@@ -286,88 +288,76 @@ class _AccountDialogState extends State<_AccountDialog> {
             _includeInAnalytics,
             _includeInBalance
           ),
-      builder: (context, cancel) => AlertDialog(
-            title: Text(widget.account == null ? 'Nova conta' : 'Editar conta'),
-            content: SizedBox(
-              width: 400,
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: 16,
-                    children: [
-                      TextFormField(
-                        controller: _name,
-                        decoration: const InputDecoration(labelText: 'Nome'),
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty
-                                ? 'Informe o nome.'
-                                : null,
-                      ),
-                      DropdownButtonFormField<AccountType>(
-                        isExpanded: true,
-                        initialValue: _type,
-                        decoration: const InputDecoration(labelText: 'Tipo'),
-                        items: AccountType.values
-                            .map((type) => DropdownMenuItem(
-                                  value: type,
-                                  child: Text(type.label),
-                                ))
-                            .toList(),
-                        onChanged: (type) {
-                          if (type != null) setState(() => _type = type);
-                        },
-                      ),
-                      TextFormField(
-                        controller: _currency,
-                        textCapitalization: TextCapitalization.characters,
-                        decoration: const InputDecoration(
-                            labelText: 'Moeda (ISO 4217)'),
-                        validator: (value) => RegExp(r'^[A-Za-z]{3}$')
-                                .hasMatch(value?.trim() ?? '')
+      builder: (context, cancel) => MovementFormFrame(
+            onCancel: cancel,
+            onSave: _submit,
+            saveLabel: 'Salvar conta',
+            title: widget.account == null ? 'Nova conta' : 'Editar conta',
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 16,
+                children: [
+                  TextFormField(
+                    controller: _name,
+                    autofocus: widget.account == null &&
+                        usesFullScreenMovementForm(context),
+                    textInputAction: TextInputAction.next,
+                    scrollPadding: const EdgeInsets.all(100),
+                    decoration: const InputDecoration(labelText: 'Nome'),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Informe o nome.'
+                        : null,
+                  ),
+                  DropdownButtonFormField<AccountType>(
+                    isExpanded: true,
+                    initialValue: _type,
+                    decoration: const InputDecoration(labelText: 'Tipo'),
+                    items: AccountType.values
+                        .map((type) => DropdownMenuItem(
+                              value: type,
+                              child: Text(type.label),
+                            ))
+                        .toList(),
+                    onChanged: (type) {
+                      if (type != null) setState(() => _type = type);
+                    },
+                  ),
+                  TextFormField(
+                    controller: _currency,
+                    textInputAction: TextInputAction.next,
+                    onChanged: (_) => setState(() {}),
+                    textCapitalization: TextCapitalization.characters,
+                    decoration:
+                        const InputDecoration(labelText: 'Moeda (ISO 4217)'),
+                    validator: (value) =>
+                        RegExp(r'^[A-Za-z]{3}$').hasMatch(value?.trim() ?? '')
                             ? null
                             : 'Use três letras, como BRL.',
-                      ),
-                      TextFormField(
-                        controller: _initialBalance,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                          signed: true,
-                        ),
-                        decoration:
-                            const InputDecoration(labelText: 'Saldo inicial'),
-                        validator: (value) {
-                          try {
-                            MoneyMinor.parse(value ?? '');
-                            return null;
-                          } on FormatException catch (error) {
-                            return error.message;
-                          }
-                        },
-                      ),
-                      SwitchListTile(
-                        title: const Text('Incluir no saldo do mês'),
-                        subtitle: const Text(
-                            'Somar esta conta ao saldo consolidado do resumo.'),
-                        value: _includeInBalance,
-                        onChanged: (value) =>
-                            setState(() => _includeInBalance = value),
-                      ),
-                      SwitchListTile(
-                        title: const Text('Incluir em análises'),
-                        value: _includeInAnalytics,
-                        onChanged: (value) =>
-                            setState(() => _includeInAnalytics = value),
-                      ),
-                    ],
                   ),
-                ),
+                  MonetaryCalculatorField(
+                    controller: _initialBalance,
+                    labelText: 'Saldo inicial',
+                    minimumMinor: null,
+                    currencyCode: _currency.text.trim().toUpperCase(),
+                  ),
+                  SwitchListTile(
+                    title: const Text('Incluir no saldo do mês'),
+                    subtitle: const Text(
+                        'Somar esta conta ao saldo consolidado do resumo.'),
+                    value: _includeInBalance,
+                    onChanged: (value) =>
+                        setState(() => _includeInBalance = value),
+                  ),
+                  SwitchListTile(
+                    title: const Text('Incluir em análises'),
+                    value: _includeInAnalytics,
+                    onChanged: (value) =>
+                        setState(() => _includeInAnalytics = value),
+                  ),
+                ],
               ),
             ),
-            actions: [
-              TextButton(onPressed: cancel, child: const Text('Cancelar')),
-              FilledButton(onPressed: _submit, child: const Text('Salvar')),
-            ],
           ));
 }

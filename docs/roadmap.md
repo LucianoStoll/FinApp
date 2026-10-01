@@ -105,6 +105,14 @@ O fechamento do ciclo e a PR para `main` acontecem após concluir e validar o es
 - [x] Cancelar descarte mantém os campos; salvar mantém o fluxo de persistência.
 - [ ] Validação manual Android/Windows — `docs/voltar-android.md`.
 
+### Entrega #40 — formulários de contas e categorias
+
+- [x] Componente compartilhado com os lançamentos, incluindo rolagem e rodapé.
+- [x] Android em tela cheia; Windows com janela adaptada.
+- [x] Preservar campos, validações e confirmação de descarte da #39.
+- [x] Calculadora no saldo inicial, permitindo zero e valores negativos.
+- [ ] Validação manual — `docs/formularios-contas-categorias.md`.
+
 ## Fase 3 — Núcleo financeiro avançado
 - [ ] Competência e regras contábeis avançadas (lançamento/vencimento/efetivação já disponíveis no MVP)
 - [ ] Análises avançadas de previsto x realizado (saldo básico já disponível)
