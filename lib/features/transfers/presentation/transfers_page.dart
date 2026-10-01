@@ -418,8 +418,9 @@ class _TransfersViewState extends State<_TransfersView> {
                       if (action == 'edit') _edit(context, item);
                       if (action == 'delete') _delete(context, item);
                       if (action == 'pending') _markPending(item);
-                      if (action == 'date' && item.effectiveDate != null)
+                      if (action == 'date' && item.effectiveDate != null) {
                         _changeDate(item.id, item.effectiveDate!, pick: true);
+                      }
                     },
                     itemBuilder: (_) => [
                       const PopupMenuItem(value: 'edit', child: Text('Editar')),

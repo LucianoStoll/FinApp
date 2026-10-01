@@ -141,10 +141,11 @@ class MovementListRow extends StatelessWidget {
                       child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 6),
                           child: details));
-                  if (stacked)
+                  if (stacked) {
                     return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [edit, value]);
+                  }
                   return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

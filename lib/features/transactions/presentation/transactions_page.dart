@@ -621,8 +621,9 @@ class _TransactionsViewState extends State<_TransactionsView> {
           if (action == 'edit') _edit(item);
           if (action == 'delete') _delete(item);
           if (action == 'pending') _setEffective(item, false);
-          if (action == 'date' && item.effectiveDate != null)
+          if (action == 'date' && item.effectiveDate != null) {
             _changeDate(item.id, item.effectiveDate!, pick: true);
+          }
         },
         itemBuilder: (_) => [
           const PopupMenuItem(value: 'edit', child: Text('Editar')),
