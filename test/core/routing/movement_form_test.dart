@@ -68,8 +68,9 @@ Future<void> _open(WidgetTester tester, Widget form,
   await tester.pumpAndSettle();
 }
 
-TextField _input(WidgetTester tester, Finder field) => tester.widget<TextField>(
-    find.descendant(of: field, matching: find.byType(TextField)));
+TextField _input(WidgetTester tester, Finder field) =>
+    tester.widget<TextField>(
+        find.descendant(of: field, matching: find.byType(TextField)));
 
 void main() {
   for (final type in ['receita', 'despesa', 'transferência']) {
