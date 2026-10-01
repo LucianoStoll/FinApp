@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
+import 'dashboard_category_chart.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -68,7 +70,7 @@ class MobileDashboardAppBar extends StatelessWidget
       });
 }
 
-/// Ordem fixa no Android: saldo, receitas/despesas, histórico e transações.
+/// Ordem no Android: saldo, receitas/despesas, gráficos e transações.
 class MobileDashboardBody extends StatelessWidget {
   const MobileDashboardBody(
       {super.key, required this.state, required this.onRefresh});
@@ -171,6 +173,11 @@ class _CurrencySection extends StatelessWidget {
       ]),
       const SizedBox(height: 12),
       _HistoryPanel(key: ValueKey('mobile-history-$code'), currency: currency),
+      const SizedBox(height: 12),
+      _Panel(
+          title: 'Gastos por categoria',
+          child: DashboardCategoryChart(
+              key: ValueKey('mobile-categories-$code'), currency: currency)),
       const SizedBox(height: 12),
     ]);
   }

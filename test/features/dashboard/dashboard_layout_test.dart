@@ -12,6 +12,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _DashboardStub implements DashboardRepository {
+  _DashboardStub({this.emptyCategories = false});
+  final bool emptyCategories;
   final requestedMonths = <DateTime>[];
 
   @override
@@ -24,7 +26,10 @@ class _DashboardStub implements DashboardRepository {
         projectedBalanceMinor: 290000,
         incomeMinor: 620000,
         expenseMinor: 385000,
-        expensesByCategory: const [DashboardCategoryExpense('Moradia', 200000)],
+        expensesByCategory: emptyCategories ? const [] : const [
+          DashboardCategoryExpense('Moradia', 200000),
+          DashboardCategoryExpense('Alimentação', 185000),
+        ],
         accounts: const [
           DashboardAccountBalance(
               'Conta principal', 'Conta corrente', 'BRL', 235000)
@@ -70,11 +75,11 @@ class _DashboardStub implements DashboardRepository {
 }
 
 Future<_DashboardStub> _mount(WidgetTester tester, Size size,
-    {double textScale = 1}) async {
+    {double textScale = 1, bool emptyCategories = false}) async {
   referenceMonth.select(DateTime.now());
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
-  final repository = _DashboardStub();
+  final repository = _DashboardStub(emptyCategories: emptyCategories);
   getIt.registerSingleton<DashboardRepository>(repository);
   addTearDown(() async {
     tester.view.resetPhysicalSize();
@@ -110,16 +115,25 @@ void main() {
           tester.getRect(find.byKey(const ValueKey('mobile-expense-BRL')));
       final history =
           tester.getRect(find.byKey(const ValueKey('mobile-history-BRL')));
-      final recent =
-          tester.getRect(find.byKey(const ValueKey('mobile-recent')));
+      final categories =
+          tester.getRect(find.byKey(const ValueKey('mobile-categories-BRL')));
       expect(balance.width, closeTo(width - 32, 0.1));
       expect(find.text('R\$ 2.350,00'), findsOneWidget);
       expect(income.top, expense.top);
       expect(income.right, lessThan(expense.left));
       expect(balance.bottom, lessThan(income.top));
       expect(history.top, greaterThan(income.bottom));
-      expect(recent.top, greaterThan(history.bottom));
-      expect(find.text('Gastos por categoria'), findsNothing);
+      expect(categories.top, greaterThan(history.bottom));
+      expect(find.text('Gastos por categoria'), findsOneWidget);
+      await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('mobile-recent')), 250,
+          scrollable: find.descendant(
+              of: find.byKey(const ValueKey('dashboard-mobile-scroll')),
+              matching: find.byType(Scrollable)));
+      final recent =
+          tester.getRect(find.byKey(const ValueKey('mobile-recent')));
+      expect(recent.top, greaterThan(
+          tester.getRect(find.byKey(const ValueKey('mobile-categories-BRL'))).bottom));
       expect(find.text('Saldo por conta'), findsNothing);
       expect(find.byType(NavigationBar), findsNothing);
       expect(tester.takeException(), isNull);
@@ -139,6 +153,17 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(
         find.byKey(const ValueKey('dashboard-month-selector')), findsOneWidget);
+  });
+
+  testWidgets('gráfico mobile sem despesas mostra estado vazio', (tester) async {
+    await _mount(tester, const Size(390, 900), emptyCategories: true);
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('mobile-categories-BRL')), 250,
+        scrollable: find.descendant(
+            of: find.byKey(const ValueKey('dashboard-mobile-scroll')),
+            matching: find.byType(Scrollable)));
+    expect(find.text('Nenhuma despesa neste mês.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('seletor de mês permanece no cabeçalho e atualiza o resumo',
@@ -198,6 +223,14 @@ void main() {
       await _mount(tester, const Size(390, 844));
       await expectLater(find.byKey(const ValueKey('dashboard-preview')),
           matchesGoldenFile('dashboard-mobile-preview.png'));
+      await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('mobile-categories-BRL')), 250,
+          scrollable: find.descendant(
+              of: find.byKey(const ValueKey('dashboard-mobile-scroll')),
+              matching: find.byType(Scrollable)));
+      await tester.pumpAndSettle();
+      await expectLater(find.byKey(const ValueKey('dashboard-preview')),
+          matchesGoldenFile('dashboard-categories-mobile-preview.png'));
     });
   }
 }

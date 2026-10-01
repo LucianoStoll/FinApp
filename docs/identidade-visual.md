@@ -81,9 +81,10 @@ Ordem e geometria mobile:
 3. Saldo do mês em cartão de largura total; projeção como informação secundária. Em mês futuro, o previsto continua em destaque.
 4. Receitas e Despesas na mesma linha, cada uma com metade da largura disponível.
 5. Gráfico “Receitas vs Despesas” em largura total, com seis meses, eixos, grade e legenda.
-6. “Transações recentes”, com ícones por tipo, descrição, data/conta, valor e acesso à listagem completa.
+6. “Gastos por categoria”, com gráfico circular, total mensal e legenda adaptada à largura.
+7. “Transações recentes”, com ícones por tipo, descrição, data/conta, valor e acesso à listagem completa.
 
-No mobile não intercalar cartões extras de projeção, categorias ou saldos por conta entre esses blocos. Contas e categorias continuam disponíveis no menu; o desktop mantém sua composição atual, incluindo esses painéis. O botão + permanece acessível e o conteúdo pode rolar sem ser coberto por ele.
+No mobile, o gráfico por categoria acompanha o histórico de receitas/despesas. Não intercalar cartões extras de projeção ou saldos por conta entre esses blocos. Contas e categorias continuam disponíveis no menu; o desktop mantém sua composição atual, incluindo esses painéis. O botão + permanece acessível e o conteúdo pode rolar sem ser coberto por ele.
 
 O seletor de mês permanece no cabeçalho durante a rolagem, com mês anterior, próximo mês e retorno ao mês atual. Espaçamentos, cartões arredondados e cores seguem a imagem. Percentuais ilustrativos não são copiados para dados reais. A composição deve suportar telas estreitas, valores grandes e texto ampliado.
 
@@ -349,3 +350,13 @@ gráficos. Aplicações podem ficar fora do consolidado, permanecendo na lista.
 Contas existentes e novas começam incluídas. A migration v6 adiciona a
 preferência sem alterar registros financeiros. Backups v1 a v6 são aceitos;
 restaurar um backup antigo preserva os dados e aplica a migration.
+
+
+### Gráficos disponíveis no celular — 01/10/2026
+
+O dashboard Android também apresenta “Gastos por categoria”, logo abaixo de
+“Receitas vs Despesas” e antes das transações recentes. O gráfico circular usa
+o mesmo componente e os mesmos dados do desktop, separados por moeda e mês.
+Em telas estreitas ou com texto ampliado, a legenda fica abaixo do gráfico.
+Sem despesas, exibe uma mensagem; os filtros e cálculos financeiros permanecem
+os mesmos. A inclusão deste gráfico atualiza a composição mobile anterior.
