@@ -127,6 +127,91 @@ void main() {
     });
   }
 
+  for (final platform in [TargetPlatform.android, TargetPlatform.windows]) {
+    for (final kind in ['income', 'expense', 'transfer']) {
+      testWidgets(
+          '$kind $platform: Voltar protege alterações e Cancelar preserva campos',
+          (tester) async {
+        final form = kind == 'transfer'
+            ? const TransferForm(accounts: _accounts)
+            : TransactionForm(
+                accounts: _accounts,
+                categories: const [],
+                initialType: kind == 'income'
+                    ? TransactionType.income
+                    : TransactionType.expense);
+        Object? result;
+        await _open(tester, form,
+            platform: platform,
+            size: const Size(1280, 900),
+            onResult: (value) => result = value);
+        await tester.enterText(find.byType(TextFormField).first, 'Alteração');
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('Descartar alterações?'), findsOneWidget);
+        await tester.tap(find.text('Continuar editando'));
+        await tester.pumpAndSettle();
+        expect(find.text('Alteração'), findsOneWidget);
+        if (platform == TargetPlatform.android) {
+          await tester.tap(find.byType(BackButton));
+        } else {
+          await tester.tap(find.text('Cancelar'));
+        }
+        await tester.pumpAndSettle();
+        expect(find.text('Descartar alterações?'), findsOneWidget);
+        await tester.tap(find.text('Descartar'));
+        await tester.pumpAndSettle();
+        expect(find.byType(MovementFormFrame), findsNothing);
+        expect(result, isNull);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+  testWidgets(
+      'Android: calculadora e data fecham antes do formulário; alterações revertidas não pedem descarte',
+      (tester) async {
+    await _open(
+        tester, const TransactionForm(accounts: _accounts, categories: []));
+    await tester.enterText(find.byType(TextFormField).first, 'Teste');
+    await tester.testTextInput.receiveAction(TextInputAction.next);
+    await tester.pumpAndSettle();
+    expect(find.text('Calculadora'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Calculadora'), findsNothing);
+    expect(find.text('Descartar alterações?'), findsNothing);
+    expect(find.byType(MovementFormFrame), findsOneWidget);
+    await tester.ensureVisible(find.text('Vencimento'));
+    await tester.tap(find.text('Vencimento'));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(DatePickerDialog), findsNothing);
+    expect(find.text('Descartar alterações?'), findsNothing);
+    await tester.enterText(find.byType(TextFormField).first, '');
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(MovementFormFrame), findsNothing);
+    expect(find.text('Descartar alterações?'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets(
+      'Android: mudar apenas efetivação também exige confirmação, Voltar na confirmação mantém formulário',
+      (tester) async {
+    await _open(tester, const TransferForm(accounts: _accounts));
+    await tester.ensureVisible(find.text('Efetivada'));
+    await tester.tap(find.text('Efetivada'));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Descartar alterações?'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Descartar alterações?'), findsNothing);
+    expect(find.byType(MovementFormFrame), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final size in [const Size(320, 640), const Size(780, 360)]) {
     testWidgets('formulário em $size com texto ampliado e teclado',
         (tester) async {

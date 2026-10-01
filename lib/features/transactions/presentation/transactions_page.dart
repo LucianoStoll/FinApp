@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/movement_form_frame.dart';
+import '../../../core/widgets/unsaved_changes_guard.dart';
 import '../../../core/widgets/movement_list_row.dart';
 import '../../../core/widgets/effectuation_feedback.dart';
 import '../../../core/widgets/monetary_calculator.dart';
@@ -755,142 +756,172 @@ class TransactionFormState extends State<TransactionForm> {
             (!category.isArchived || category.id == _subcategoryId))
         .toList();
     final kind = _type == TransactionType.income ? 'receita' : 'despesa';
-    return MovementFormFrame(
-      title: widget.item == null ? 'Nova $kind' : 'Editar $kind',
-      onSave: _submit,
-      child: Form(
-        key: _formKey,
-        child: Column(mainAxisSize: MainAxisSize.min, spacing: 16, children: [
-          TextFormField(
-              controller: _description,
-              focusNode: _descriptionFocus,
-              autofocus:
-                  widget.item == null && usesFullScreenMovementForm(context),
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (_) {
-                _amountFocus.requestFocus();
-                _amount.selection = TextSelection(
-                    baseOffset: 0, extentOffset: _amount.text.length);
-              },
-              scrollPadding: const EdgeInsets.all(100),
-              decoration: const InputDecoration(labelText: 'Descrição'),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Informe a descrição.'
-                  : null),
-          MonetaryCalculatorField(
-              controller: _amount,
-              focusNode: _amountFocus,
-              currencyCode: _availableAccounts
-                      .where((a) => a.id == _accountId)
-                      .firstOrNull
-                      ?.currencyCode ??
-                  'BRL'),
-          DropdownButtonFormField<String>(
-            isExpanded: true,
-            initialValue: _accountId,
-            decoration: const InputDecoration(labelText: 'Conta'),
-            items: _availableAccounts
-                .map((account) => DropdownMenuItem(
-                      value: account.id,
-                      child: Text(
-                          '${account.name}${account.isArchived ? ' (arquivada)' : ''}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
-                    ))
-                .toList(),
-            validator: (value) =>
-                value == null ? 'Cadastre uma conta ativa.' : null,
-            onChanged: (id) => setState(() => _accountId = id),
-          ),
-          DropdownButtonFormField<String>(
-            isExpanded: true,
-            key: ValueKey('category-${_type.name}'),
-            initialValue: _categoryId,
-            decoration: const InputDecoration(labelText: 'Categoria'),
-            items: [
-              const DropdownMenuItem(value: '', child: Text('Sem categoria')),
-              for (final category in roots)
-                DropdownMenuItem(
-                    value: category.id,
-                    child: Text(
-                        '${category.name}'
-                        '${category.isArchived ? ' (arquivada)' : ''}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis))
-            ],
-            onChanged: (id) => setState(() {
-              _categoryId = id == null || id.isEmpty ? null : id;
-              _subcategoryId = null;
-            }),
-          ),
-          DropdownButtonFormField<String>(
-            isExpanded: true,
-            key: ValueKey('subcategory-${_type.name}-$_categoryId'),
-            initialValue: _subcategoryId,
-            decoration: const InputDecoration(labelText: 'Subcategoria'),
-            items: [
-              const DropdownMenuItem(value: '', child: Text('Nenhuma')),
-              for (final category in children)
-                DropdownMenuItem(
-                    value: category.id,
-                    child: Text(
-                        '${category.name}'
-                        '${category.isArchived ? ' (arquivada)' : ''}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis))
-            ],
-            onChanged: _categoryId == null
-                ? null
-                : (id) => setState(() =>
-                    _subcategoryId = id == null || id.isEmpty ? null : id),
-          ),
-          MovementDateFields(
-            posted: _date,
-            due: _dueDate,
-            onPosted: () => _pickDate('posted'),
-            onDue: () => _pickDate('due'),
-          ),
-          SwitchListTile(
-            title: Text(_type == TransactionType.income ? 'Recebido' : 'Pago'),
-            subtitle:
-                const Text('A data determina quando entra no saldo atual'),
-            value: _isEffective,
-            onChanged: (value) => setState(() => _isEffective = value),
-          ),
-          if (_isEffective)
-            ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Data de efetivação'),
-                subtitle: Text(_dateLabel(_effectiveDate ?? DateTime.now())),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _pickDate('effective')),
-          if (widget.fixedType == null)
-            ExpansionTile(
-              title: const Text('Mais detalhes'),
-              tilePadding: EdgeInsets.zero,
-              children: [
-                DropdownButtonFormField<TransactionType>(
-                  isExpanded: true,
-                  initialValue: _type,
-                  decoration: const InputDecoration(labelText: 'Tipo'),
-                  items: TransactionType.values
-                      .map((type) => DropdownMenuItem(
-                          value: type, child: Text(type.label)))
-                      .toList(),
-                  onChanged: (type) {
-                    if (type != null) {
-                      setState(() {
-                        _type = type;
-                        _categoryId = null;
-                        _subcategoryId = null;
-                      });
-                    }
-                  },
-                ),
-              ],
+    return UnsavedChangesGuard(
+        value: () => (
+              _description.text,
+              _amount.text,
+              _type,
+              _date,
+              _dueDate,
+              _effectiveDate,
+              _isEffective,
+              _accountId,
+              _categoryId,
+              _subcategoryId
             ),
-        ]),
-      ),
-    );
+        changes: [_description, _amount],
+        builder: (context, cancel) => MovementFormFrame(
+              onCancel: cancel,
+              title: widget.item == null ? 'Nova $kind' : 'Editar $kind',
+              onSave: _submit,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 16,
+                    children: [
+                      TextFormField(
+                          controller: _description,
+                          focusNode: _descriptionFocus,
+                          autofocus: widget.item == null &&
+                              usesFullScreenMovementForm(context),
+                          textInputAction: TextInputAction.next,
+                          onFieldSubmitted: (_) {
+                            _amountFocus.requestFocus();
+                            _amount.selection = TextSelection(
+                                baseOffset: 0,
+                                extentOffset: _amount.text.length);
+                          },
+                          scrollPadding: const EdgeInsets.all(100),
+                          decoration:
+                              const InputDecoration(labelText: 'Descrição'),
+                          validator: (value) =>
+                              value == null || value.trim().isEmpty
+                                  ? 'Informe a descrição.'
+                                  : null),
+                      MonetaryCalculatorField(
+                          controller: _amount,
+                          focusNode: _amountFocus,
+                          currencyCode: _availableAccounts
+                                  .where((a) => a.id == _accountId)
+                                  .firstOrNull
+                                  ?.currencyCode ??
+                              'BRL'),
+                      DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        initialValue: _accountId,
+                        decoration: const InputDecoration(labelText: 'Conta'),
+                        items: _availableAccounts
+                            .map((account) => DropdownMenuItem(
+                                  value: account.id,
+                                  child: Text(
+                                      '${account.name}${account.isArchived ? ' (arquivada)' : ''}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis),
+                                ))
+                            .toList(),
+                        validator: (value) =>
+                            value == null ? 'Cadastre uma conta ativa.' : null,
+                        onChanged: (id) => setState(() => _accountId = id),
+                      ),
+                      DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        key: ValueKey('category-${_type.name}'),
+                        initialValue: _categoryId,
+                        decoration:
+                            const InputDecoration(labelText: 'Categoria'),
+                        items: [
+                          const DropdownMenuItem(
+                              value: '', child: Text('Sem categoria')),
+                          for (final category in roots)
+                            DropdownMenuItem(
+                                value: category.id,
+                                child: Text(
+                                    '${category.name}'
+                                    '${category.isArchived ? ' (arquivada)' : ''}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis))
+                        ],
+                        onChanged: (id) => setState(() {
+                          _categoryId = id == null || id.isEmpty ? null : id;
+                          _subcategoryId = null;
+                        }),
+                      ),
+                      DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        key: ValueKey('subcategory-${_type.name}-$_categoryId'),
+                        initialValue: _subcategoryId,
+                        decoration:
+                            const InputDecoration(labelText: 'Subcategoria'),
+                        items: [
+                          const DropdownMenuItem(
+                              value: '', child: Text('Nenhuma')),
+                          for (final category in children)
+                            DropdownMenuItem(
+                                value: category.id,
+                                child: Text(
+                                    '${category.name}'
+                                    '${category.isArchived ? ' (arquivada)' : ''}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis))
+                        ],
+                        onChanged: _categoryId == null
+                            ? null
+                            : (id) => setState(() => _subcategoryId =
+                                id == null || id.isEmpty ? null : id),
+                      ),
+                      MovementDateFields(
+                        posted: _date,
+                        due: _dueDate,
+                        onPosted: () => _pickDate('posted'),
+                        onDue: () => _pickDate('due'),
+                      ),
+                      SwitchListTile(
+                        title: Text(_type == TransactionType.income
+                            ? 'Recebido'
+                            : 'Pago'),
+                        subtitle: const Text(
+                            'A data determina quando entra no saldo atual'),
+                        value: _isEffective,
+                        onChanged: (value) =>
+                            setState(() => _isEffective = value),
+                      ),
+                      if (_isEffective)
+                        ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Data de efetivação'),
+                            subtitle: Text(
+                                _dateLabel(_effectiveDate ?? DateTime.now())),
+                            trailing: const Icon(Icons.calendar_today),
+                            onTap: () => _pickDate('effective')),
+                      if (widget.fixedType == null)
+                        ExpansionTile(
+                          title: const Text('Mais detalhes'),
+                          tilePadding: EdgeInsets.zero,
+                          children: [
+                            DropdownButtonFormField<TransactionType>(
+                              isExpanded: true,
+                              initialValue: _type,
+                              decoration:
+                                  const InputDecoration(labelText: 'Tipo'),
+                              items: TransactionType.values
+                                  .map((type) => DropdownMenuItem(
+                                      value: type, child: Text(type.label)))
+                                  .toList(),
+                              onChanged: (type) {
+                                if (type != null) {
+                                  setState(() {
+                                    _type = type;
+                                    _categoryId = null;
+                                    _subcategoryId = null;
+                                  });
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                    ]),
+              ),
+            ));
   }
 }

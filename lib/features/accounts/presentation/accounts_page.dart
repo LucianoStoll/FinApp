@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/di/injection.dart';
+import '../../../core/widgets/unsaved_changes_guard.dart';
 import '../../../core/filters/reference_month.dart';
 import '../../../core/widgets/month_selector.dart';
 import '../../../core/routing/somia_shell.dart';
@@ -276,89 +277,98 @@ class _AccountDialogState extends State<_AccountDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-        title: Text(widget.account == null ? 'Nova conta' : 'Editar conta'),
-        content: SizedBox(
-          width: 400,
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                spacing: 16,
-                children: [
-                  TextFormField(
-                    controller: _name,
-                    decoration: const InputDecoration(labelText: 'Nome'),
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? 'Informe o nome.'
-                        : null,
-                  ),
-                  DropdownButtonFormField<AccountType>(
-                    isExpanded: true,
-                    initialValue: _type,
-                    decoration: const InputDecoration(labelText: 'Tipo'),
-                    items: AccountType.values
-                        .map((type) => DropdownMenuItem(
-                              value: type,
-                              child: Text(type.label),
-                            ))
-                        .toList(),
-                    onChanged: (type) {
-                      if (type != null) setState(() => _type = type);
-                    },
-                  ),
-                  TextFormField(
-                    controller: _currency,
-                    textCapitalization: TextCapitalization.characters,
-                    decoration:
-                        const InputDecoration(labelText: 'Moeda (ISO 4217)'),
-                    validator: (value) =>
-                        RegExp(r'^[A-Za-z]{3}$').hasMatch(value?.trim() ?? '')
+  Widget build(BuildContext context) => UnsavedChangesGuard(
+      value: () => (
+            _name.text,
+            _currency.text,
+            _initialBalance.text,
+            _type,
+            _includeInAnalytics,
+            _includeInBalance
+          ),
+      changes: [_name, _currency, _initialBalance],
+      builder: (context, cancel) => AlertDialog(
+            title: Text(widget.account == null ? 'Nova conta' : 'Editar conta'),
+            content: SizedBox(
+              width: 400,
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 16,
+                    children: [
+                      TextFormField(
+                        controller: _name,
+                        decoration: const InputDecoration(labelText: 'Nome'),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                                ? 'Informe o nome.'
+                                : null,
+                      ),
+                      DropdownButtonFormField<AccountType>(
+                        isExpanded: true,
+                        initialValue: _type,
+                        decoration: const InputDecoration(labelText: 'Tipo'),
+                        items: AccountType.values
+                            .map((type) => DropdownMenuItem(
+                                  value: type,
+                                  child: Text(type.label),
+                                ))
+                            .toList(),
+                        onChanged: (type) {
+                          if (type != null) setState(() => _type = type);
+                        },
+                      ),
+                      TextFormField(
+                        controller: _currency,
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: const InputDecoration(
+                            labelText: 'Moeda (ISO 4217)'),
+                        validator: (value) => RegExp(r'^[A-Za-z]{3}$')
+                                .hasMatch(value?.trim() ?? '')
                             ? null
                             : 'Use três letras, como BRL.',
+                      ),
+                      TextFormField(
+                        controller: _initialBalance,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                          signed: true,
+                        ),
+                        decoration:
+                            const InputDecoration(labelText: 'Saldo inicial'),
+                        validator: (value) {
+                          try {
+                            MoneyMinor.parse(value ?? '');
+                            return null;
+                          } on FormatException catch (error) {
+                            return error.message;
+                          }
+                        },
+                      ),
+                      SwitchListTile(
+                        title: const Text('Incluir no saldo do mês'),
+                        subtitle: const Text(
+                            'Somar esta conta ao saldo consolidado do resumo.'),
+                        value: _includeInBalance,
+                        onChanged: (value) =>
+                            setState(() => _includeInBalance = value),
+                      ),
+                      SwitchListTile(
+                        title: const Text('Incluir em análises'),
+                        value: _includeInAnalytics,
+                        onChanged: (value) =>
+                            setState(() => _includeInAnalytics = value),
+                      ),
+                    ],
                   ),
-                  TextFormField(
-                    controller: _initialBalance,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                    decoration:
-                        const InputDecoration(labelText: 'Saldo inicial'),
-                    validator: (value) {
-                      try {
-                        MoneyMinor.parse(value ?? '');
-                        return null;
-                      } on FormatException catch (error) {
-                        return error.message;
-                      }
-                    },
-                  ),
-                  SwitchListTile(
-                    title: const Text('Incluir no saldo do mês'),
-                    subtitle: const Text(
-                        'Somar esta conta ao saldo consolidado do resumo.'),
-                    value: _includeInBalance,
-                    onChanged: (value) =>
-                        setState(() => _includeInBalance = value),
-                  ),
-                  SwitchListTile(
-                    title: const Text('Incluir em análises'),
-                    value: _includeInAnalytics,
-                    onChanged: (value) =>
-                        setState(() => _includeInAnalytics = value),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar')),
-          FilledButton(onPressed: _submit, child: const Text('Salvar')),
-        ],
-      );
+            actions: [
+              TextButton(onPressed: cancel, child: const Text('Cancelar')),
+              FilledButton(onPressed: _submit, child: const Text('Salvar')),
+            ],
+          ));
 }

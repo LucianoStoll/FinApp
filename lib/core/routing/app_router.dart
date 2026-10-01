@@ -39,56 +39,70 @@ final GoRouter appRouter = GoRouter(
           GoRoute(
             path: AppRoutes.transfersPath,
             name: AppRoutes.transfers,
-            builder: (context, state) => TransfersPage(
-                key: ValueKey(state.uri.queryParameters['create']),
-                startCreate: state.uri.queryParameters['create'] == '1'),
+            builder: (context, state) => SomiaSectionBackScope(
+                location: state.uri.path,
+                child: TransfersPage(
+                    key: ValueKey(state.uri.queryParameters['create']),
+                    startCreate: state.uri.queryParameters['create'] == '1')),
           ),
           GoRoute(
             path: AppRoutes.transactionsPath,
             name: AppRoutes.transactions,
-            builder: (context, state) => TransactionsPage(
-                key: ValueKey(state.uri.queryParameters['create']),
-                initialCreateType: state.uri.queryParameters['create']),
+            builder: (context, state) => SomiaSectionBackScope(
+                location: state.uri.path,
+                child: TransactionsPage(
+                    key: ValueKey(state.uri.queryParameters['create']),
+                    initialCreateType: state.uri.queryParameters['create'])),
           ),
           GoRoute(
             path: AppRoutes.incomePath,
             name: AppRoutes.income,
-            builder: (context, state) => TransactionsPage(
-                key: ValueKey(state.uri.toString()),
-                sectionType: TransactionType.income,
-                initialCreateType: state.uri.queryParameters['create'] == '1'
-                    ? 'income'
-                    : null),
+            builder: (context, state) => SomiaSectionBackScope(
+                location: state.uri.path,
+                child: TransactionsPage(
+                    key: ValueKey(state.uri.toString()),
+                    sectionType: TransactionType.income,
+                    initialCreateType:
+                        state.uri.queryParameters['create'] == '1'
+                            ? 'income'
+                            : null)),
           ),
           GoRoute(
             path: AppRoutes.expensesPath,
             name: AppRoutes.expenses,
-            builder: (context, state) => TransactionsPage(
-                key: ValueKey(state.uri.toString()),
-                sectionType: TransactionType.expense,
-                initialCreateType: state.uri.queryParameters['create'] == '1'
-                    ? 'expense'
-                    : null),
+            builder: (context, state) => SomiaSectionBackScope(
+                location: state.uri.path,
+                child: TransactionsPage(
+                    key: ValueKey(state.uri.toString()),
+                    sectionType: TransactionType.expense,
+                    initialCreateType:
+                        state.uri.queryParameters['create'] == '1'
+                            ? 'expense'
+                            : null)),
           ),
           GoRoute(
             path: AppRoutes.categoriesPath,
             name: AppRoutes.categories,
-            builder: (context, state) => const CategoriesPage(),
+            builder: (context, state) => SomiaSectionBackScope(
+                location: state.uri.path, child: const CategoriesPage()),
           ),
           GoRoute(
             path: AppRoutes.accountsPath,
             name: AppRoutes.accounts,
-            builder: (context, state) => const AccountsPage(),
+            builder: (context, state) => SomiaSectionBackScope(
+                location: state.uri.path, child: const AccountsPage()),
           ),
           GoRoute(
             path: AppRoutes.settingsPath,
             name: AppRoutes.settings,
-            builder: (context, state) => const SettingsPage(),
+            builder: (context, state) => SomiaSectionBackScope(
+                location: state.uri.path, child: const SettingsPage()),
           ),
           GoRoute(
             path: AppRoutes.dashboardPath,
             name: AppRoutes.dashboard,
-            builder: (context, state) => const DashboardPage(),
+            builder: (context, state) => SomiaSectionBackScope(
+                location: state.uri.path, child: const DashboardPage()),
           ),
         ]),
   ],

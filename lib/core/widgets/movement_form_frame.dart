@@ -15,10 +15,12 @@ class MovementFormFrame extends StatelessWidget {
       {super.key,
       required this.title,
       required this.child,
-      required this.onSave});
+      required this.onSave,
+      this.onCancel});
   final String title;
   final Widget child;
   final VoidCallback onSave;
+  final VoidCallback? onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +43,7 @@ class MovementFormFrame extends StatelessWidget {
         content: SizedBox(width: 480, child: form),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: onCancel ?? () => Navigator.maybePop(context),
               child: const Text('Cancelar')),
           FilledButton(
               onPressed: onSave, child: const Text('Salvar lançamento')),
@@ -52,7 +54,8 @@ class MovementFormFrame extends StatelessWidget {
       key: const ValueKey('movement-full-screen'),
       appBar: AppBar(
           title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-          leading: BackButton(onPressed: () => Navigator.pop(context))),
+          leading: BackButton(
+              onPressed: onCancel ?? () => Navigator.maybePop(context))),
       body: SafeArea(
         top: false,
         child: Column(children: [

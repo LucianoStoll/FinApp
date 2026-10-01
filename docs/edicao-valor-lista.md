@@ -29,4 +29,4 @@ Não há alteração de schema, dependência ou necessidade de rede.
 - Testar Android estreito, texto ampliado, paisagem e Windows com teclado.
 
 Validação automatizada executada pelo Flutter CI em Linux e Windows antes da entrega.
-Validação manual do usuário permanece pendente.
+Validação manual aprovada pelo usuário em 01/10/2026.

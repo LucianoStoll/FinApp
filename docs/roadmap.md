@@ -71,8 +71,9 @@ Issues de acompanhamento concluídas: #30, #31, #32, #35 e #33. Fechamento/relea
 
 Branch ativa: `v0.2.0-alpha`, iniciada a partir do MVP validado em `main`.
 A #34 foi validada pelo usuário e concluída em 01/10/2026.
-As #42 e #43 estão implementadas, com validação manual pendente.
-O fechamento do ciclo e a PR para `main` acontecem após essa validação.
+As #42 e #43 foram validadas pelo usuário e concluídas em 01/10/2026.
+A #39 é a próxima entrega autorizada, implementada com validação manual pendente.
+O fechamento do ciclo e a PR para `main` acontecem após concluir e validar o escopo da versão.
 - [x] Calculadora monetária integrada como entrada padrão para campos de valor
 - [x] Operações básicas: soma, subtração, multiplicação e divisão
 - [x] Teclas numéricas, `00`, separador decimal, limpar, apagar e confirmar
@@ -86,7 +87,23 @@ O fechamento do ciclo e a PR para `main` acontecem após essa validação.
 - [x] Desfazer restaura a efetivação anterior, incluindo agendamentos
 - [x] Ajustar data pelo feedback ou menu
 - [x] Áreas independentes e proteção contra repetição/ação antiga
-- [ ] Validação manual pelo usuário
+- [x] Validação manual pelo usuário em 01/10/2026
+
+### Entrega #43 — editar valor na lista
+
+- [x] Calculadora integrada ao toque no valor de receita, despesa e transferência.
+- [x] Atualização isolada do valor, preservando vínculos, datas e efetivação.
+- [x] Cancelar/voltar mantém o original; ações de valor e status independentes.
+- [x] Ajustes #42: feedback por 5 segundos, remover efetivação pelo ícone de receita/despesa e efetivados no topo.
+- [x] Validação manual aprovada pelo usuário em 01/10/2026 — roteiro em `docs/edicao-valor-lista.md`.
+
+### Entrega #39 — Voltar no Android
+
+- [x] Voltar fecha sobreposições antes de sair da seção.
+- [x] Seções retornam ao Resumo; somente o Resumo libera saída padrão.
+- [x] Confirmação de descarte em receitas, despesas, transferências, contas e categorias.
+- [x] Cancelar descarte mantém os campos; salvar mantém o fluxo de persistência.
+- [ ] Validação manual Android/Windows — `docs/voltar-android.md`.
 
 ## Fase 3 — Núcleo financeiro avançado
 - [ ] Competência e regras contábeis avançadas (lançamento/vencimento/efetivação já disponíveis no MVP)
@@ -180,11 +197,3 @@ O fechamento do ciclo e a PR para `main` acontecem após essa validação.
 ## Releases
 
 Semantic Versioning: 0.x-alpha para desenvolvimento inicial, 0.x-beta para estabilização e 1.0.0 para primeira versão estável. Cada release terá tag, changelog e issues/PRs relacionados.
-
-### Entrega #43 — editar valor na lista
-
-- [x] Calculadora integrada ao toque no valor de receita, despesa e transferência.
-- [x] Atualização isolada do valor, preservando vínculos, datas e efetivação.
-- [x] Cancelar/voltar mantém o original; ações de valor e status independentes.
-- [x] Ajustes #42: feedback por 5 segundos, remover efetivação pelo ícone de receita/despesa e efetivados no topo.
-- [ ] Validação manual Android e Windows — roteiro em `docs/edicao-valor-lista.md`.

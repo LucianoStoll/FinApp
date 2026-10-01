@@ -44,6 +44,31 @@ class SomiaMenuButton extends StatelessWidget {
       onPressed: () => _mobileScaffoldKey.currentState?.openDrawer());
 }
 
+/// Na rota da seção, sobreposições continuam recebendo Voltar antes dela.
+class SomiaSectionBackScope extends StatelessWidget {
+  const SomiaSectionBackScope(
+      {super.key, required this.location, required this.child});
+  final String location;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => PopScope<Object?>(
+        canPop: Theme.of(context).platform != TargetPlatform.android ||
+            location == AppRoutes.dashboardPath,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop || Theme.of(context).platform != TargetPlatform.android)
+            return;
+          final scaffold = _mobileScaffoldKey.currentState;
+          if (scaffold?.isDrawerOpen ?? false) {
+            scaffold!.closeDrawer();
+          } else if (location != AppRoutes.dashboardPath) {
+            context.go(AppRoutes.dashboardPath);
+          }
+        },
+        child: child,
+      );
+}
+
 class SomiaShell extends StatelessWidget {
   const SomiaShell({super.key, required this.location, required this.child});
   final String location;

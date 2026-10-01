@@ -1,4 +1,5 @@
 import 'package:finapp/app/app.dart';
+import 'package:finapp/core/theme/app_theme.dart';
 import 'package:finapp/core/di/injection.dart';
 import 'package:finapp/core/filters/reference_month.dart';
 import 'package:finapp/features/transfers/domain/transfer.dart';
@@ -159,6 +160,124 @@ class _TransfersStub implements TransfersRepository {
 void main() {
   setUp(() => referenceMonth.select(DateTime(2026, 9)));
   tearDown(() => referenceMonth.select(DateTime.now()));
+
+  Future<void> openBackTest(WidgetTester tester,
+      {TargetPlatform platform = TargetPlatform.android,
+      Size size = const Size(390, 844)}) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1;
+    getIt.registerSingleton<DashboardRepository>(_DashboardStub());
+    getIt.registerSingleton<TransactionsRepository>(_TransactionsStub());
+    getIt.registerSingleton<TransfersRepository>(_TransfersStub());
+    getIt.registerSingleton<AccountsRepository>(_AccountsStub());
+    getIt.registerSingleton<CategoriesRepository>(_CategoriesStub());
+    addTearDown(() async {
+      appRouter.go('/');
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      await getIt.reset();
+    });
+    appRouter.go('/');
+    await tester.pumpWidget(MaterialApp.router(
+        routerConfig: appRouter,
+        theme: AppTheme.dark.copyWith(platform: platform)));
+    await tester.pumpAndSettle();
+  }
+
+  for (final size in [const Size(390, 844), const Size(915, 412)]) {
+    testWidgets(
+        'Android $size: Voltar retorna ao Resumo em todas as seções e só então permite sair',
+        (tester) async {
+      await openBackTest(tester, size: size);
+      for (final path in [
+        '/income',
+        '/expenses',
+        '/transfers',
+        '/accounts',
+        '/categories',
+        '/settings',
+        '/transactions'
+      ]) {
+        appRouter.go(path);
+        await tester.pumpAndSettle();
+        expect(await appRouter.routerDelegate.popRoute(), true);
+        await tester.pumpAndSettle();
+        expect(appRouter.routeInformationProvider.value.uri.path, '/');
+        // false devolve ao Android a saída padrão, sem remover a rota Resumo.
+        expect(await appRouter.routerDelegate.popRoute(), false);
+        await tester.pumpAndSettle();
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+  testWidgets(
+      'Android: drawer, balão + e filtros fecham antes de sair da seção',
+      (tester) async {
+    await openBackTest(tester);
+    for (final path in ['/', '/expenses']) {
+      appRouter.go(path);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Abrir menu'));
+      await tester.pumpAndSettle();
+      expect(await appRouter.routerDelegate.popRoute(), true);
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Fechar menu'), findsNothing);
+      expect(appRouter.routeInformationProvider.value.uri.path, path);
+    }
+    await tester.tap(find.byTooltip('Adicionar lançamento ou transferência'));
+    await tester.pumpAndSettle();
+    expect(await appRouter.routerDelegate.popRoute(), true);
+    await tester.pumpAndSettle();
+    expect(find.text('Receita'), findsNothing);
+    expect(appRouter.routeInformationProvider.value.uri.path, '/expenses');
+    await tester.tap(find.text('Filtros'));
+    await tester.pumpAndSettle();
+    expect(await appRouter.routerDelegate.popRoute(), true);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Fechar filtros'), findsNothing);
+    expect(appRouter.routeInformationProvider.value.uri.path, '/expenses');
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(appRouter.routeInformationProvider.value.uri.path, '/');
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('Windows mantém navegação sem retorno automático ao Resumo',
+      (tester) async {
+    await openBackTest(tester,
+        platform: TargetPlatform.windows, size: const Size(1280, 900));
+    appRouter.go('/accounts');
+    await tester.pumpAndSettle();
+    expect(await appRouter.routerDelegate.popRoute(), false);
+    await tester.pumpAndSettle();
+    expect(appRouter.routeInformationProvider.value.uri.path, '/accounts');
+  });
+  for (final path in ['/accounts', '/categories']) {
+    testWidgets(
+        '$path: Voltar/Cancelar protege cadastro alterado e preserva campos ao continuar',
+        (tester) async {
+      await openBackTest(tester);
+      appRouter.go(path);
+      await tester.pumpAndSettle();
+      await tester.tap(
+          find.text(path == '/accounts' ? 'Nova conta' : 'Nova categoria'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).first, 'Novo nome');
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('Descartar alterações?'), findsOneWidget);
+      await tester.tap(find.text('Continuar editando'));
+      await tester.pumpAndSettle();
+      expect(find.text('Novo nome'), findsOneWidget);
+      expect(appRouter.routeInformationProvider.value.uri.path, path);
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Descartar'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(appRouter.routeInformationProvider.value.uri.path, path);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('mês compartilhado e filtros avançados nas três abas',
       (tester) async {

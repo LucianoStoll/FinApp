@@ -2,6 +2,8 @@
 
 ## v0.2.0-alpha — em desenvolvimento (pós-MVP)
 
+- #39: Voltar no Android fecha primeiro sobreposições, retorna das seções ao Resumo e só permite saída padrão no Resumo. Formulários alterados pedem confirmação de descarte.
+
 - #43: tocar no valor de receitas, despesas ou transferências abre a calculadora com o valor atual; confirmar atualiza apenas o valor e os totais, cancelar mantém o original.
 - Ajustes #42: feedback de efetivação desaparece em 5 segundos; ícone de receita/despesa efetivada permite voltar a pendente; efetivados ficam no topo.
 

@@ -44,3 +44,5 @@ abre a calculadora diretamente com o valor atual. O formulário completo mantém
 - Conferir edição, valor e menu sem acionar status; conferir etiquetas de categoria.
 - Testar descrição longa, valor grande, texto ampliado, celular em paisagem e PC.
 - Reiniciar o app e confirmar persistência; atualizar APK preservando os dados.
+
+Validação manual, incluindo os ajustes junto da #43, aprovada pelo usuário em 01/10/2026.

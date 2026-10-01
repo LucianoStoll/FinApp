@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/movement_form_frame.dart';
+import '../../../core/widgets/unsaved_changes_guard.dart';
 import '../../../core/widgets/movement_list_row.dart';
 import '../../../core/widgets/effectuation_feedback.dart';
 import '../../../core/widgets/monetary_calculator.dart';
@@ -570,104 +571,121 @@ class TransferFormState extends State<TransferForm> {
   }
 
   @override
-  Widget build(BuildContext context) => MovementFormFrame(
-        title:
-            widget.item == null ? 'Nova transferência' : 'Editar transferência',
-        onSave: _submit,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            spacing: 16,
-            children: [
-              TextFormField(
-                controller: _description,
-                focusNode: _descriptionFocus,
-                autofocus:
-                    widget.item == null && usesFullScreenMovementForm(context),
-                textInputAction: TextInputAction.next,
-                scrollPadding: const EdgeInsets.all(100),
-                decoration: const InputDecoration(labelText: 'Descrição'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Informe a descrição.'
-                    : null,
-                onFieldSubmitted: (_) {
-                  _amountFocus.requestFocus();
-                  _amount.selection = TextSelection(
-                      baseOffset: 0, extentOffset: _amount.text.length);
-                },
-              ),
-              MonetaryCalculatorField(
-                  controller: _amount,
-                  focusNode: _amountFocus,
-                  currencyCode: widget.accounts
-                          .where((a) => a.id == _sourceId)
-                          .firstOrNull
-                          ?.currencyCode ??
-                      'BRL'),
-              DropdownButtonFormField<String>(
-                key: ValueKey('source-$_sourceId'),
-                isExpanded: true,
-                initialValue: _sourceId,
-                decoration: const InputDecoration(labelText: 'Conta de origem'),
-                items: _sources
-                    .map((a) => DropdownMenuItem(
-                        value: a.id,
-                        child: Text(
-                            '${a.name} (${a.currencyCode})'
-                            '${a.isArchived ? ' · arquivada' : ''}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis)))
-                    .toList(),
-                validator: (id) =>
-                    id == null ? 'Selecione uma conta de origem.' : null,
-                onChanged: (id) => setState(() {
-                  _sourceId = id;
-                  if (!_destinations.any((a) => a.id == _destinationId)) {
-                    _destinationId = _destinations.firstOrNull?.id;
-                  }
-                }),
-              ),
-              DropdownButtonFormField<String>(
-                key: ValueKey('destination-$_sourceId'),
-                isExpanded: true,
-                initialValue: _destinationId,
-                decoration:
-                    const InputDecoration(labelText: 'Conta de destino'),
-                items: _destinations
-                    .map((a) => DropdownMenuItem(
-                        value: a.id,
-                        child: Text(
-                            '${a.name} (${a.currencyCode})'
-                            '${a.isArchived ? ' · arquivada' : ''}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis)))
-                    .toList(),
-                validator: (id) =>
-                    id == null ? 'Selecione outra conta da mesma moeda.' : null,
-                onChanged: (id) => setState(() => _destinationId = id),
-              ),
-              MovementDateFields(
-                posted: _date,
-                due: _dueDate,
-                onPosted: () => _pickDate('posted'),
-                onDue: () => _pickDate('due'),
-              ),
-              SwitchListTile(
-                  title: const Text('Efetivada'),
-                  subtitle: const Text('A data movimenta as duas contas'),
-                  value: _isEffective,
-                  onChanged: (value) => setState(() => _isEffective = value)),
-              if (_isEffective)
-                ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Data de efetivação'),
-                    subtitle:
-                        Text(_dateLabel(_effectiveDate ?? DateTime.now())),
-                    trailing: const Icon(Icons.calendar_today),
-                    onTap: () => _pickDate('effective')),
-            ],
+  Widget build(BuildContext context) => UnsavedChangesGuard(
+      value: () => (
+            _description.text,
+            _amount.text,
+            _sourceId,
+            _destinationId,
+            _date,
+            _dueDate,
+            _effectiveDate,
+            _isEffective
           ),
-        ),
-      );
+      changes: [_description, _amount],
+      builder: (context, cancel) => MovementFormFrame(
+            onCancel: cancel,
+            title: widget.item == null
+                ? 'Nova transferência'
+                : 'Editar transferência',
+            onSave: _submit,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 16,
+                children: [
+                  TextFormField(
+                    controller: _description,
+                    focusNode: _descriptionFocus,
+                    autofocus: widget.item == null &&
+                        usesFullScreenMovementForm(context),
+                    textInputAction: TextInputAction.next,
+                    scrollPadding: const EdgeInsets.all(100),
+                    decoration: const InputDecoration(labelText: 'Descrição'),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Informe a descrição.'
+                        : null,
+                    onFieldSubmitted: (_) {
+                      _amountFocus.requestFocus();
+                      _amount.selection = TextSelection(
+                          baseOffset: 0, extentOffset: _amount.text.length);
+                    },
+                  ),
+                  MonetaryCalculatorField(
+                      controller: _amount,
+                      focusNode: _amountFocus,
+                      currencyCode: widget.accounts
+                              .where((a) => a.id == _sourceId)
+                              .firstOrNull
+                              ?.currencyCode ??
+                          'BRL'),
+                  DropdownButtonFormField<String>(
+                    key: ValueKey('source-$_sourceId'),
+                    isExpanded: true,
+                    initialValue: _sourceId,
+                    decoration:
+                        const InputDecoration(labelText: 'Conta de origem'),
+                    items: _sources
+                        .map((a) => DropdownMenuItem(
+                            value: a.id,
+                            child: Text(
+                                '${a.name} (${a.currencyCode})'
+                                '${a.isArchived ? ' · arquivada' : ''}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis)))
+                        .toList(),
+                    validator: (id) =>
+                        id == null ? 'Selecione uma conta de origem.' : null,
+                    onChanged: (id) => setState(() {
+                      _sourceId = id;
+                      if (!_destinations.any((a) => a.id == _destinationId)) {
+                        _destinationId = _destinations.firstOrNull?.id;
+                      }
+                    }),
+                  ),
+                  DropdownButtonFormField<String>(
+                    key: ValueKey('destination-$_sourceId'),
+                    isExpanded: true,
+                    initialValue: _destinationId,
+                    decoration:
+                        const InputDecoration(labelText: 'Conta de destino'),
+                    items: _destinations
+                        .map((a) => DropdownMenuItem(
+                            value: a.id,
+                            child: Text(
+                                '${a.name} (${a.currencyCode})'
+                                '${a.isArchived ? ' · arquivada' : ''}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis)))
+                        .toList(),
+                    validator: (id) => id == null
+                        ? 'Selecione outra conta da mesma moeda.'
+                        : null,
+                    onChanged: (id) => setState(() => _destinationId = id),
+                  ),
+                  MovementDateFields(
+                    posted: _date,
+                    due: _dueDate,
+                    onPosted: () => _pickDate('posted'),
+                    onDue: () => _pickDate('due'),
+                  ),
+                  SwitchListTile(
+                      title: const Text('Efetivada'),
+                      subtitle: const Text('A data movimenta as duas contas'),
+                      value: _isEffective,
+                      onChanged: (value) =>
+                          setState(() => _isEffective = value)),
+                  if (_isEffective)
+                    ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Data de efetivação'),
+                        subtitle:
+                            Text(_dateLabel(_effectiveDate ?? DateTime.now())),
+                        trailing: const Icon(Icons.calendar_today),
+                        onTap: () => _pickDate('effective')),
+                ],
+              ),
+            ),
+          ));
 }
