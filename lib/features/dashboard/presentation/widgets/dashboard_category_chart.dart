@@ -22,84 +22,67 @@ class DashboardCategoryChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => currency.expensesByCategory.isEmpty
-              ? const SizedBox(
-                  height: 220,
-                  child: Center(child: Text('Nenhuma despesa neste mês.')))
-              : LayoutBuilder(builder: (context, box) {
-                  final wide = box.maxWidth >= 350 &&
-                      MediaQuery.textScalerOf(context).scale(16) < 24;
-                  final total = currency.expensesByCategory
-                      .fold<int>(0, (sum, item) => sum + item.amountMinor);
-                  final donut = SizedBox(
-                      width: 170,
-                      height: 170,
-                      child: Stack(alignment: Alignment.center, children: [
-                        CustomPaint(
-                            size: const Size(160, 160),
-                            painter:
-                                _DonutPainter(currency.expensesByCategory)),
-                        Padding(
-                            padding: const EdgeInsets.all(30),
-                            child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  FittedBox(
-                                      child: Text(
-                                          MoneyMinor.display(
-                                              total, currency.currencyCode),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleMedium
-                                              ?.copyWith(
-                                                  fontWeight:
-                                                      FontWeight.bold))),
-                                  Text('Total do mês',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(color: SomiaColors.muted)),
-                                ])),
-                      ]));
-                  final legend = Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (var i = 0;
-                            i < currency.expensesByCategory.length;
-                            i++)
-                          Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 5),
-                              child: Row(children: [
-                                CircleAvatar(
-                                    radius: 5,
-                                    backgroundColor:
-                                        _chartColors[i % _chartColors.length]),
-                                const SizedBox(width: 9),
-                                Expanded(
-                                    child: Text(
-                                        currency.expensesByCategory[i].name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis)),
-                                const SizedBox(width: 7),
-                                Text(
-                                    '${total == 0 ? 0 : (currency.expensesByCategory[i].amountMinor * 100 / total).round()}%',
-                                    style: const TextStyle(
-                                        color: SomiaColors.muted)),
-                              ]))
-                      ]);
-                  return ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 220),
-                      child: wide
-                          ? Row(children: [
-                              donut,
-                              const SizedBox(width: 18),
-                              Expanded(child: legend)
-                            ])
-                          : Column(children: [
-                              donut,
-                              const SizedBox(height: 12),
-                              legend
-                            ]));
-                });
+      ? const SizedBox(
+          height: 220, child: Center(child: Text('Nenhuma despesa neste mês.')))
+      : LayoutBuilder(builder: (context, box) {
+          final wide = box.maxWidth >= 350 &&
+              MediaQuery.textScalerOf(context).scale(16) < 24;
+          final total = currency.expensesByCategory
+              .fold<int>(0, (sum, item) => sum + item.amountMinor);
+          final donut = SizedBox(
+              width: 170,
+              height: 170,
+              child: Stack(alignment: Alignment.center, children: [
+                CustomPaint(
+                    size: const Size(160, 160),
+                    painter: _DonutPainter(currency.expensesByCategory)),
+                Padding(
+                    padding: const EdgeInsets.all(30),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      FittedBox(
+                          child: Text(
+                              MoneyMinor.display(total, currency.currencyCode),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold))),
+                      Text('Total do mês',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: SomiaColors.muted)),
+                    ])),
+              ]));
+          final legend =
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            for (var i = 0; i < currency.expensesByCategory.length; i++)
+              Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: Row(children: [
+                    CircleAvatar(
+                        radius: 5,
+                        backgroundColor: _chartColors[i % _chartColors.length]),
+                    const SizedBox(width: 9),
+                    Expanded(
+                        child: Text(currency.expensesByCategory[i].name,
+                            maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    const SizedBox(width: 7),
+                    Text(
+                        '${total == 0 ? 0 : (currency.expensesByCategory[i].amountMinor * 100 / total).round()}%',
+                        style: const TextStyle(color: SomiaColors.muted)),
+                  ]))
+          ]);
+          return ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 220),
+              child: wide
+                  ? Row(children: [
+                      donut,
+                      const SizedBox(width: 18),
+                      Expanded(child: legend)
+                    ])
+                  : Column(
+                      children: [donut, const SizedBox(height: 12), legend]));
+        });
 }
 
 class _DonutPainter extends CustomPainter {

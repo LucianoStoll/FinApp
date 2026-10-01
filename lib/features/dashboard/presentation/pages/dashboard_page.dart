@@ -538,4 +538,3 @@ class _LegendDot extends StatelessWidget {
                 ?.copyWith(color: SomiaColors.muted))
       ]);
 }
-

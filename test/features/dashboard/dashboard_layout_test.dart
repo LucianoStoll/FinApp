@@ -26,10 +26,12 @@ class _DashboardStub implements DashboardRepository {
         projectedBalanceMinor: 290000,
         incomeMinor: 620000,
         expenseMinor: 385000,
-        expensesByCategory: emptyCategories ? const [] : const [
-          DashboardCategoryExpense('Moradia', 200000),
-          DashboardCategoryExpense('Alimentação', 185000),
-        ],
+        expensesByCategory: emptyCategories
+            ? const []
+            : const [
+                DashboardCategoryExpense('Moradia', 200000),
+                DashboardCategoryExpense('Alimentação', 185000),
+              ],
         accounts: const [
           DashboardAccountBalance(
               'Conta principal', 'Conta corrente', 'BRL', 235000)
@@ -132,8 +134,11 @@ void main() {
               matching: find.byType(Scrollable)));
       final recent =
           tester.getRect(find.byKey(const ValueKey('mobile-recent')));
-      expect(recent.top, greaterThan(
-          tester.getRect(find.byKey(const ValueKey('mobile-categories-BRL'))).bottom));
+      expect(
+          recent.top,
+          greaterThan(tester
+              .getRect(find.byKey(const ValueKey('mobile-categories-BRL')))
+              .bottom));
       expect(find.text('Saldo por conta'), findsNothing);
       expect(find.byType(NavigationBar), findsNothing);
       expect(tester.takeException(), isNull);
@@ -155,7 +160,8 @@ void main() {
         find.byKey(const ValueKey('dashboard-month-selector')), findsOneWidget);
   });
 
-  testWidgets('gráfico mobile sem despesas mostra estado vazio', (tester) async {
+  testWidgets('gráfico mobile sem despesas mostra estado vazio',
+      (tester) async {
     await _mount(tester, const Size(390, 900), emptyCategories: true);
     await tester.scrollUntilVisible(
         find.byKey(const ValueKey('mobile-categories-BRL')), 250,
