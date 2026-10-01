@@ -90,7 +90,7 @@ versão publicada.
   `device_id` e `sync_version` preparam sincronização, sem habilitá-la.
 - Chaves estrangeiras são ativadas em toda abertura. Exclusão lógica usa
   `deleted_at`; referências históricas usam `ON DELETE RESTRICT`.
-- `schemaVersion` é 5. Novas versões entram como passos sequenciais em
+- `schemaVersion` é 7. Novas versões entram como passos sequenciais em
   `onUpgrade`; o schema da v1 permanece imutável. Uma versão sem migration
   explícita falha, preservando o banco anterior.
 
@@ -191,7 +191,7 @@ Os saldos em destaque usam o último dia do mês selecionado como corte: somente
 movimentos efetivados até essa data entram no saldo atual, e a projeção adiciona
 apenas movimentos planejados até a mesma data que ainda não estavam efetivados
 naquele momento. Um lançamento de dezembro não altera os saldos mostrados em
-outubro. A tela de Contas permanece com a posição atual sem corte mensal.
+outubro. A tela de Contas também permite escolher o mês e consultar os saldos no fim desse mês.
 
 ### Issue #30 — três datas financeiras (v5)
 

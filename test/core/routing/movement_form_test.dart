@@ -68,9 +68,8 @@ Future<void> _open(WidgetTester tester, Widget form,
   await tester.pumpAndSettle();
 }
 
-TextField _input(WidgetTester tester, Finder field) =>
-    tester.widget<TextField>(
-        find.descendant(of: field, matching: find.byType(TextField)));
+TextField _input(WidgetTester tester, Finder field) => tester.widget<TextField>(
+    find.descendant(of: field, matching: find.byType(TextField)));
 
 void main() {
   for (final type in ['receita', 'despesa', 'transferência']) {
@@ -138,7 +137,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Salvar lançamento').hitTestable(), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Mais detalhes'), 250,
-          scrollable: find.ancestor(of: find.text('Mais detalhes'), matching: find.byType(Scrollable)).first);
+          scrollable: find
+              .ancestor(
+                  of: find.text('Mais detalhes'),
+                  matching: find.byType(Scrollable))
+              .first);
       await tester.tap(find.text('Mais detalhes'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
@@ -172,8 +175,7 @@ void main() {
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.byKey(const ValueKey('movement-full-screen')), findsNothing);
     expect(find.text('Editar transferência'), findsOneWidget);
-    expect(
-        _input(tester, find.byType(TextFormField).first).focusNode!.hasFocus,
+    expect(_input(tester, find.byType(TextFormField).first).focusNode!.hasFocus,
         false);
     await tester.tap(find.text('Salvar lançamento'));
     await tester.pumpAndSettle();
