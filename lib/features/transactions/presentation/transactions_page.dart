@@ -610,7 +610,8 @@ class _TransactionsViewState extends State<_TransactionsView> {
 
 class TransactionForm extends StatefulWidget {
   const TransactionForm(
-      {required this.accounts,
+      {super.key,
+      required this.accounts,
       required this.categories,
       this.item,
       this.fixedType,

@@ -68,6 +68,9 @@ Future<void> _open(WidgetTester tester, Widget form,
   await tester.pumpAndSettle();
 }
 
+TextField _input(WidgetTester tester, Finder field) => tester.widget<TextField>(
+    find.descendant(of: field, matching: find.byType(TextField)));
+
 void main() {
   for (final type in ['receita', 'despesa', 'transferência']) {
     testWidgets('$type: descrição, próximo, valor e salvar no Android',
@@ -89,8 +92,7 @@ void main() {
       expect(find.text('Nova $type'), findsOneWidget);
       final description = find.byType(TextFormField).at(0);
       final amount = find.byType(TextFormField).at(1);
-      expect(
-          tester.widget<TextFormField>(description).focusNode!.hasFocus, true);
+      expect(_input(tester, description).focusNode!.hasFocus, true);
       expect(tester.testTextInput.isVisible, true);
       expect(tester.getTopLeft(description).dy,
           lessThan(tester.getTopLeft(amount).dy));
@@ -98,8 +100,8 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.next);
       await tester.pumpAndSettle();
       expect(result, isNull);
-      expect(tester.widget<TextFormField>(amount).focusNode!.hasFocus, true);
-      expect(tester.widget<TextFormField>(amount).keyboardType,
+      expect(_input(tester, amount).focusNode!.hasFocus, true);
+      expect(_input(tester, amount).keyboardType,
           const TextInputType.numberWithOptions(decimal: true));
       tester.view.viewInsets = const FakeViewPadding(bottom: 300);
       await tester.pumpAndSettle();
@@ -169,10 +171,7 @@ void main() {
     expect(find.byKey(const ValueKey('movement-full-screen')), findsNothing);
     expect(find.text('Editar transferência'), findsOneWidget);
     expect(
-        tester
-            .widget<TextFormField>(find.byType(TextFormField).first)
-            .focusNode!
-            .hasFocus,
+        _input(tester, find.byType(TextFormField).first).focusNode!.hasFocus,
         false);
     await tester.tap(find.text('Salvar lançamento'));
     await tester.pumpAndSettle();

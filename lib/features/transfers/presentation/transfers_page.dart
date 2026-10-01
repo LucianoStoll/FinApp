@@ -397,7 +397,7 @@ class _TransfersViewState extends State<_TransfersView> {
 }
 
 class TransferForm extends StatefulWidget {
-  const TransferForm({required this.accounts, this.item});
+  const TransferForm({super.key, required this.accounts, this.item});
 
   final List<Account> accounts;
   final Transfer? item;
