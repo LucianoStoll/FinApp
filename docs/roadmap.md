@@ -67,13 +67,17 @@ O ciclo `v0.1.0-alpha` foi aprovado em 01/10/2026, sem bugs relatados no checkli
 
 Issues de acompanhamento concluídas: #30, #31, #32, #35 e #33. Fechamento/release: #10.
 
-## Pós-MVP — UX financeira
-- [ ] Calculadora monetária integrada como entrada padrão para campos de valor
-- [ ] Operações básicas: soma, subtração, multiplicação e divisão
-- [ ] Teclas numéricas, `00`, separador decimal, limpar, apagar e confirmar
-- [ ] Preservar valor anterior ao cancelar/voltar
-- [ ] Precisão monetária sem erros de ponto flutuante
-- [ ] Componente global reutilizável em lançamentos e módulos futuros
+## Pós-MVP — UX financeira / v0.2.0-alpha
+
+Branch ativa: `v0.2.0-alpha`, iniciada a partir do MVP validado em `main`.
+A #34 está implementada; validação manual Android/Windows pendente.
+O fechamento do ciclo e a PR para `main` acontecem após essa validação.
+- [x] Calculadora monetária integrada como entrada padrão para campos de valor
+- [x] Operações básicas: soma, subtração, multiplicação e divisão
+- [x] Teclas numéricas, `00`, separador decimal, limpar, apagar e confirmar
+- [x] Preservar valor anterior ao cancelar/voltar
+- [x] Precisão monetária sem erros de ponto flutuante
+- [x] Componente global reutilizável em lançamentos e módulos futuros
 
 ## Fase 3 — Núcleo financeiro avançado
 - [ ] Competência e regras contábeis avançadas (lançamento/vencimento/efetivação já disponíveis no MVP)

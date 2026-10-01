@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/movement_form_frame.dart';
+import '../../../core/widgets/monetary_calculator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -531,24 +532,14 @@ class TransferFormState extends State<TransferForm> {
                       baseOffset: 0, extentOffset: _amount.text.length);
                 },
               ),
-              TextFormField(
+              MonetaryCalculatorField(
                   controller: _amount,
                   focusNode: _amountFocus,
-                  scrollPadding: const EdgeInsets.all(100),
-                  style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.w600),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Valor'),
-                  validator: (value) {
-                    try {
-                      return MoneyMinor.parse(value ?? '') > 0
-                          ? null
-                          : 'O valor deve ser maior que zero.';
-                    } on FormatException catch (error) {
-                      return error.message;
-                    }
-                  }),
+                  currencyCode: widget.accounts
+                          .where((a) => a.id == _sourceId)
+                          .firstOrNull
+                          ?.currencyCode ??
+                      'BRL'),
               DropdownButtonFormField<String>(
                 key: ValueKey('source-$_sourceId'),
                 isExpanded: true,

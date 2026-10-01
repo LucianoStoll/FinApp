@@ -100,17 +100,17 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.next);
       await tester.pumpAndSettle();
       expect(result, isNull);
-      expect(_input(tester, amount).focusNode!.hasFocus, true);
-      expect(_input(tester, amount).keyboardType,
-          const TextInputType.numberWithOptions(decimal: true));
-      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      expect(find.text('Calculadora'), findsOneWidget);
+      expect(tester.testTextInput.isVisible, false);
+      expect(_input(tester, amount).readOnly, true);
+      for (final key in ['1', '2', '3', ',', '4', '5']) {
+        await tester.tap(find.byKey(ValueKey('calculator-key-$key')));
+      }
+      await tester.tap(find.text('Confirmar valor'));
       await tester.pumpAndSettle();
-      await tester.enterText(amount, '123,45');
-      await tester.pumpAndSettle();
-      expect(tester.getBottomLeft(amount).dy, lessThan(544));
+      expect(_input(tester, amount).controller!.text, '123,45');
       final save = find.text('Salvar lançamento');
       expect(save.hitTestable(), findsOneWidget);
-      expect(tester.getBottomLeft(save).dy, lessThan(544));
       await tester.tap(save);
       await tester.pumpAndSettle();
       if (result is TransferDraft) {
@@ -213,7 +213,11 @@ void main() {
               fixedType: TransactionType.expense));
       await tester.enterText(find.byType(TextFormField).first, 'Supermercado');
       await tester.testTextInput.receiveAction(TextInputAction.next);
-      await tester.enterText(find.byType(TextFormField).at(1), '320,50');
+      await tester.pumpAndSettle();
+      for (final key in ['3', '2', '0', ',', '5', '0']) {
+        await tester.tap(find.byKey(ValueKey('calculator-key-$key')));
+      }
+      await tester.tap(find.text('Confirmar valor'));
       await tester.pumpAndSettle();
       await expectLater(find.byKey(const ValueKey('movement-full-screen')),
           matchesGoldenFile('movement-mobile-preview.png'));

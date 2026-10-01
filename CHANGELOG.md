@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.0-alpha — em desenvolvimento (pós-MVP)
+
+- #34: calculadora monetária reutilizável como entrada de valores em receitas, despesas e transferências, incluindo avanço da descrição por Enter.
+- Entrada direta, `00`, vírgula, limpar/apagar, soma, subtração, multiplicação, divisão, resultado e confirmação; cancelar/voltar preserva o valor anterior.
+- Operações com precedência convencional e frações exatas de `BigInt`; arredondamento final para centavos, metade para fora de zero. Divisão por zero, operações incompletas, valores fora do limite e valores não positivos nos lançamentos são rejeitados.
+- Painel rolável no Android, janela no Windows e suporte a teclado físico. Sem mudança no banco de dados.
+
+
 ## 0.1.0-alpha — 2026-10-01
 
 Primeiro MVP do Somia, validado pelo usuário nas issues #30, #31, #32, #35 e no checklist final #33. Fechamento acompanhado pela #10.
