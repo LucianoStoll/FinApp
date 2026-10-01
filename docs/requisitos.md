@@ -90,6 +90,14 @@ Ações rápidas, autocompletar e modelos inteligentes reutilizam histórico e c
 
 ## UX
 
+### Calculadora monetária integrada (pós-MVP)
+
+Campos de valor financeiro devem usar um componente global de calculadora monetária no lugar do teclado numérico padrão. Ao tocar ou editar o valor de receitas, despesas e transferências, a calculadora abre sempre; para lançamentos simples, o usuário pode utilizá-la como um teclado comum, digitando o valor e confirmando.
+
+A calculadora deve oferecer operações básicas (`+`, `−`, `×`, `÷`), números, `00`, separador decimal, limpar, apagar último dígito e confirmar. O resultado confirmado é aplicado ao campo monetário; cancelar/voltar preserva o valor anterior. Os cálculos devem respeitar a precisão monetária do FinApp, evitando erros de ponto flutuante e convertendo o resultado para unidades monetárias inteiras/centavos ao confirmar.
+
+O componente deve ser reutilizável por outros campos monetários futuros, como saldo inicial, parcelas, orçamentos, metas, juros, descontos e rateios. A funcionalidade é pós-MVP e não altera o escopo da `v0.1.0-alpha`.
+
 UI adaptativa Android/Windows. No MVP, o Somia usa **tema escuro**; tema claro e opção de seguir o sistema ficam para evolução posterior, já com direção visual aprovada.
 
 No mobile, a navegação principal usa **drawer/menu lateral**, sem barra inferior. O menu expõe Dashboard/Resumo, Receitas, Despesas, Transferências, Contas, Categorias e Configurações. **Receitas e Despesas são áreas independentes**. Em telas largas do Windows, a mesma arquitetura de informação pode ser apresentada como sidebar/NavigationRail persistente.
