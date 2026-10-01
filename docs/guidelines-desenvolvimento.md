@@ -1,4 +1,6 @@
-# Guidelines de Desenvolvimento — FinApp
+# Guidelines de Desenvolvimento — Somia
+
+Fluxo de preparação, branches e validação: [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Arquitetura
 - features independentes com `data/domain/presentation`;
@@ -36,28 +38,34 @@ Conventional Commits:
 - `refactor:`
 - `test:`
 - `chore:`
+- `ci:`
+
+A branch de trabalho do MVP é `v0.1.0-alpha`; `main` recebe a versão validada
+por PR ao encerrar o marco. Branches auxiliares partem da versão e retornam
+para ela por PR:
 
 Branches sugeridas:
 - `feature/issue-<n>-descricao`
 - `fix/issue-<n>-descricao`
-- `docs/descricao`
+- `docs/issue-<n>-descricao`
 
 PRs devem referenciar issue quando houver, descrever alterações e conter checklist de validação manual relevante.
 
 ## Qualidade
-Inicialmente:
-- `dart format`;
+Antes de enviar mudanças:
+- `dart format lib test` para aplicar a formatação;
+- `dart format --output=none --set-exit-if-changed lib test` para conferir;
 - `flutter analyze`;
-- testes manuais.
+- `flutter test`;
+- testes manuais relevantes no Android/Windows.
 
-Evolução planejada:
-- unitários de regras financeiras;
-- banco/repositories;
-- widgets críticos;
-- migrations;
-- importação;
-- backup/restauração;
-- sync.
+O CI verifica formatação, análise e testes automaticamente em pushes para
+`main`/`v*` e PRs com esses destinos. A suíte cobre regras financeiras,
+repositories, navegação, migrations e backup/restauração. A Action também
+compila Windows e, fora de PRs, gera APK assinado com chave persistente.
+
+Testes de importação e sincronização serão adicionados quando esses módulos
+pós-MVP forem implementados.
 
 ## Releases
 Semantic Versioning:

@@ -2,102 +2,84 @@
 
 ## Direção
 
-Arquitetura **offline-first**, modular por feature e inspirada em Clean Architecture. O SQLite/Drift é a fonte imediata dos dados. Nenhuma operação local deve aguardar serviço remoto.
+Arquitetura offline-first, organizada por feature e em camadas. SQLite/Drift é a fonte de verdade operacional; serviços remotos são opcionais.
 
 ## Estrutura alvo
 
-```text
-lib/
-├── core/
-│   ├── database/
-│   ├── di/
-│   ├── errors/
-│   ├── routing/
-│   ├── theme/
-│   ├── i18n/
-│   ├── logging/
-│   └── utils/
-├── features/
-│   ├── accounts/
-│   │   ├── data/
-│   │   ├── domain/
-│   │   └── presentation/
-│   ├── categories/
-│   │   ├── data/
-│   │   ├── domain/
-│   │   └── presentation/
-│   ├── transactions/
-│   │   ├── data/
-│   │   ├── domain/
-│   │   └── presentation/
-│   ├── transfers/
-│   └── dashboard/
-└── main.dart
-```
+    lib/
+    ├── core/
+    │   ├── database/
+    │   ├── errors/
+    │   ├── routing/
+    │   ├── di/
+    │   ├── logging/
+    │   ├── i18n/
+    │   ├── theme/
+    │   ├── sync/
+    │   └── utils/
+    ├── features/
+    │   ├── accounts/{data,domain,presentation}
+    │   ├── categories/{data,domain,presentation}
+    │   ├── transactions/{data,domain,presentation}
+    │   ├── transfers/{data,domain,presentation}
+    │   ├── dashboard/{data,domain,presentation}
+    │   └── ...
+    └── main.dart
 
-Features futuras seguem a mesma estrutura: cards, budgets, goals, reports, assets, debts, investments, sync etc.
+Cada feature encapsula persistência específica, domínio e apresentação. core contém somente infraestrutura transversal.
 
 ## Stack
 
-- Estado: **BLoC/Cubit**.
-- Rotas: **go_router**, rotas nomeadas e organizadas por módulo.
-- DI: **get_it**, módulos e ambientes `dev/test/prod`.
-- Banco: **Drift/SQLite**.
-- IDs: **UUID**.
-- Valores monetários: inteiros em unidade mínima.
-- CI inicial: `flutter analyze` + verificação de formatação.
+Flutter/Dart; Drift + SQLite; BLoC/Cubit; go_router; get_it; UUID; GitHub Actions.
 
 ## Fluxo local
 
-```text
-UI → BLoC/Cubit → Use case/Domain → Repository → DAO/Drift → SQLite
-```
+    UI → BLoC/Cubit → domínio/use case → Repository → DAO/Drift → SQLite
 
-A conclusão da gravação local significa sucesso para a operação offline.
+Salvar localmente significa sucesso. A UI não aguarda nuvem.
 
 ## Sincronização futura
 
-```text
-SQLite ↔ Repository ↔ Sync Engine ↔ SyncProvider ↔ Provedor remoto
-```
+    SQLite/Drift → change tracking → SyncEngine → SyncProvider → provedor remoto
 
-O primeiro provedor planejado é Google Drive, autenticado diretamente por OAuth. O domínio não conhece o provedor. Outros provedores podem ser adicionados e migrados futuramente.
+Google Drive é o primeiro provedor provável. OneDrive, WebDAV e servidor próprio podem ser adicionados sem alterar o domínio.
 
-Regras já definidas:
-- sync apenas enquanto o app está aberto;
-- sync ao abrir e após alterações relevantes;
-- ação manual “Sincronizar agora”;
-- Last Write Wins;
-- conflitos ficam registrados;
-- primeira carga em dispositivo vazio baixa a base remota;
-- se houver base local independente antes da primeira sync, não mesclar automaticamente;
-- status detalhado de sync;
-- anexos configuráveis: automático, somente Wi-Fi ou manual.
+Regras: sync apenas com app aberto; ao abrir e após alterações importantes; botão Sincronizar agora; Last Write Wins com conflito registrado; anexos configuráveis; autenticação no provedor; base vazia recebe dados remotos; duas bases independentes não são mescladas automaticamente.
 
-## Erros
+## Persistência e integridade
 
-Erros de domínio, técnicos e mensagens de UI são separados. Uma camada central padroniza códigos, localização das mensagens e logging. Logs técnicos não devem vazar dados financeiros sensíveis.
+UUIDs desde o MVP; dinheiro em unidades mínimas inteiras; timestamps técnicos em UTC; tombstones para entidades sincronizáveis; createdAt/updatedAt/deletedAt/deviceId/syncVersion.
+
+Migrations são sequenciais e versionadas: backup antes, migração, validação e rollback/restauração segura em falha.
+
+## Modelagem
+
+Não representar conceitos distintos com uma única transação genérica. À medida que forem implementados, usar abstrações explícitas para Transaction, Transfer, Settlement, Allocation/Split, Reimbursement, Recurrence, InstallmentPlan, CardInvoice, Budget, Goal, Debt, Asset e Attachment.
+
+Competência, vencimento e efetivação são separados. Atraso pode ser derivado. Previsto e realizado são preservados. Rateios não duplicam movimentação.
+
+## Estado e navegação
+
+Cubit para fluxos simples; BLoC quando eventos explícitos forem úteis. A apresentação não acessa Drift diretamente.
+
+go_router usa rotas nomeadas organizadas por feature, adequado a Android e desktop.
+
+## Injeção e ambientes
+
+get_it registra dependências por módulo. Ambientes dev, test e prod podem trocar implementações sem alterar o domínio.
 
 ## Desempenho
 
-Dashboard e relatórios podem usar cache, invalidação seletiva, recálculo incremental e snapshots/agregações. Operações pesadas devem ser assíncronas e manter a UI responsiva.
+Dashboard e relatórios podem usar cache, invalidação por dependência, recálculo incremental e agregações/snapshots. Operações pesadas são assíncronas e canceláveis quando tecnicamente seguro.
 
-## Migrations
+## Erros e observabilidade
 
-Migrations são versionadas e sequenciais. Para alterações relevantes:
-1. criar backup;
-2. executar migration;
-3. validar;
-4. concluir ou restaurar com segurança.
+Erros de domínio, erros técnicos e mensagens ao usuário são separados. Camada central mapeia códigos/tipos para mensagens localizadas. Logs locais estruturados têm níveis, rotação e modo diagnóstico, sem dados financeiros sensíveis por padrão.
 
-## UI
+## Qualidade
 
-Android e Windows compartilham identidade e componentes, mas podem ter navegação/layout específicos. Tema claro/escuro/sistema. A identidade visual detalhada será definida em questionário próprio.
+MVP começa com testes manuais. Depois, evoluir para testes unitários, banco/repositories/widgets e fluxos críticos. CI inicial executa formatação e flutter analyze.
 
-## Princípios de dependência
+## Decisões separadas
 
-- UI não executa SQL.
-- domínio não conhece Flutter, Drift ou Google Drive.
-- features não dependem diretamente de implementações internas de outras features.
-- `core/` contém somente infraestrutura realmente compartilhada.
-- integrações externas ficam atrás de contratos.
+Identidade visual detalhada será definida em questionário próprio. Licença open-source será escolhida próximo da publicação.

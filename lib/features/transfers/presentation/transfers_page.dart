@@ -1,0 +1,617 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/widgets/movement_form_frame.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/di/injection.dart';
+import '../../../core/filters/reference_month.dart';
+import '../../../core/widgets/month_selector.dart';
+import '../../../core/routing/somia_shell.dart';
+import '../../../core/widgets/effectuation_date_dialog.dart';
+import '../../accounts/domain/account.dart';
+import '../../accounts/domain/accounts_repository.dart';
+import '../../accounts/domain/money_minor.dart';
+import '../domain/transfer.dart';
+import '../domain/transfers_repository.dart';
+import 'transfers_cubit.dart';
+
+String _dateLabel(DateTime date) => '${date.day.toString().padLeft(2, '0')}/'
+    '${date.month.toString().padLeft(2, '0')}/${date.year}';
+
+class TransfersPage extends StatelessWidget {
+  const TransfersPage({super.key, this.startCreate = false});
+  final bool startCreate;
+
+  @override
+  Widget build(BuildContext context) => BlocProvider(
+        create: (_) => TransfersCubit(
+            getIt<TransfersRepository>(), getIt<AccountsRepository>(),
+            month: referenceMonth.value),
+        child: _TransfersView(startCreate: startCreate),
+      );
+}
+
+class _TransfersView extends StatefulWidget {
+  const _TransfersView({required this.startCreate});
+  final bool startCreate;
+
+  @override
+  State<_TransfersView> createState() => _TransfersViewState();
+}
+
+class _TransfersViewState extends State<_TransfersView> {
+  bool _openedInitial = false;
+  DateTimeRange? _range;
+  bool _customPeriod = false;
+  String? _accountId;
+  bool? _effective;
+  TransferDateField _dateField = TransferDateField.due;
+  VoidCallback? _refreshFilters;
+
+  DateTimeRange get _monthRange => DateTimeRange(
+      start: referenceMonth.value,
+      end: DateTime(
+          referenceMonth.value.year, referenceMonth.value.month + 1, 0));
+
+  @override
+  void initState() {
+    super.initState();
+    _range = _monthRange;
+    referenceMonth.addListener(_monthChanged);
+  }
+
+  @override
+  void dispose() {
+    referenceMonth.removeListener(_monthChanged);
+    super.dispose();
+  }
+
+  void _monthChanged() {
+    setState(() {
+      _range = _monthRange;
+      _customPeriod = false;
+    });
+    _apply();
+  }
+
+  void _apply() {
+    _refreshFilters?.call();
+    context.read<TransfersCubit>().load(TransferFilter(
+        from: _range?.start,
+        to: _range?.end,
+        accountId: _accountId,
+        effective: _effective,
+        dateField: _dateField));
+  }
+
+  Future<void> _openFilters() async {
+    final accounts = context.read<TransfersCubit>().state.accounts;
+    await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheet) => StatefulBuilder(builder: (sheet, refresh) {
+              _refreshFilters = () {
+                if (sheet.mounted) refresh(() {});
+              };
+              return SafeArea(
+                  child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Row(children: [
+                          const Expanded(
+                              child: Text('Filtros',
+                                  style: TextStyle(fontSize: 20))),
+                          TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _accountId = null;
+                                  _effective = null;
+                                  _dateField = TransferDateField.due;
+                                  _range = _monthRange;
+                                  _customPeriod = false;
+                                });
+                                _apply();
+                              },
+                              child: const Text('Limpar filtros')),
+                          IconButton(
+                              tooltip: 'Fechar filtros',
+                              onPressed: () => Navigator.pop(sheet),
+                              icon: const Icon(Icons.close)),
+                        ]),
+                        Flexible(
+                            child: SingleChildScrollView(
+                                child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                              DropdownButton<String>(
+                                  isExpanded: true,
+                                  value: _accountId ?? '',
+                                  items: [
+                                    const DropdownMenuItem(
+                                        value: '',
+                                        child: Text('Todas as contas')),
+                                    for (final account in accounts)
+                                      DropdownMenuItem(
+                                          value: account.id,
+                                          child: Text(account.name,
+                                              overflow: TextOverflow.ellipsis))
+                                  ],
+                                  onChanged: (id) {
+                                    setState(() =>
+                                        _accountId = id == '' ? null : id);
+                                    _apply();
+                                  }),
+                              DropdownButton<String>(
+                                  isExpanded: true,
+                                  value: _effective == null
+                                      ? 'all'
+                                      : _effective!
+                                          ? 'effective'
+                                          : 'pending',
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: 'all',
+                                        child: Text('Todos os estados')),
+                                    DropdownMenuItem(
+                                        value: 'effective',
+                                        child: Text('Efetivadas')),
+                                    DropdownMenuItem(
+                                        value: 'pending',
+                                        child: Text('Pendentes'))
+                                  ],
+                                  onChanged: (status) {
+                                    setState(() => _effective = status == 'all'
+                                        ? null
+                                        : status == 'effective');
+                                    _apply();
+                                  }),
+                              DropdownButton<TransferDateField>(
+                                  isExpanded: true,
+                                  value: _dateField,
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: TransferDateField.posted,
+                                        child: Text('Filtrar lançamento')),
+                                    DropdownMenuItem(
+                                        value: TransferDateField.due,
+                                        child: Text('Filtrar vencimento')),
+                                    DropdownMenuItem(
+                                        value: TransferDateField.effective,
+                                        child: Text('Filtrar efetivação'))
+                                  ],
+                                  onChanged: (field) {
+                                    if (field != null) {
+                                      setState(() => _dateField = field);
+                                      _apply();
+                                    }
+                                  }),
+                              OutlinedButton.icon(
+                                  icon: const Icon(Icons.date_range),
+                                  label: Text(_range == null
+                                      ? 'Período'
+                                      : '${_dateLabel(_range!.start)} – ${_dateLabel(_range!.end)}'),
+                                  onPressed: () async {
+                                    final picked = await showDateRangePicker(
+                                        context: context,
+                                        firstDate: DateTime(2000),
+                                        lastDate: DateTime(2100),
+                                        initialDateRange:
+                                            _range ?? _monthRange);
+                                    if (picked != null && mounted) {
+                                      setState(() {
+                                        _range = picked;
+                                        _customPeriod = true;
+                                      });
+                                      _apply();
+                                    }
+                                  }),
+                              TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _range = null;
+                                      _customPeriod = true;
+                                    });
+                                    _apply();
+                                  },
+                                  child: const Text('Todos os meses')),
+                            ]))),
+                      ])));
+            }));
+    _refreshFilters = null;
+  }
+
+  Future<void> _edit(BuildContext context, [Transfer? item]) async {
+    final cubit = context.read<TransfersCubit>();
+    final draft = await showMovementForm<TransferDraft>(context,
+        (_) => TransferForm(item: item, accounts: cubit.state.accounts));
+    if (!context.mounted) return;
+    if (draft == null) {
+      if (item == null && widget.startCreate) context.go('/transfers');
+      return;
+    }
+    try {
+      await cubit.save(draft, id: item?.id);
+    } catch (error) {
+      if (context.mounted) _showError(context, error);
+    }
+    if (context.mounted && item == null && widget.startCreate) {
+      context.go('/transfers');
+    }
+  }
+
+  Future<void> _delete(BuildContext context, Transfer item) async {
+    final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+              title: const Text('Excluir transferência?'),
+              content: const Text('O valor sairá dos saldos das duas contas.'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(dialog, false),
+                    child: const Text('Cancelar')),
+                FilledButton(
+                    onPressed: () => Navigator.pop(dialog, true),
+                    child: const Text('Excluir')),
+              ],
+            ));
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await context.read<TransfersCubit>().delete(item.id);
+    } catch (error) {
+      if (context.mounted) _showError(context, error);
+    }
+  }
+
+  Future<void> _setEffective(BuildContext context, Transfer item) async {
+    final chosen =
+        await chooseEffectuationDate(context, item.dueDate ?? item.date);
+    if (chosen == null || !context.mounted) return;
+    try {
+      await context
+          .read<TransfersCubit>()
+          .setEffective(item.id, effective: true, effectiveDate: chosen);
+    } catch (error) {
+      if (context.mounted) _showError(context, error);
+    }
+  }
+
+  void _showError(BuildContext context, Object error) {
+    final message = error is FormatException
+        ? error.message
+        : error is StateError
+            ? error.message
+            : 'Não foi possível salvar a transferência.';
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+            title: const Text('Transferências'),
+            leading: somiaMenuLeading(context)),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _edit(context),
+          icon: const Icon(Icons.add),
+          label: const Text('Nova transferência'),
+        ),
+        body: Column(children: [
+          Padding(
+              padding: const EdgeInsets.all(12),
+              child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    MonthSelector(
+                        month: referenceMonth.value,
+                        onChanged: (month) {
+                          if (month == referenceMonth.value) {
+                            _monthChanged();
+                          } else {
+                            referenceMonth.select(month);
+                          }
+                        }),
+                    OutlinedButton.icon(
+                        onPressed: _openFilters,
+                        icon: const Icon(Icons.tune),
+                        label: const Text('Filtros')),
+                    if (_customPeriod)
+                      Text(_range == null
+                          ? 'Todos os meses'
+                          : '${_dateLabel(_range!.start)} – ${_dateLabel(_range!.end)}'),
+                  ])),
+          Expanded(
+              child: BlocConsumer<TransfersCubit, TransfersState>(
+                  listener: (context, state) {
+            if (widget.startCreate &&
+                !_openedInitial &&
+                !state.loading &&
+                state.error == null) {
+              _openedInitial = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) _edit(context);
+              });
+            }
+          }, builder: (context, state) {
+            if (state.loading && state.accounts.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state.error != null) {
+              return Center(
+                  child: TextButton(
+                onPressed: context.read<TransfersCubit>().load,
+                child: Text('${state.error} Tentar novamente'),
+              ));
+            }
+            if (state.items.isEmpty) {
+              return const Center(
+                  child: Text('Nenhuma transferência para estes filtros.'));
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
+              itemCount: state.items.length,
+              itemBuilder: (context, index) {
+                final item = state.items[index];
+                return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      leading: const Icon(Icons.swap_horiz),
+                      title: Text(item.description,
+                          maxLines: 2, overflow: TextOverflow.ellipsis),
+                      subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                '${item.sourceAccountName} → ${item.destinationAccountName}'),
+                            Text('Lançamento ${_dateLabel(item.date)} · '
+                                'Vencimento ${_dateLabel(item.dueDate ?? item.date)} · '
+                                '${item.effectiveDate == null ? 'Pendente' : item.isEffective ? 'Efetivada ${_dateLabel(item.effectiveDate!)}' : 'Agendada ${_dateLabel(item.effectiveDate!)}'}'),
+                            Text(MoneyMinor.display(
+                                item.amountMinor, item.currencyCode)),
+                            if (!item.isEffective)
+                              TextButton.icon(
+                                  onPressed: () => _setEffective(context, item),
+                                  icon: const Icon(Icons.check_circle_outline),
+                                  label: const Text('Efetivar')),
+                          ]),
+                      trailing: PopupMenuButton<String>(
+                          tooltip: 'Ações da transferência',
+                          onSelected: (action) => action == 'edit'
+                              ? _edit(context, item)
+                              : _delete(context, item),
+                          itemBuilder: (_) => const [
+                                PopupMenuItem(
+                                    value: 'edit', child: Text('Editar')),
+                                PopupMenuItem(
+                                    value: 'delete', child: Text('Excluir')),
+                              ]),
+                      onTap: () => _edit(context, item),
+                    ));
+              },
+            );
+          })),
+        ]),
+      );
+}
+
+class TransferForm extends StatefulWidget {
+  const TransferForm({super.key, required this.accounts, this.item});
+
+  final List<Account> accounts;
+  final Transfer? item;
+
+  @override
+  State<TransferForm> createState() => TransferFormState();
+}
+
+class TransferFormState extends State<TransferForm> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _amount;
+  late final TextEditingController _description;
+  final _descriptionFocus = FocusNode();
+  final _amountFocus = FocusNode();
+  String? _sourceId;
+  String? _destinationId;
+  late DateTime _date;
+  late DateTime _dueDate;
+  DateTime? _effectiveDate;
+  late bool _isEffective;
+
+  List<Account> get _sources => widget.accounts
+      .where((a) => !a.isArchived || a.id == widget.item?.sourceAccountId)
+      .toList();
+
+  List<Account> get _destinations {
+    final source = widget.accounts.where((a) => a.id == _sourceId).firstOrNull;
+    return widget.accounts
+        .where((a) =>
+            a.id != _sourceId &&
+            a.currencyCode == source?.currencyCode &&
+            (!a.isArchived || a.id == widget.item?.destinationAccountId))
+        .toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _description = TextEditingController(text: widget.item?.description ?? '');
+    _amount = TextEditingController(
+        text: MoneyMinor.plain(widget.item?.amountMinor ?? 0));
+    _sourceId = widget.item?.sourceAccountId ?? _sources.firstOrNull?.id;
+    _destinationId =
+        widget.item?.destinationAccountId ?? _destinations.firstOrNull?.id;
+    _date = widget.item?.date ?? DateTime.now();
+    _dueDate = widget.item?.dueDate ?? _date;
+    _effectiveDate = widget.item?.effectiveDate;
+    _isEffective = widget.item == null || widget.item!.effectiveDate != null;
+  }
+
+  @override
+  void dispose() {
+    _description.dispose();
+    _descriptionFocus.dispose();
+    _amountFocus.dispose();
+    _amount.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate(String field) async {
+    final picked = await showDatePicker(
+        context: context,
+        initialDate: field == 'posted'
+            ? _date
+            : field == 'due'
+                ? _dueDate
+                : _effectiveDate ?? DateTime.now(),
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2100));
+    if (picked != null && mounted) {
+      setState(() {
+        if (field == 'posted') {
+          _date = picked;
+        } else if (field == 'due') {
+          _dueDate = picked;
+        } else {
+          _effectiveDate = picked;
+        }
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    var effective = _isEffective ? _effectiveDate ?? DateTime.now() : null;
+    if (_isEffective &&
+        widget.item?.effectiveDate == null &&
+        !DateUtils.isSameDay(_dueDate, DateTime.now())) {
+      effective = await chooseEffectuationDate(context, _dueDate);
+      if (effective == null || !mounted) return;
+    }
+    if (!mounted) return;
+    Navigator.pop(
+        context,
+        TransferDraft(
+            description: _description.text.trim(),
+            sourceAccountId: _sourceId!,
+            destinationAccountId: _destinationId!,
+            amountMinor: MoneyMinor.parse(_amount.text),
+            date: _date,
+            dueDate: _dueDate,
+            effectiveDate: effective,
+            isEffective: _isEffective));
+  }
+
+  @override
+  Widget build(BuildContext context) => MovementFormFrame(
+        title:
+            widget.item == null ? 'Nova transferência' : 'Editar transferência',
+        onSave: _submit,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 16,
+            children: [
+              TextFormField(
+                controller: _description,
+                focusNode: _descriptionFocus,
+                autofocus:
+                    widget.item == null && usesFullScreenMovementForm(context),
+                textInputAction: TextInputAction.next,
+                scrollPadding: const EdgeInsets.all(100),
+                decoration: const InputDecoration(labelText: 'Descrição'),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Informe a descrição.'
+                    : null,
+                onFieldSubmitted: (_) {
+                  _amountFocus.requestFocus();
+                  _amount.selection = TextSelection(
+                      baseOffset: 0, extentOffset: _amount.text.length);
+                },
+              ),
+              TextFormField(
+                  controller: _amount,
+                  focusNode: _amountFocus,
+                  scrollPadding: const EdgeInsets.all(100),
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.w600),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Valor'),
+                  validator: (value) {
+                    try {
+                      return MoneyMinor.parse(value ?? '') > 0
+                          ? null
+                          : 'O valor deve ser maior que zero.';
+                    } on FormatException catch (error) {
+                      return error.message;
+                    }
+                  }),
+              DropdownButtonFormField<String>(
+                key: ValueKey('source-$_sourceId'),
+                isExpanded: true,
+                initialValue: _sourceId,
+                decoration: const InputDecoration(labelText: 'Conta de origem'),
+                items: _sources
+                    .map((a) => DropdownMenuItem(
+                        value: a.id,
+                        child: Text(
+                            '${a.name} (${a.currencyCode})'
+                            '${a.isArchived ? ' · arquivada' : ''}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis)))
+                    .toList(),
+                validator: (id) =>
+                    id == null ? 'Selecione uma conta de origem.' : null,
+                onChanged: (id) => setState(() {
+                  _sourceId = id;
+                  if (!_destinations.any((a) => a.id == _destinationId)) {
+                    _destinationId = _destinations.firstOrNull?.id;
+                  }
+                }),
+              ),
+              DropdownButtonFormField<String>(
+                key: ValueKey('destination-$_sourceId'),
+                isExpanded: true,
+                initialValue: _destinationId,
+                decoration:
+                    const InputDecoration(labelText: 'Conta de destino'),
+                items: _destinations
+                    .map((a) => DropdownMenuItem(
+                        value: a.id,
+                        child: Text(
+                            '${a.name} (${a.currencyCode})'
+                            '${a.isArchived ? ' · arquivada' : ''}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis)))
+                    .toList(),
+                validator: (id) =>
+                    id == null ? 'Selecione outra conta da mesma moeda.' : null,
+                onChanged: (id) => setState(() => _destinationId = id),
+              ),
+              MovementDateFields(
+                posted: _date,
+                due: _dueDate,
+                onPosted: () => _pickDate('posted'),
+                onDue: () => _pickDate('due'),
+              ),
+              SwitchListTile(
+                  title: const Text('Efetivada'),
+                  subtitle: const Text('A data movimenta as duas contas'),
+                  value: _isEffective,
+                  onChanged: (value) => setState(() => _isEffective = value)),
+              if (_isEffective)
+                ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Data de efetivação'),
+                    subtitle:
+                        Text(_dateLabel(_effectiveDate ?? DateTime.now())),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () => _pickDate('effective')),
+            ],
+          ),
+        ),
+      );
+}

@@ -1,0 +1,95 @@
+import 'package:flutter/foundation.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../features/dashboard/presentation/pages/dashboard_page.dart';
+import '../../features/accounts/presentation/accounts_page.dart';
+import '../../features/categories/presentation/categories_page.dart';
+import '../../features/transactions/presentation/transactions_page.dart';
+import '../../features/transactions/domain/financial_transaction.dart';
+import '../../features/transfers/presentation/transfers_page.dart';
+import '../../features/settings/presentation/settings_page.dart';
+import 'somia_shell.dart';
+
+abstract final class AppRoutes {
+  static const dashboard = 'dashboard';
+  static const dashboardPath = '/';
+  static const accounts = 'accounts';
+  static const accountsPath = '/accounts';
+  static const categories = 'categories';
+  static const categoriesPath = '/categories';
+  static const transactions = 'transactions';
+  static const transactionsPath = '/transactions';
+  static const income = 'income';
+  static const incomePath = '/income';
+  static const expenses = 'expenses';
+  static const expensesPath = '/expenses';
+  static const transfers = 'transfers';
+  static const transfersPath = '/transfers';
+  static const settings = 'settings';
+  static const settingsPath = '/settings';
+}
+
+final GoRouter appRouter = GoRouter(
+  initialLocation: AppRoutes.dashboardPath,
+  routes: [
+    ShellRoute(
+        builder: (context, state, child) =>
+            SomiaShell(location: state.uri.path, child: child),
+        routes: [
+          GoRoute(
+            path: AppRoutes.transfersPath,
+            name: AppRoutes.transfers,
+            builder: (context, state) => TransfersPage(
+                key: ValueKey(state.uri.queryParameters['create']),
+                startCreate: state.uri.queryParameters['create'] == '1'),
+          ),
+          GoRoute(
+            path: AppRoutes.transactionsPath,
+            name: AppRoutes.transactions,
+            builder: (context, state) => TransactionsPage(
+                key: ValueKey(state.uri.queryParameters['create']),
+                initialCreateType: state.uri.queryParameters['create']),
+          ),
+          GoRoute(
+            path: AppRoutes.incomePath,
+            name: AppRoutes.income,
+            builder: (context, state) => TransactionsPage(
+                key: ValueKey(state.uri.toString()),
+                sectionType: TransactionType.income,
+                initialCreateType: state.uri.queryParameters['create'] == '1'
+                    ? 'income'
+                    : null),
+          ),
+          GoRoute(
+            path: AppRoutes.expensesPath,
+            name: AppRoutes.expenses,
+            builder: (context, state) => TransactionsPage(
+                key: ValueKey(state.uri.toString()),
+                sectionType: TransactionType.expense,
+                initialCreateType: state.uri.queryParameters['create'] == '1'
+                    ? 'expense'
+                    : null),
+          ),
+          GoRoute(
+            path: AppRoutes.categoriesPath,
+            name: AppRoutes.categories,
+            builder: (context, state) => const CategoriesPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.accountsPath,
+            name: AppRoutes.accounts,
+            builder: (context, state) => const AccountsPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.settingsPath,
+            name: AppRoutes.settings,
+            builder: (context, state) => const SettingsPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.dashboardPath,
+            name: AppRoutes.dashboard,
+            builder: (context, state) => const DashboardPage(),
+          ),
+        ]),
+  ],
+);

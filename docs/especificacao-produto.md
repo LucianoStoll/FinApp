@@ -14,7 +14,9 @@ Este documento consolida as decisões do questionário de produto. Ele complemen
 Tipos amplos e personalizáveis. Conta pode ser arquivada/inativada, bloqueando novos lançamentos, reativada depois e configurada quanto à participação/visibilidade em análises. Dinheiro em espécie é conta comum. Grupos de contas suportam conceitos como liquidez, dia a dia e reserva. Cheque especial é limite separado e vira passivo quando utilizado.
 
 ## Transações
-Três datas: competência, vencimento e efetivação. Status principais: Pendente, Efetivada e Atrasada. Saldo atual e projetado são separados. Lançamentos podem ser ignorados independentemente em saldo e analytics.
+No MVP, receitas, despesas e transferências possuem três datas operacionais: **lançamento, vencimento e efetivação**. A data de lançamento não é o timestamp técnico de criação do registro. Status principais: Pendente, Efetivada e Atrasada. Saldo atual e projetado são separados. Lançamentos podem ser ignorados independentemente em saldo e analytics.
+
+O saldo realizado usa a **data de efetivação**. Pendências e compromissos futuros entram na projeção pelo **vencimento**. Ao efetivar antecipadamente algo que vence no futuro, o usuário escolhe entre **Contabilizar hoje** e **Contabilizar no vencimento**; uma data de efetivação futura não altera o saldo realizado antes de chegar.
 
 Previsto x realizado é preservado. Liquidações parciais suportam juros, multa, desconto e acréscimos. Taxas/encargos são componentes estruturados. Rateio divide internamente uma única transação por valor ou percentual. Reembolsos ficam vinculados à despesa original e podem ser parciais ou totais.
 
@@ -54,7 +56,17 @@ Anexos internos, hash e limite inicial de 20 MB. Backup automático diário com 
 Provider abstrato, Google Drive primeiro. OAuth direto no provedor. Sync apenas com app aberto: ao abrir, após alterações relevantes e manualmente. LWW com conflito registrado. Dispositivo vazio baixa a base remota. Bases independentes não são mescladas automaticamente. Status e histórico detalhados.
 
 ## Interface
-Dashboard customizável no futuro. Gráficos/relatórios configuráveis. Busca global avançada. Filtros globais podem ser salvos. Favoritos/fixados. Relatórios salvos recalculam ao abrir. Tema claro/escuro/sistema. Ajuda contextual, busca de ajuda, tutoriais e futuro assistente baseado na documentação.
+No MVP mobile, a barra inferior é removida e a navegação principal passa a usar **drawer/menu lateral**. Receitas e Despesas são seções independentes, junto de Dashboard/Resumo, Transferências, Contas, Categorias e Configurações. Em Windows, a mesma arquitetura pode ser apresentada como sidebar/NavigationRail em telas largas.
+
+O MVP usa tema escuro Somia com destaque azul acinzentado. O **tema claro já possui direção visual aprovada**, mas sua implementação fica para uma versão futura, assim como seguir o tema do sistema. Dashboard customizável, gráficos/relatórios configuráveis, busca global avançada, filtros salvos, favoritos/fixados e demais personalizações também são evolução posterior. Ajuda contextual, busca de ajuda, tutoriais e futuro assistente baseado na documentação permanecem planejados.
+
+## Revisão do MVP — atualização e preservação de dados
+
+Os APKs Android de teste devem poder atualizar uma instalação anterior sem desinstalar o app. Para isso, o projeto mantém `applicationId` fixo, assinatura persistente entre builds e `versionCode` crescente. A pipeline do GitHub Actions deve usar a mesma chave de assinatura protegida por Secrets.
+
+Mudanças de schema utilizam migrations Drift/SQLite não destrutivas. A atualização de uma versão para outra deve preservar dados locais. Durante o MVP, uma exportação/importação simples de backup funciona como proteção adicional para testes; o módulo completo de backup/sincronização continua sendo evolução posterior.
+
+As issues #30, #31 e #32 consolidam esta revisão.
 
 ## Fechamento
 Fechamento mensal cria snapshot; período fechado exige reabertura para edição. Exportações de relatório recebem versão e data/hora.

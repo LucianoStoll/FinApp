@@ -1,0 +1,273 @@
+name: Flutter CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Check Dart formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Static analysis
+        run: flutter analyze
+      - name: Tests
+        run: flutter test
+      - name: Render dashboard mobile preview
+        run: flutter test test/features/dashboard/dashboard_layout_test.dart --update-goldens --dart-define=SOMIA_RENDER_PREVIEW=true
+      - name: Render movement form preview
+        run: flutter test test/core/routing/movement_form_test.dart --update-goldens --dart-define=SOMIA_RENDER_PREVIEW=true
+      - name: Publish dashboard preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: somia-dashboard-preview
+          path: |
+            test/features/dashboard/*mobile-preview.png
+            test/core/routing/*mobile-preview.png
+          if-no-files-found: error
+          retention-days: 30
+
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Tests on Windows
+        run: flutter test
+      - name: Read app version
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          version = re.search(r'^version:\s*(\S+)', Path('pubspec.yaml').read_text(), re.MULTILINE).group(1).split('+')[0]
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('SOMIA_VERSION=' + version + '\n')
+          PY
+      - name: Build Windows release
+        run: flutter build windows --release --build-name=${{ env.SOMIA_VERSION }} --build-number=${{ github.run_number }} --dart-define=SOMIA_VERSION=${{ env.SOMIA_VERSION }} --dart-define=SOMIA_BUILD_NUMBER=${{ github.run_number }}
+      - name: Publish Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: somia-windows-release
+          path: build/windows/x64/runner/Release/
+          if-no-files-found: error
+          retention-days: 30
+
+  android-build:
+    if: github.event_name != 'pull_request'
+    needs: analyze-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Prepare persistent signing key
+        env:
+          SOMIA_KEYSTORE_B64: ${{ secrets.SOMIA_KEYSTORE_B64 }}
+          SOMIA_KEYSTORE_PASSWORD: ${{ secrets.SOMIA_KEYSTORE_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import base64, os
+          from pathlib import Path
+          encoded = os.environ.get('SOMIA_KEYSTORE_B64', '')
+          password = os.environ.get('SOMIA_KEYSTORE_PASSWORD', '')
+          if not encoded or not password:
+              raise SystemExit('Configure SOMIA_KEYSTORE_B64 e SOMIA_KEYSTORE_PASSWORD nos secrets.')
+          folder = Path(os.environ['RUNNER_TEMP']) / 'somia-signing'
+          folder.mkdir(mode=0o700, exist_ok=True)
+          key = folder / 'somia-upload.jks'
+          try:
+              key.write_bytes(base64.b64decode(''.join(encoded.split()), validate=True))
+          except Exception:
+              raise SystemExit('SOMIA_KEYSTORE_B64 não contém Base64 válido.')
+          key.chmod(0o600)
+          def escape(value):
+              result = ''
+              for char in value:
+                  if char in '\\=:#! ':
+                      result += '\\' + char
+                  elif char == '\n':
+                      result += '\\n'
+                  elif char == '\r':
+                      result += '\\r'
+                  elif char == '\t':
+                      result += '\\t'
+                  elif ord(char) > 126:
+                      encoded_char = char.encode('utf-16-be')
+                      result += ''.join('\\u' + encoded_char[i:i+2].hex()
+                                        for i in range(0, len(encoded_char), 2))
+                  else:
+                      result += char
+              return result
+          properties = Path('android/key.properties')
+          properties.write_text('storeFile=' + str(key) + '\nkeyAlias=somia\n'
+                                + 'storePassword=' + escape(password) + '\n'
+                                + 'keyPassword=' + escape(password) + '\n',
+                                encoding='ascii')
+          properties.chmod(0o600)
+          PY
+      - name: Read app version
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          version = re.search(r'^version:\s*(\S+)', Path('pubspec.yaml').read_text(), re.MULTILINE).group(1).split('+')[0]
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('SOMIA_VERSION=' + version + '\n')
+          PY
+      - name: Build signed APK
+        run: flutter build apk --release --build-name=${{ env.SOMIA_VERSION }} --build-number=${{ github.run_number }} --dart-define=SOMIA_VERSION=${{ env.SOMIA_VERSION }} --dart-define=SOMIA_BUILD_NUMBER=${{ github.run_number }}
+      - name: Verify signing and version
+        env:
+          SOMIA_KEYSTORE_PASSWORD: ${{ secrets.SOMIA_KEYSTORE_PASSWORD }}
+          EXPECTED_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          apk=build/app/outputs/flutter-apk/app-release.apk
+          "$build_tools/apksigner" verify --verbose --print-certs "$apk" > build/app/outputs/flutter-apk/signing-info.txt
+          keytool -exportcert -alias somia -keystore "$RUNNER_TEMP/somia-signing/somia-upload.jks" -storepass:env SOMIA_KEYSTORE_PASSWORD -file "$RUNNER_TEMP/somia-signing/certificate.der"
+          "$build_tools/aapt" dump badging "$apk" > "$RUNNER_TEMP/somia-signing/badging.txt"
+          python3 - <<'PY'
+          import hashlib, os, re
+          from pathlib import Path
+          folder = Path(os.environ['RUNNER_TEMP']) / 'somia-signing'
+          info = Path('build/app/outputs/flutter-apk/signing-info.txt')
+          text = info.read_text()
+          expected = hashlib.sha256((folder / 'certificate.der').read_bytes()).hexdigest()
+          matches = re.findall(r'^(?:Signer|V[1-4](?:\.\d+)? Signer)[^\n]* certificate SHA-256 digest:\s*([0-9a-fA-F:]+)\s*$', text, re.MULTILINE)
+          actual = [digest.replace(':', '').lower() for digest in matches]
+          print('SHA-256 esperado: ' + expected)
+          print('SHA-256 do APK: ' + ', '.join(actual))
+          if not actual:
+              print(text)
+              raise SystemExit('Não foi possível ler o certificado no relatório do apksigner.')
+          if set(actual) != {expected}:
+              raise SystemExit('O certificado do APK não corresponde à chave persistente.')
+          package = re.search(r"package: name='([^']+)' versionCode='([^']+)' versionName='([^']+)'", (folder / 'badging.txt').read_text())
+          if not package or package.group(1) != 'com.example.finapp' or package.group(2) != os.environ['EXPECTED_VERSION_CODE']:
+              raise SystemExit('Identificador ou versionCode do APK incorreto.')
+          metadata = '\nPackage: ' + package.group(1) + '\nVersionCode: ' + package.group(2) + '\nVersionName: ' + package.group(3) + '\n'
+          info.write_text(text + metadata)
+          print('Certificado persistente conferido.' + metadata)
+          PY
+      - name: Publish signed APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: somia-signed-apk
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/signing-info.txt
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove signing material
+        if: always()
+        run: |
+          rm -f android/key.properties
+          rm -rf "$RUNNER_TEMP/somia-signing"
+
+  publish-alpha-release:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [analyze-and-test, windows-build, android-build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: somia-release-v0.1.0-alpha
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check release eligibility
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(python3 -c "import re; from pathlib import Path; print(re.search(r'^version:\\s*(\\S+)', Path('pubspec.yaml').read_text(), re.MULTILINE).group(1).split('+')[0])")"
+          if [[ "$version" != "0.1.0-alpha" ]]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          gh api "repos/$GH_REPO/releases" --paginate --slurp > "$RUNNER_TEMP/somia-releases.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          releases = [item for page in json.loads((Path(os.environ['RUNNER_TEMP']) / 'somia-releases.json').read_text()) for item in page]
+          existing = next((item for item in releases if item['tag_name'] == 'v0.1.0-alpha'), None)
+          publish = existing is None or existing['draft']
+          if existing and existing['draft'] and existing['target_commitish'] != os.environ['GITHUB_SHA']:
+              raise SystemExit('Rascunho existente aponta para outro commit; publicação interrompida.')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('publish=' + str(publish).lower() + '\n')
+          PY
+      - name: Download signed Android package
+        if: steps.release.outputs.publish == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: somia-signed-apk
+          path: packages/android
+      - name: Download Windows release package
+        if: steps.release.outputs.publish == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: somia-windows-release
+          path: packages/windows
+      - name: Package and verify release assets
+        if: steps.release.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s packages/android/app-release.apk
+          test -s packages/android/signing-info.txt
+          test -s packages/windows/finapp.exe
+          test -d packages/windows/data
+          mkdir -p release-assets
+          cp packages/android/app-release.apk release-assets/somia-v0.1.0-alpha-android.apk
+          cp packages/android/signing-info.txt release-assets/signing-info.txt
+          (cd packages/windows && zip -qr ../../release-assets/somia-v0.1.0-alpha-windows-x64.zip .)
+          (cd release-assets && sha256sum somia-v0.1.0-alpha-android.apk somia-v0.1.0-alpha-windows-x64.zip signing-info.txt > SHA256SUMS.txt)
+      - name: Publish alpha release at verified commit
+        if: steps.release.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag=v0.1.0-alpha
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --target "$GITHUB_SHA" --title "Somia v0.1.0-alpha" --notes-file CHANGELOG.md --prerelease --draft
+          fi
+          gh release upload "$tag" release-assets/* --clobber
+          gh release edit "$tag" --draft=false --prerelease --notes-file CHANGELOG.md
