@@ -264,7 +264,9 @@ class _TransfersViewState extends State<_TransfersView> {
         context: context,
         builder: (dialog) => AlertDialog(
               title: const Text('Excluir transferência?'),
-              content: const Text('O valor sairá dos saldos das duas contas.'),
+              content: Text(scope == SeriesScope.thisAndNext
+                  ? 'As transferências pendentes desta posição em diante sairão da lista e das projeções das duas contas.'
+                  : 'O valor sairá dos saldos das duas contas.'),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(dialog, false),

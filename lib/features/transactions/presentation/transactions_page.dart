@@ -184,7 +184,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
     final scope = item?.series == null
         ? SeriesScope.onlyThis
         : await chooseSeriesScope(context, deleting: false);
-    if (scope == null || !context.mounted) return;
+    if (scope == null || !mounted) return;
     final cubit = context.read<TransactionsCubit>();
     final state = cubit.state;
     final draft = await showMovementForm<TransactionDraft>(
@@ -221,12 +221,14 @@ class _TransactionsViewState extends State<_TransactionsView> {
     final scope = item.series == null
         ? SeriesScope.onlyThis
         : await chooseSeriesScope(context, deleting: true);
-    if (scope == null || !context.mounted) return;
+    if (scope == null || !mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
         title: const Text('Excluir lançamento?'),
-        content: Text('“${item.description}” sairá da lista e dos saldos.'),
+        content: Text(scope == SeriesScope.thisAndNext
+            ? 'As ocorrências pendentes desta posição em diante sairão da lista e das projeções.'
+            : '“${item.description}” sairá da lista e dos saldos.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(dialog, false),

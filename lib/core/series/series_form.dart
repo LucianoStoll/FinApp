@@ -112,8 +112,9 @@ class SeriesFormFields extends StatelessWidget {
                 DropdownMenuItem(value: false, child: Text('Valor por parcela'))
               ],
               onChanged: (value) {
-                if (value != null)
+                if (value != null) {
                   controller.change(() => controller.amountIsTotal = value);
+                }
               }),
         AnimatedBuilder(
             animation: Listenable.merge(

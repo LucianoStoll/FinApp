@@ -96,7 +96,7 @@ void main() {
         await tester.tap(find.text('Salvar lançamento'));
         await tester.pumpAndSettle();
         final plan = result is TransactionDraft
-            ? result.seriesPlan!
+            ? (result as TransactionDraft).seriesPlan!
             : (result as TransferDraft).seriesPlan!;
         expect(plan.kind, SeriesKind.installments);
         expect(plan.count, 3);
@@ -105,7 +105,7 @@ void main() {
         expect(plan.amountIsTotal, true);
         expect(
             result is TransactionDraft
-                ? result.isEffective
+                ? (result as TransactionDraft).isEffective
                 : (result as TransferDraft).isEffective,
             false);
         expect(tester.takeException(), isNull);
