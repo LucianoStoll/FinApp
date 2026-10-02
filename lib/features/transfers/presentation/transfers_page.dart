@@ -1,3 +1,5 @@
+import '../../../core/series/movement_series.dart';
+import '../../../core/series/series_form.dart';
 import '../../accounts/presentation/account_identity.dart';
 import 'package:flutter/material.dart';
 
@@ -202,7 +204,7 @@ class _TransfersViewState extends State<_TransfersView> {
                                     final picked = await showDateRangePicker(
                                         context: context,
                                         firstDate: DateTime(2000),
-                                        lastDate: DateTime(2100),
+                                        lastDate: DateTime(2100, 12, 31),
                                         initialDateRange:
                                             _range ?? _monthRange);
                                     if (picked != null && mounted) {
@@ -229,9 +231,15 @@ class _TransfersViewState extends State<_TransfersView> {
   }
 
   Future<void> _edit(BuildContext context, [Transfer? item]) async {
+    final scope = item?.series == null
+        ? SeriesScope.onlyThis
+        : await chooseSeriesScope(context, deleting: false);
+    if (scope == null || !context.mounted) return;
     final cubit = context.read<TransfersCubit>();
-    final draft = await showMovementForm<TransferDraft>(context,
-        (_) => TransferForm(item: item, accounts: cubit.state.accounts));
+    final draft = await showMovementForm<TransferDraft>(
+        context,
+        (_) => TransferForm(
+            item: item, scope: scope, accounts: cubit.state.accounts));
     if (!context.mounted) return;
     if (draft == null) {
       if (item == null && widget.startCreate) context.go('/transfers');
@@ -248,6 +256,10 @@ class _TransfersViewState extends State<_TransfersView> {
   }
 
   Future<void> _delete(BuildContext context, Transfer item) async {
+    final scope = item.series == null
+        ? SeriesScope.onlyThis
+        : await chooseSeriesScope(context, deleting: true);
+    if (scope == null || !context.mounted) return;
     final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialog) => AlertDialog(
@@ -264,7 +276,7 @@ class _TransfersViewState extends State<_TransfersView> {
             ));
     if (confirmed != true || !context.mounted) return;
     try {
-      await context.read<TransfersCubit>().delete(item.id);
+      await context.read<TransfersCubit>().delete(item.id, scope: scope);
     } catch (error) {
       if (context.mounted) _showError(context, error);
     }
@@ -285,8 +297,14 @@ class _TransfersViewState extends State<_TransfersView> {
           currencyCode: item.currencyCode,
           minimumMinor: 1);
       if (!mounted || amount == null || amount == item.amountMinor) return;
+      final scope = item.series == null
+          ? SeriesScope.onlyThis
+          : await chooseSeriesScope(context, deleting: false);
+      if (scope == null || !mounted) return;
       await context.read<TransfersCubit>().updateAmount(item.id,
-          expectedAmountMinor: item.amountMinor, amountMinor: amount);
+          expectedAmountMinor: item.amountMinor,
+          amountMinor: amount,
+          scope: scope);
     } catch (error) {
       if (mounted) _showError(context, error);
     } finally {
@@ -326,7 +344,7 @@ class _TransfersViewState extends State<_TransfersView> {
               context: context,
               initialDate: expected,
               firstDate: DateTime(2000),
-              lastDate: DateTime(2100))
+              lastDate: DateTime(2100, 12, 31))
           : restore;
       if (!mounted || (pick && chosen == null)) return;
       await context.read<TransfersCubit>().changeEffectiveDate(id,
@@ -418,7 +436,9 @@ class _TransfersViewState extends State<_TransfersView> {
                 final item = state.items[index];
                 return MovementListRow(
                   id: item.id,
-                  description: item.description,
+                  description: item.series == null
+                      ? item.description
+                      : '${item.description} · ${item.series!.label}',
                   account:
                       '${item.sourceAccountName} → ${item.destinationAccountName}',
                   amount:
@@ -467,10 +487,15 @@ class _TransfersViewState extends State<_TransfersView> {
 }
 
 class TransferForm extends StatefulWidget {
-  const TransferForm({super.key, required this.accounts, this.item});
+  const TransferForm(
+      {super.key,
+      required this.accounts,
+      this.item,
+      this.scope = SeriesScope.onlyThis});
 
   final List<Account> accounts;
   final Transfer? item;
+  final SeriesScope scope;
 
   @override
   State<TransferForm> createState() => TransferFormState();
@@ -478,6 +503,13 @@ class TransferForm extends StatefulWidget {
 
 class TransferFormState extends State<TransferForm> {
   final _formKey = GlobalKey<FormState>();
+  final _series = SeriesFormController();
+  bool get _forcePending =>
+      _series.active || widget.scope == SeriesScope.thisAndNext;
+  void _seriesChanged() {
+    if (mounted) setState(() {});
+  }
+
   late final TextEditingController _amount;
   late final TextEditingController _description;
   final _descriptionFocus = FocusNode();
@@ -506,6 +538,7 @@ class TransferFormState extends State<TransferForm> {
   @override
   void initState() {
     super.initState();
+    _series.addListener(_seriesChanged);
     _description = TextEditingController(text: widget.item?.description ?? '');
     _amount = TextEditingController(
         text: MoneyMinor.plain(widget.item?.amountMinor ?? 0));
@@ -520,6 +553,7 @@ class TransferFormState extends State<TransferForm> {
 
   @override
   void dispose() {
+    _series.dispose();
     _description.dispose();
     _descriptionFocus.dispose();
     _amountFocus.dispose();
@@ -536,7 +570,7 @@ class TransferFormState extends State<TransferForm> {
                 ? _dueDate
                 : _effectiveDate ?? DateTime.now(),
         firstDate: DateTime(2000),
-        lastDate: DateTime(2100));
+        lastDate: DateTime(2100, 12, 31));
     if (picked != null && mounted) {
       setState(() {
         if (field == 'posted') {
@@ -552,8 +586,23 @@ class TransferFormState extends State<TransferForm> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    var effective = _isEffective ? _effectiveDate ?? DateTime.now() : null;
-    if (_isEffective &&
+    if (_series.active) {
+      try {
+        _series.plan!.amounts(MoneyMinor.parse(_amount.text));
+        if (_series.plan!.dateAt(_date, _series.plan!.count - 1).year > 2100 ||
+            _series.plan!.dateAt(_dueDate, _series.plan!.count - 1).year >
+                2100) {
+          throw const FormatException('A série deve terminar até o ano 2100.');
+        }
+      } on FormatException catch (error) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+        return;
+      }
+    }
+    final isEffective = !_forcePending && _isEffective;
+    var effective = isEffective ? _effectiveDate ?? DateTime.now() : null;
+    if (isEffective &&
         widget.item?.effectiveDate == null &&
         !DateUtils.isSameDay(_dueDate, DateTime.now())) {
       effective = await chooseEffectuationDate(context, _dueDate);
@@ -570,7 +619,9 @@ class TransferFormState extends State<TransferForm> {
             date: _date,
             dueDate: _dueDate,
             effectiveDate: effective,
-            isEffective: _isEffective));
+            isEffective: isEffective,
+            seriesPlan: _series.plan,
+            scope: widget.scope));
   }
 
   @override
@@ -583,7 +634,8 @@ class TransferFormState extends State<TransferForm> {
             _date,
             _dueDate,
             _effectiveDate,
-            _isEffective
+            _isEffective,
+            _series.snapshot
           ),
       builder: (context, cancel) => MovementFormFrame(
             onCancel: cancel,
@@ -616,12 +668,28 @@ class TransferFormState extends State<TransferForm> {
                   ),
                   MonetaryCalculatorField(
                       controller: _amount,
+                      labelText: _series.kind == SeriesKind.installments
+                          ? (_series.amountIsTotal
+                              ? 'Valor total'
+                              : 'Valor por parcela')
+                          : 'Valor',
                       focusNode: _amountFocus,
                       currencyCode: widget.accounts
                               .where((a) => a.id == _sourceId)
                               .firstOrNull
                               ?.currencyCode ??
                           'BRL'),
+                  if (widget.item == null || widget.item?.series != null)
+                    SeriesFormFields(
+                        controller: _series,
+                        amount: _amount,
+                        dueDate: _dueDate,
+                        currencyCode: widget.accounts
+                                .where((a) => a.id == _sourceId)
+                                .firstOrNull
+                                ?.currencyCode ??
+                            'BRL',
+                        existing: widget.item?.series),
                   DropdownButtonFormField<String>(
                     key: ValueKey('source-$_sourceId'),
                     isExpanded: true,
@@ -669,10 +737,11 @@ class TransferFormState extends State<TransferForm> {
                   SwitchListTile(
                       title: const Text('Efetivada'),
                       subtitle: const Text('A data movimenta as duas contas'),
-                      value: _isEffective,
-                      onChanged: (value) =>
-                          setState(() => _isEffective = value)),
-                  if (_isEffective)
+                      value: !_forcePending && _isEffective,
+                      onChanged: _forcePending
+                          ? null
+                          : (value) => setState(() => _isEffective = value)),
+                  if (!_forcePending && _isEffective)
                     ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Data de efetivação'),

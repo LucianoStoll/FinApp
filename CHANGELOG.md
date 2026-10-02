@@ -2,6 +2,9 @@
 
 ## v0.2.0-alpha — em desenvolvimento (pós-MVP)
 
+- #46: recorrências e parcelamentos em receitas, despesas e transferências, por quantidade e sempre pendentes; frequências/intervalos, parcelamento por total ou valor individual, centavos exatos, calendário com último dia disponível e ações isoladas/em série protegendo efetivados. Migration v9 e backup compatível.
+- #41 validada pelo usuário em 02/10/2026.
+
 - #41: catálogo offline com busca e logos de instituições na criação/edição de contas, lista e seletores dos lançamentos; nome personalizado independente, opção de ícone padrão e migration v8 preservando contas antigas e backups.
 - #39 e #40 validadas pelo usuário em 01/10/2026, incluindo as correções em Transferências.
 

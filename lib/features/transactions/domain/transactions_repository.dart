@@ -1,3 +1,4 @@
+import '../../../core/series/movement_series.dart';
 import 'financial_transaction.dart';
 
 abstract interface class TransactionsRepository {
@@ -13,6 +14,8 @@ abstract interface class TransactionsRepository {
 
   /// Atualiza só o valor; rejeita uma edição baseada em um valor antigo.
   Future<void> updateAmount(String id,
-      {required int expectedAmountMinor, required int amountMinor});
-  Future<void> delete(String id);
+      {required int expectedAmountMinor,
+      required int amountMinor,
+      SeriesScope scope = SeriesScope.onlyThis});
+  Future<void> delete(String id, {SeriesScope scope = SeriesScope.onlyThis});
 }

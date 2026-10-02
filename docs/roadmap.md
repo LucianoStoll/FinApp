@@ -73,7 +73,8 @@ Branch ativa: `v0.2.0-alpha`, iniciada a partir do MVP validado em `main`.
 A #34 foi validada pelo usuário e concluída em 01/10/2026.
 As #42 e #43 foram validadas pelo usuário e concluídas em 01/10/2026.
 As #39 e #40 foram validadas pelo usuário e concluídas em 01/10/2026.
-A #41 é a entrega atual autorizada, com catálogo offline de instituições.
+A #41 foi validada pelo usuário e concluída em 02/10/2026.
+A #46 é a entrega atual autorizada: recorrências e parcelamentos, primeira entrega da #11.
 O fechamento do ciclo e a PR para `main` acontecem após concluir e validar o escopo da versão.
 - [x] Calculadora monetária integrada como entrada padrão para campos de valor
 - [x] Operações básicas: soma, subtração, multiplicação e divisão
@@ -120,7 +121,16 @@ O fechamento do ciclo e a PR para `main` acontecem após concluir e validar o es
 - [x] Assets locais e ícone padrão para dinheiro/carteira/banco ausente.
 - [x] Logo na lista de contas e nos seletores de receitas, despesas e transferências.
 - [x] Migration v8 e backup preservando a instituição escolhida.
-- [ ] Validação manual — `docs/catalogo-bancos.md`.
+- [x] Validação manual aprovada em 02/10/2026 — `docs/catalogo-bancos.md`.
+
+### Entrega #46 — recorrências e parcelamentos
+
+- [x] Frequências diária/semanal/mensal/anual e intervalos personalizados.
+- [x] Séries por quantidade, geradas pendentes nos três tipos de lançamento.
+- [x] Parcelamento por total ou valor da parcela, centavos exatos e calendário ancorado.
+- [x] Editar/excluir isolado ou próximos, preservando anteriores e efetivados/agendados.
+- [x] Migration v9, atomicidade e backup compatível.
+- [ ] Validação manual — `docs/recorrencias-parcelamentos.md`.
 
 ## Fase 3 — Núcleo financeiro avançado
 - [ ] Competência e regras contábeis avançadas (lançamento/vencimento/efetivação já disponíveis no MVP)

@@ -1,3 +1,4 @@
+import 'package:finapp/core/series/movement_series.dart';
 import 'package:finapp/app/app.dart';
 import 'package:finapp/core/theme/app_theme.dart';
 import 'package:finapp/core/di/injection.dart';
@@ -107,10 +108,13 @@ class _TransactionsStub implements TransactionsRepository {
       {required DateTime expectedDate, DateTime? effectiveDate}) async {}
   @override
   Future<void> updateAmount(String id,
-      {required int expectedAmountMinor, required int amountMinor}) async {}
+      {required int expectedAmountMinor,
+      required int amountMinor,
+      SeriesScope scope = SeriesScope.onlyThis}) async {}
 
   @override
-  Future<void> delete(String id) => throw UnimplementedError();
+  Future<void> delete(String id, {SeriesScope scope = SeriesScope.onlyThis}) =>
+      throw UnimplementedError();
 }
 
 class _TransfersStub implements TransfersRepository {
@@ -152,10 +156,13 @@ class _TransfersStub implements TransfersRepository {
       {required DateTime expectedDate, DateTime? effectiveDate}) async {}
   @override
   Future<void> updateAmount(String id,
-      {required int expectedAmountMinor, required int amountMinor}) async {}
+      {required int expectedAmountMinor,
+      required int amountMinor,
+      SeriesScope scope = SeriesScope.onlyThis}) async {}
 
   @override
-  Future<void> delete(String id) => throw UnimplementedError();
+  Future<void> delete(String id, {SeriesScope scope = SeriesScope.onlyThis}) =>
+      throw UnimplementedError();
 }
 
 void main() {

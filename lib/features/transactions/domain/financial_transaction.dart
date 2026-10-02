@@ -1,3 +1,5 @@
+import '../../../core/series/movement_series.dart';
+
 enum TransactionType {
   expense('Despesa'),
   income('Receita');
@@ -13,6 +15,7 @@ enum TransactionDateField { posted, due, effective }
 class FinancialTransaction {
   const FinancialTransaction({
     required this.id,
+    this.series,
     required this.description,
     required this.type,
     required this.amountMinor,
@@ -28,6 +31,7 @@ class FinancialTransaction {
   });
 
   final String id;
+  final SeriesInfo? series;
   final String description;
   final TransactionType type;
   final int amountMinor;
@@ -53,6 +57,8 @@ class TransactionDraft {
     this.dueDate,
     this.effectiveDate,
     required this.isEffective,
+    this.seriesPlan,
+    this.scope = SeriesScope.onlyThis,
     required this.accountId,
     this.categoryId,
   });
@@ -64,6 +70,8 @@ class TransactionDraft {
   final DateTime? dueDate;
   final DateTime? effectiveDate;
   final bool isEffective;
+  final SeriesPlan? seriesPlan;
+  final SeriesScope scope;
   final String accountId;
   final String? categoryId;
 }

@@ -1,3 +1,4 @@
+import 'package:finapp/core/series/movement_series.dart';
 import 'package:finapp/core/di/injection.dart';
 import 'package:finapp/core/theme/app_theme.dart';
 import 'package:finapp/features/accounts/domain/account.dart';
@@ -38,7 +39,9 @@ class _Transactions implements TransactionsRepository {
   int amount = 12345;
   @override
   Future<void> updateAmount(String id,
-      {required int expectedAmountMinor, required int amountMinor}) async {
+      {required int expectedAmountMinor,
+      required int amountMinor,
+      SeriesScope scope = SeriesScope.onlyThis}) async {
     expect(amount, expectedAmountMinor);
     amount = amountMinor;
   }
@@ -95,7 +98,9 @@ class _Transfers implements TransfersRepository {
   int amount = 12345;
   @override
   Future<void> updateAmount(String id,
-      {required int expectedAmountMinor, required int amountMinor}) async {
+      {required int expectedAmountMinor,
+      required int amountMinor,
+      SeriesScope scope = SeriesScope.onlyThis}) async {
     expect(amount, expectedAmountMinor);
     amount = amountMinor;
   }

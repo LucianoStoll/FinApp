@@ -1,3 +1,5 @@
+import '../../../core/series/movement_series.dart';
+import '../../../core/series/series_form.dart';
 import '../../accounts/presentation/account_identity.dart';
 import 'package:flutter/material.dart';
 
@@ -165,7 +167,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
+      lastDate: DateTime(2100, 12, 31),
       initialDateRange: _range ??
           DateTimeRange(start: DateTime(now.year, now.month, 1), end: now),
     );
@@ -179,12 +181,17 @@ class _TransactionsViewState extends State<_TransactionsView> {
   }
 
   Future<void> _edit([FinancialTransaction? item]) async {
+    final scope = item?.series == null
+        ? SeriesScope.onlyThis
+        : await chooseSeriesScope(context, deleting: false);
+    if (scope == null || !context.mounted) return;
     final cubit = context.read<TransactionsCubit>();
     final state = cubit.state;
     final draft = await showMovementForm<TransactionDraft>(
       context,
       (_) => TransactionForm(
           item: item,
+          scope: scope,
           fixedType: widget.sectionType,
           initialType: (widget.sectionType == TransactionType.income ||
                   widget.initialCreateType == 'income')
@@ -211,6 +218,10 @@ class _TransactionsViewState extends State<_TransactionsView> {
   }
 
   Future<void> _delete(FinancialTransaction item) async {
+    final scope = item.series == null
+        ? SeriesScope.onlyThis
+        : await chooseSeriesScope(context, deleting: true);
+    if (scope == null || !context.mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
@@ -228,7 +239,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
     );
     if (confirmed != true || !mounted) return;
     try {
-      await context.read<TransactionsCubit>().delete(item.id);
+      await context.read<TransactionsCubit>().delete(item.id, scope: scope);
     } catch (error) {
       if (mounted) _showError(error);
     }
@@ -249,8 +260,14 @@ class _TransactionsViewState extends State<_TransactionsView> {
           currencyCode: item.currencyCode,
           minimumMinor: 1);
       if (!mounted || amount == null || amount == item.amountMinor) return;
+      final scope = item.series == null
+          ? SeriesScope.onlyThis
+          : await chooseSeriesScope(context, deleting: false);
+      if (scope == null || !mounted) return;
       await context.read<TransactionsCubit>().updateAmount(item.id,
-          expectedAmountMinor: item.amountMinor, amountMinor: amount);
+          expectedAmountMinor: item.amountMinor,
+          amountMinor: amount,
+          scope: scope);
     } catch (error) {
       if (mounted) _showError(error);
     } finally {
@@ -292,7 +309,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
               context: context,
               initialDate: expected,
               firstDate: DateTime(2000),
-              lastDate: DateTime(2100))
+              lastDate: DateTime(2100, 12, 31))
           : restore;
       if (!mounted || (pick && chosen == null)) return;
       await context.read<TransactionsCubit>().changeEffectiveDate(id,
@@ -578,7 +595,9 @@ class _TransactionsViewState extends State<_TransactionsView> {
     final busy = _changingStatus.contains(item.id);
     return MovementListRow(
       id: item.id,
-      description: item.description,
+      description: item.series == null
+          ? item.description
+          : '${item.description} · ${item.series!.label}',
       account: item.accountName,
       amount:
           '${item.type == TransactionType.income ? '+' : '-'}${MoneyMinor.display(item.amountMinor, item.currencyCode)}',
@@ -632,9 +651,11 @@ class TransactionForm extends StatefulWidget {
       required this.accounts,
       required this.categories,
       this.item,
+      this.scope = SeriesScope.onlyThis,
       this.fixedType,
       this.initialType = TransactionType.expense});
   final FinancialTransaction? item;
+  final SeriesScope scope;
   final TransactionType? fixedType;
   final TransactionType initialType;
   final List<Account> accounts;
@@ -646,6 +667,13 @@ class TransactionForm extends StatefulWidget {
 
 class TransactionFormState extends State<TransactionForm> {
   final _formKey = GlobalKey<FormState>();
+  final _series = SeriesFormController();
+  bool get _forcePending =>
+      _series.active || widget.scope == SeriesScope.thisAndNext;
+  void _seriesChanged() {
+    if (mounted) setState(() {});
+  }
+
   late final TextEditingController _description;
   late final TextEditingController _amount;
   final _descriptionFocus = FocusNode();
@@ -662,6 +690,7 @@ class TransactionFormState extends State<TransactionForm> {
   @override
   void initState() {
     super.initState();
+    _series.addListener(_seriesChanged);
     final item = widget.item;
     _description = TextEditingController(text: item?.description ?? '');
     _amount =
@@ -688,6 +717,7 @@ class TransactionFormState extends State<TransactionForm> {
   void dispose() {
     _descriptionFocus.dispose();
     _amountFocus.dispose();
+    _series.dispose();
     _description.dispose();
     _amount.dispose();
     super.dispose();
@@ -702,7 +732,7 @@ class TransactionFormState extends State<TransactionForm> {
                 ? _dueDate
                 : _effectiveDate ?? DateTime.now(),
         firstDate: DateTime(2000),
-        lastDate: DateTime(2100));
+        lastDate: DateTime(2100, 12, 31));
     if (picked != null && mounted) {
       setState(() {
         if (field == 'posted') {
@@ -718,8 +748,23 @@ class TransactionFormState extends State<TransactionForm> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    var effective = _isEffective ? _effectiveDate ?? DateTime.now() : null;
-    if (_isEffective &&
+    if (_series.active) {
+      try {
+        _series.plan!.amounts(MoneyMinor.parse(_amount.text));
+        if (_series.plan!.dateAt(_date, _series.plan!.count - 1).year > 2100 ||
+            _series.plan!.dateAt(_dueDate, _series.plan!.count - 1).year >
+                2100) {
+          throw const FormatException('A série deve terminar até o ano 2100.');
+        }
+      } on FormatException catch (error) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+        return;
+      }
+    }
+    final isEffective = !_forcePending && _isEffective;
+    var effective = isEffective ? _effectiveDate ?? DateTime.now() : null;
+    if (isEffective &&
         widget.item?.effectiveDate == null &&
         !DateUtils.isSameDay(_dueDate, DateTime.now())) {
       effective = await chooseEffectuationDate(context, _dueDate);
@@ -735,7 +780,9 @@ class TransactionFormState extends State<TransactionForm> {
           date: _date,
           dueDate: _dueDate,
           effectiveDate: effective,
-          isEffective: _isEffective,
+          isEffective: isEffective,
+          seriesPlan: _series.plan,
+          scope: widget.scope,
           accountId: _accountId!,
           categoryId: _subcategoryId ?? _categoryId,
         ));
@@ -767,7 +814,8 @@ class TransactionFormState extends State<TransactionForm> {
               _isEffective,
               _accountId,
               _categoryId,
-              _subcategoryId
+              _subcategoryId,
+              _series.snapshot
             ),
         builder: (context, cancel) => MovementFormFrame(
               onCancel: cancel,
@@ -800,12 +848,28 @@ class TransactionFormState extends State<TransactionForm> {
                                   : null),
                       MonetaryCalculatorField(
                           controller: _amount,
+                          labelText: _series.kind == SeriesKind.installments
+                              ? (_series.amountIsTotal
+                                  ? 'Valor total'
+                                  : 'Valor por parcela')
+                              : 'Valor',
                           focusNode: _amountFocus,
                           currencyCode: _availableAccounts
                                   .where((a) => a.id == _accountId)
                                   .firstOrNull
                                   ?.currencyCode ??
                               'BRL'),
+                      if (widget.item == null || widget.item?.series != null)
+                        SeriesFormFields(
+                            controller: _series,
+                            amount: _amount,
+                            dueDate: _dueDate,
+                            currencyCode: _availableAccounts
+                                    .where((a) => a.id == _accountId)
+                                    .firstOrNull
+                                    ?.currencyCode ??
+                                'BRL',
+                            existing: widget.item?.series),
                       DropdownButtonFormField<String>(
                         isExpanded: true,
                         initialValue: _accountId,
@@ -878,11 +942,12 @@ class TransactionFormState extends State<TransactionForm> {
                             : 'Pago'),
                         subtitle: const Text(
                             'A data determina quando entra no saldo atual'),
-                        value: _isEffective,
-                        onChanged: (value) =>
-                            setState(() => _isEffective = value),
+                        value: !_forcePending && _isEffective,
+                        onChanged: _forcePending
+                            ? null
+                            : (value) => setState(() => _isEffective = value),
                       ),
-                      if (_isEffective)
+                      if (!_forcePending && _isEffective)
                         ListTile(
                             contentPadding: EdgeInsets.zero,
                             title: const Text('Data de efetivação'),

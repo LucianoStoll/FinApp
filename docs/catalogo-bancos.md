@@ -52,6 +52,6 @@ são rasterizados em 192 × 192; nenhuma logo é gerada ou redesenhada.
 - Abrir uma conta antiga, usar o app sem internet e conferir logos em tema escuro.
 - Conferir Android em retrato/paisagem e Windows.
 
-Validação manual pelo usuário pendente. Testes automatizados cobrem migration v7→v8,
+Validação manual aprovada pelo usuário em 02/10/2026. Testes automatizados cobrem migration v7→v8,
 reabertura, troca/remoção, backup, alternância de saldo sem perder instituição,
 busca, assets locais, cancelamento, descarte e fallback de instituição ausente.

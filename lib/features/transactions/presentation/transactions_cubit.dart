@@ -1,3 +1,4 @@
+import '../../../core/series/movement_series.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../accounts/domain/account.dart';
@@ -87,14 +88,19 @@ class TransactionsCubit extends Cubit<TransactionsState> {
   }
 
   Future<void> updateAmount(String id,
-      {required int expectedAmountMinor, required int amountMinor}) async {
+      {required int expectedAmountMinor,
+      required int amountMinor,
+      SeriesScope scope = SeriesScope.onlyThis}) async {
     await _transactions.updateAmount(id,
-        expectedAmountMinor: expectedAmountMinor, amountMinor: amountMinor);
+        expectedAmountMinor: expectedAmountMinor,
+        amountMinor: amountMinor,
+        scope: scope);
     if (!isClosed) await load();
   }
 
-  Future<void> delete(String id) async {
-    await _transactions.delete(id);
+  Future<void> delete(String id,
+      {SeriesScope scope = SeriesScope.onlyThis}) async {
+    await _transactions.delete(id, scope: scope);
     if (!isClosed) {
       await load();
     }

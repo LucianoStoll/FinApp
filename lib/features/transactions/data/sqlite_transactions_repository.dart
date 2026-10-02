@@ -1,3 +1,5 @@
+import '../../../core/series/series_store.dart';
+import '../../../core/series/movement_series.dart';
 import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
@@ -11,6 +13,7 @@ class SqliteTransactionsRepository implements TransactionsRepository {
 
   static const _select = '''
     SELECT t.id, t.description, t.type, t.planned_amount_minor,
+      t.series_id, t.series_index, t.series_kind, t.series_count, t.series_unit, t.series_interval,
       t.posted_at, t.due_at, t.effective_at, t.account_id, t.category_id,
       a.name AS account_name, a.currency_code,
       c.name AS category_name
@@ -74,6 +77,69 @@ class SqliteTransactionsRepository implements TransactionsRepository {
 
   @override
   Future<FinancialTransaction> create(TransactionDraft draft) async {
+    final plan = draft.seriesPlan;
+    if (plan == null) return _createSingle(draft);
+    plan.validate();
+    if (plan.dateAt(draft.date, plan.count - 1).year > 2100 ||
+        plan.dateAt(draft.dueDate ?? draft.date, plan.count - 1).year > 2100) {
+      throw const FormatException('A série deve terminar até o ano 2100.');
+    }
+    final id = await SeriesStore(_db, 'transactions')
+        .create(plan, draft.amountMinor, (index, amount) async {
+      final date = plan.dateAt(draft.date, index);
+      final due = plan.dateAt(draft.dueDate ?? draft.date, index);
+      if (date.year > 2100 || due.year > 2100) {
+        throw const FormatException('A série deve terminar até o ano 2100.');
+      }
+      return (await _createSingle(TransactionDraft(
+              description: draft.description,
+              type: draft.type,
+              accountId: draft.accountId,
+              categoryId: draft.categoryId,
+              amountMinor: amount,
+              date: date,
+              dueDate: due,
+              isEffective: false)))
+          .id;
+    });
+    return _find(id);
+  }
+
+  @override
+  Future<FinancialTransaction> update(String id, TransactionDraft draft) =>
+      _db.transaction(() async {
+        final store = SeriesStore(_db, 'transactions');
+        final original = await store.row(id);
+        if (draft.scope == SeriesScope.onlyThis ||
+            SeriesStore.info(original) == null) {
+          return _updateSingle(id, draft);
+        }
+        final targets = await store.targets(id, draft.scope);
+        for (final row in targets) {
+          final date =
+              SeriesStore.shiftedDate(row, original, 'posted_at', draft.date);
+          final due = SeriesStore.shiftedDate(
+              row, original, 'due_at', draft.dueDate ?? draft.date);
+          if (date.year > 2100 || due.year > 2100) {
+            throw const FormatException(
+                'A série deve terminar até o ano 2100.');
+          }
+          await _updateSingle(
+              row.read<String>('id'),
+              TransactionDraft(
+                  description: draft.description,
+                  type: draft.type,
+                  accountId: draft.accountId,
+                  categoryId: draft.categoryId,
+                  amountMinor: draft.amountMinor,
+                  date: date,
+                  dueDate: due,
+                  isEffective: false));
+        }
+        return _find(id);
+      });
+
+  Future<FinancialTransaction> _createSingle(TransactionDraft draft) async {
     _validateDraft(draft);
     await _validateReferences(draft);
     final id = EntityMetadata.newId();
@@ -107,8 +173,8 @@ class SqliteTransactionsRepository implements TransactionsRepository {
     return _find(id);
   }
 
-  @override
-  Future<FinancialTransaction> update(String id, TransactionDraft draft) async {
+  Future<FinancialTransaction> _updateSingle(
+      String id, TransactionDraft draft) async {
     _validateDraft(draft);
     final original = await _find(id);
     final accountChanged = original.accountId != draft.accountId;
@@ -165,6 +231,25 @@ class SqliteTransactionsRepository implements TransactionsRepository {
 
   @override
   Future<void> updateAmount(String id,
+          {required int expectedAmountMinor,
+          required int amountMinor,
+          SeriesScope scope = SeriesScope.onlyThis}) =>
+      _db.transaction(() async {
+        final store = SeriesStore(_db, 'transactions');
+        final original = await store.row(id);
+        if (original.read<int>('planned_amount_minor') != expectedAmountMinor) {
+          throw StateError(
+              'O valor já mudou. Atualize a lista e tente novamente.');
+        }
+        final targets = await store.targets(id, scope);
+        for (final row in targets) {
+          await _updateAmountSingle(row.read<String>('id'),
+              expectedAmountMinor: row.read<int>('planned_amount_minor'),
+              amountMinor: amountMinor);
+        }
+      });
+
+  Future<void> _updateAmountSingle(String id,
       {required int expectedAmountMinor, required int amountMinor}) async {
     if (amountMinor <= 0 || amountMinor > 9000000000000000) {
       throw const FormatException(
@@ -188,15 +273,8 @@ class SqliteTransactionsRepository implements TransactionsRepository {
   }
 
   @override
-  Future<void> delete(String id) async {
-    await _find(id);
-    final now = EntityMetadata.nowUtcMillis();
-    await _db.customStatement('''
-      UPDATE transactions SET deleted_at = ?, updated_at = ?,
-        sync_version = sync_version + 1
-      WHERE id = ? AND deleted_at IS NULL
-    ''', [now, now, id]);
-  }
+  Future<void> delete(String id, {SeriesScope scope = SeriesScope.onlyThis}) =>
+      SeriesStore(_db, 'transactions').delete(id, scope);
 
   @override
   Future<void> setEffective(String id,
@@ -293,6 +371,7 @@ class SqliteTransactionsRepository implements TransactionsRepository {
 
   FinancialTransaction _map(QueryRow row) => FinancialTransaction(
         id: row.read<String>('id'),
+        series: SeriesStore.info(row),
         description: row.read<String>('description'),
         type: TransactionType.values.byName(row.read<String>('type')),
         amountMinor: row.read<int>('planned_amount_minor'),
