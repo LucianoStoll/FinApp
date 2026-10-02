@@ -179,6 +179,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester
           .ensureVisible(find.byKey(const ValueKey('series-amount-mode')));
+      await tester.pumpAndSettle();
       await expectLater(find.byKey(const ValueKey('movement-full-screen')),
           matchesGoldenFile('series-mobile-preview.png'));
     });

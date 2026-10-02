@@ -438,9 +438,8 @@ class _TransfersViewState extends State<_TransfersView> {
                 final item = state.items[index];
                 return MovementListRow(
                   id: item.id,
-                  description: item.series == null
-                      ? item.description
-                      : '${item.description} · ${item.series!.label}',
+                  description: item.description,
+                  tags: [if (item.series != null) item.series!.label],
                   account:
                       '${item.sourceAccountName} → ${item.destinationAccountName}',
                   amount:

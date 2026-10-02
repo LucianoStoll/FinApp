@@ -597,9 +597,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
     final busy = _changingStatus.contains(item.id);
     return MovementListRow(
       id: item.id,
-      description: item.series == null
-          ? item.description
-          : '${item.description} · ${item.series!.label}',
+      description: item.description,
       account: item.accountName,
       amount:
           '${item.type == TransactionType.income ? '+' : '-'}${MoneyMinor.display(item.amountMinor, item.currencyCode)}',
@@ -613,6 +611,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
       effectiveLabel:
           item.type == TransactionType.income ? 'Receber hoje' : 'Pagar hoje',
       tags: [
+        if (item.series != null) item.series!.label,
         if (parent != null) parent.name,
         if (item.categoryName != null) item.categoryName!
       ],
