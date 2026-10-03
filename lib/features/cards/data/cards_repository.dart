@@ -740,8 +740,9 @@ class CardsRepository {
             card.paymentAccountId != expectedAccountId) {
           throw StateError('A fatura mudou. Atualize a lista antes de pagar.');
         }
-        if (bill.balanceMinor <= 0)
+        if (bill.balanceMinor <= 0) {
           throw StateError('Esta fatura já está quitada.');
+        }
         final todayEnd = cardDay(DateTime.now().add(const Duration(days: 1)));
         final shifted = <(String, DateTime, int)>[];
         final now = EntityMetadata.nowUtcMillis();
@@ -799,8 +800,9 @@ class CardsRepository {
   Future<void> undoSettlement(CardSettlement action) =>
       db.transaction(() async {
         await _checkSettlement(action);
-        if (action.newPaymentId != null)
+        if (action.newPaymentId != null) {
           await undoPayment(action.newPaymentId!);
+        }
         final now = EntityMetadata.nowUtcMillis();
         for (final s in action.shifted) {
           await db.customStatement(
@@ -855,7 +857,9 @@ class CardsRepository {
         final today = cardDay(DateTime.now());
         for (final c in await list()) {
           if (filter.accountId != null &&
-              filter.accountId != c.paymentAccountId) continue;
+              filter.accountId != c.paymentAccountId) {
+            continue;
+          }
           // A lista mensal mostra também dívida trazida de ciclos anteriores,
           // mesmo quando não há uma nova compra naquele mês.
           if (filter.dateField != TransactionDateField.effective &&
@@ -887,15 +891,20 @@ class CardsRepository {
           for (final bill in await invoices(c.id)) {
             if (bill.entries.isEmpty &&
                 bill.payments.isEmpty &&
-                bill.previousMinor <= 0) continue;
+                bill.previousMinor <= 0) {
+              continue;
+            }
             if (filter.categoryId != null &&
-                !bill.entries.any((e) => categories.contains(e.categoryId)))
+                !bill.entries.any((e) => categories.contains(e.categoryId))) {
               continue;
+            }
             final effective = bill.balanceMinor <= 0;
-            if (filter.status == TransactionStatus.effective && !effective)
+            if (filter.status == TransactionStatus.effective && !effective) {
               continue;
-            if (filter.status == TransactionStatus.pending && effective)
+            }
+            if (filter.status == TransactionStatus.pending && effective) {
               continue;
+            }
             final actual =
                 bill.payments.where((p) => cardDay(p.date) <= today).toList();
             final scheduled =
@@ -912,7 +921,9 @@ class CardsRepository {
                 (filter.from != null &&
                     cardDay(filterDate) < cardDay(filter.from!)) ||
                 (filter.to != null &&
-                    cardDay(filterDate) > cardDay(filter.to!))) continue;
+                    cardDay(filterDate) > cardDay(filter.to!))) {
+              continue;
+            }
             result.add(FinancialTransaction(
                 id: 'invoice:${bill.id}',
                 cardId: c.id,

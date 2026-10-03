@@ -631,8 +631,9 @@ class _TransactionsViewState extends State<_TransactionsView> {
                       initialDate: settlement.date,
                       firstDate: DateTime(2000),
                       lastDate: DateTime(2100, 12, 31));
-                  if (date != null)
+                  if (date != null) {
                     await repo.changeSettlementDate(settlement, date);
+                  }
                 }));
       });
 
