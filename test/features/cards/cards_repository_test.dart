@@ -418,4 +418,26 @@ void main() {
             CardsRepository.paymentSignature(bill)),
         throwsStateError);
   });
+  test('duas compras mp em novembro aparecem só como fatura de 242 reais',
+      () async {
+    final id = await cards.save(CardDraft(
+        name: 'mp', paymentAccountId: account.id, closingDay: 25, dueDay: 5));
+    await cards.createPurchase(
+        draft(amount: 22200, selectedCard: id, month: DateTime(2026, 11)));
+    await cards.createPurchase(
+        draft(amount: 2000, selectedCard: id, month: DateTime(2026, 11)));
+    final rows = await SqliteTransactionsRepository(db).list(TransactionFilter(
+        from: DateTime(2026, 11), to: DateTime(2026, 11, 30)));
+    expect(rows, hasLength(1));
+    expect(rows.single.description, 'Cartão - mp');
+    expect(rows.single.amountMinor, 24200);
+    expect(rows.single.cardEntryCount, 2);
+    expect(rows.single.date, DateTime.utc(2026, 10, 25));
+    expect(rows.single.dueDate, DateTime.utc(2026, 11, 5));
+    expect(
+        (await cards.invoice(rows.single.cardInvoiceId!))
+            .entries
+            .map((e) => e.amountMinor),
+        unorderedEquals([22200, 2000]));
+  });
 }

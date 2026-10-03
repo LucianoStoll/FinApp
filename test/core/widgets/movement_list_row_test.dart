@@ -30,6 +30,24 @@ Widget row(
             itemBuilder: (_) =>
                 [const PopupMenuItem(value: 'edit', child: Text('Editar'))]));
 
+Widget invoiceRow() => MovementListRow(
+    id: 'invoice:mp',
+    description: 'Cartão - mp',
+    account: 'MercadoPago',
+    amount: '-R\$ 242,00',
+    dueDate: DateTime(2026, 11, 5),
+    effectiveDate: null,
+    effective: false,
+    color: SomiaColors.red,
+    pendingIcon: Icons.schedule,
+    highlightLabel: 'Fecha dia 25/out.',
+    effectiveLabel: 'Pagar fatura hoje',
+    onEdit: () {},
+    onEffective: () {},
+    menu: PopupMenuButton<String>(
+        itemBuilder: (_) =>
+            [const PopupMenuItem(value: 'open', child: Text('Ver fatura'))]));
+
 Future<void> open(
     WidgetTester tester, Widget child, Size size, double scale) async {
   tester.view.physicalSize = size;
@@ -120,8 +138,11 @@ void main() {
       }
       await font.load();
       await icons.load();
-      await open(tester, Column(children: [row(), row(effective: true)]),
-          const Size(390, 844), 1);
+      await open(
+          tester,
+          Column(children: [invoiceRow(), row(), row(effective: true)]),
+          const Size(390, 844),
+          1);
       await expectLater(find.byKey(const ValueKey('preview')),
           matchesGoldenFile('movement-list-mobile-preview.png'));
     });

@@ -934,7 +934,7 @@ class CardsRepository {
                 cardEntryCount: bill.entries.length,
                 cardLastPaymentId: actual.lastOrNull?.id,
                 cardPaymentSignature: paymentSignature(bill),
-                description: 'Fatura ${c.name}',
+                description: 'Cartão - ${c.name}',
                 type: TransactionType.expense,
                 amountMinor:
                     math.max(0, bill.previousMinor + bill.chargesMinor),

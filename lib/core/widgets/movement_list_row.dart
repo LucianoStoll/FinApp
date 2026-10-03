@@ -18,6 +18,8 @@ class MovementListRow extends StatelessWidget {
       required this.onEffective,
       required this.menu,
       this.tags = const [],
+      this.highlightLabel,
+      this.pendingIcon = Icons.radio_button_unchecked,
       this.busy = false,
       this.onAmount,
       this.onPending,
@@ -29,6 +31,8 @@ class MovementListRow extends StatelessWidget {
   final bool effective, busy;
   final Color color;
   final List<String> tags;
+  final String? highlightLabel;
+  final IconData pendingIcon;
   final VoidCallback onEdit, onEffective;
   final VoidCallback? onAmount, onPending;
   final Widget menu;
@@ -69,7 +73,7 @@ class MovementListRow extends StatelessWidget {
                   ? Icons.check_circle_outline
                   : effectiveDate != null
                       ? Icons.schedule
-                      : Icons.radio_button_unchecked,
+                      : pendingIcon,
               color: statusColor,
               size: 22),
     );
@@ -84,6 +88,19 @@ class MovementListRow extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+      if (highlightLabel != null) ...[
+        const SizedBox(height: 5),
+        Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+                color: SomiaColors.blue,
+                borderRadius: BorderRadius.circular(12)),
+            child: Text(highlightLabel!,
+                style:
+                    const TextStyle(color: SomiaColors.sidebar, fontSize: 12),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis)),
+      ],
       if (tags.isNotEmpty) ...[
         const SizedBox(height: 5),
         Wrap(spacing: 5, runSpacing: 4, children: [

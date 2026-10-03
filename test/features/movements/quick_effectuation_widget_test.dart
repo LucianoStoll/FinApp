@@ -190,7 +190,7 @@ class _InvoiceTransactions implements TransactionsRepository {
             cardBalanceMinor: cards.paid ? 0 : 7000,
             cardEntryCount: 3,
             cardLastPaymentId: cards.paid ? 'p' : null,
-            description: 'Fatura Nu',
+            description: 'Cartão - Nu',
             type: TransactionType.expense,
             amountMinor: 10000,
             date: DateTime(2026, 9, 25),
@@ -234,8 +234,9 @@ void main() {
         .registerSingleton<TransactionsRepository>(_InvoiceTransactions(cards));
     await open(
         tester, const TransactionsPage(sectionType: TransactionType.expense));
-    expect(find.text('Fatura Nu'), findsOneWidget);
-    expect(find.text('3 lançamentos'), findsOneWidget);
+    expect(find.text('Cartão - Nu'), findsOneWidget);
+    expect(find.text('Fecha dia 25/set.'), findsOneWidget);
+    expect(find.text('Compra no cartão'), findsNothing);
     await tester
         .tap(find.byKey(const ValueKey('movement-status-invoice:bill')));
     await tester.pumpAndSettle();

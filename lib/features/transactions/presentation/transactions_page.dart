@@ -684,10 +684,25 @@ class _TransactionsViewState extends State<_TransactionsView> {
         busy: busy,
         color: SomiaColors.red,
         effectiveLabel: 'Pagar fatura hoje',
+        pendingIcon: Icons.schedule,
+        highlightLabel:
+            'Fecha dia ${item.date.day.toString().padLeft(2, '0')}/${const [
+          'jan',
+          'fev',
+          'mar',
+          'abr',
+          'mai',
+          'jun',
+          'jul',
+          'ago',
+          'set',
+          'out',
+          'nov',
+          'dez'
+        ][item.date.month - 1]}.',
         pendingLabel: 'Desfazer último pagamento',
         tags: [
-          'Fatura completa',
-          '${item.cardEntryCount} lançamentos',
+          if (_categoryId != null || _subcategoryId != null) 'Fatura completa',
           if (!item.isEffective && item.cardBalanceMinor != item.amountMinor)
             'Restante ${MoneyMinor.display(item.cardBalanceMinor, 'BRL')}',
           if (item.cardScheduledMinor > 0)

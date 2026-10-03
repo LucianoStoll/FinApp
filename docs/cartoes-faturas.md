@@ -18,7 +18,7 @@ Editar/excluir somente esta ou esta e próximas preserva anteriores e faturas co
 
 ## Fatura na lista de despesas
 
-Despesas mostra uma linha por cartão e fatura, com o total completo e o saldo restante após pagamentos parciais. Tocar no nome ou valor abre o cartão no mês correspondente; os lançamentos ficam separados nessa tela. O filtro de categoria encontra faturas com aquela categoria e mantém o total completo, indicado na etiqueta. Conta filtra pela conta padrão de pagamento.
+Despesas mostra uma linha “Cartão - nome” por cartão e fatura, com etiqueta azul de fechamento e vencimento, com o total completo e o saldo restante após pagamentos parciais. Tocar no nome ou valor abre o cartão no mês correspondente; os lançamentos ficam separados nessa tela. O filtro de categoria encontra faturas com aquela categoria e mantém o total completo, indicado na etiqueta. Conta filtra pela conta padrão de pagamento.
 
 O ícone pendente paga o saldo restante hoje pela conta padrão. Pagamentos futuros da mesma fatura são antecipados para hoje, sem criar débito duplicado. O feedback de 5 segundos permite desfazer exatamente essa ação (restaurando os agendamentos) ou ajustar a data. Uma fatura efetivada permite desfazer seu último pagamento com confirmação; os pagamentos anteriores ficam preservados. Crédito sem pagamento não oferece desfazer. Totais derivados da fatura são alterados pelos lançamentos dentro do cartão.
 
