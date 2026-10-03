@@ -67,7 +67,7 @@ Testes cobrem calendário, centavos, ambos os modos, criação nos três tipos, 
 proteção de efetivados/agendados, ações isoladas/em série, atomicidade, migration
 v8→v9, logos e histórico anteriores, backup, interface e confirmação de descarte.
 
-Validação manual pelo usuário pendente:
+Validação manual aprovada pelo usuário em 02/10/2026. Roteiro utilizado:
 
 1. Criar receita recorrente mensal por 3 ocorrências e navegar entre os meses.
 2. Criar despesa de R$ 100,00 em 3 parcelas; conferir R$ 33,34 + R$ 33,33 + R$ 33,33.

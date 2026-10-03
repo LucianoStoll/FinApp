@@ -958,6 +958,7 @@ class TransactionFormState extends State<TransactionForm> {
                             cardMode: _cardId != null,
                             existing: widget.item?.series),
                       if (_type == TransactionType.expense &&
+                          widget.initialCardId == null &&
                           widget.item == null &&
                           widget.cards.any((c) => !c.isArchived))
                         DropdownButtonFormField<bool>(

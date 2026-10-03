@@ -137,8 +137,12 @@ void main() {
         (tester) async {
       await open(tester, platform);
       expect(find.text('Nubank · 10/2026'), findsOneWidget);
+      await tester.scrollUntilVisible(
+          find.text('Compra parcelada com descrição longa'), 200);
+      await tester.pumpAndSettle();
       expect(find.text('Compra parcelada com descrição longa'), findsOneWidget);
-      await tester.ensureVisible(find.text('Caixa / pagamentos'));
+      await tester.scrollUntilVisible(find.text('Caixa / pagamentos'), -200);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Caixa / pagamentos'));
       await tester.pumpAndSettle();
       expect(find.text('Pago no mês'), findsOneWidget);
@@ -166,10 +170,9 @@ void main() {
         ('MaterialIcons', 'MaterialIcons-Regular.otf')
       ]) {
         final loader = FontLoader(pair.$1)
-          ..addFont(File(
+          ..addFont(Future.value(ByteData.sublistView(File(
                   '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/${pair.$2}')
-              .readAsBytes()
-              .then((b) => ByteData.sublistView(b)));
+              .readAsBytesSync())));
         await loader.load();
       }
       await open(tester, TargetPlatform.android);

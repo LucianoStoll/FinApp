@@ -141,16 +141,14 @@ void main() {
   if (const bool.fromEnvironment('SOMIA_RENDER_PREVIEW')) {
     testWidgets('prévia pagamento cartão Android', (tester) async {
       final fonts = FontLoader('Roboto')
-        ..addFont(File(
+        ..addFont(Future.value(ByteData.sublistView(File(
                 '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/Roboto-Regular.ttf')
-            .readAsBytes()
-            .then((b) => ByteData.sublistView(b)));
+            .readAsBytesSync())));
       await fonts.load();
       final icons = FontLoader('MaterialIcons')
-        ..addFont(File(
+        ..addFont(Future.value(ByteData.sublistView(File(
                 '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf')
-            .readAsBytes()
-            .then((b) => ByteData.sublistView(b)));
+            .readAsBytesSync())));
       await icons.load();
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
