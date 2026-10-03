@@ -21,8 +21,9 @@ class MovementListRow extends StatelessWidget {
       this.busy = false,
       this.onAmount,
       this.onPending,
-      this.effectiveLabel = 'Efetivar hoje'});
-  final String id, description, account, amount, effectiveLabel;
+      this.effectiveLabel = 'Efetivar hoje',
+      this.pendingLabel = 'Marcar como pendente'});
+  final String id, description, account, amount, effectiveLabel, pendingLabel;
   final DateTime dueDate;
   final DateTime? effectiveDate;
   final bool effective, busy;
@@ -48,7 +49,7 @@ class MovementListRow extends StatelessWidget {
       tooltip: busy
           ? 'Salvando'
           : effective
-              ? (onPending == null ? status : 'Marcar como pendente')
+              ? (onPending == null ? status : pendingLabel)
               : effectiveLabel,
       onPressed: busy
           ? null

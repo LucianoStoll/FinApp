@@ -595,7 +595,133 @@ class _TransactionsViewState extends State<_TransactionsView> {
             )),
       );
 
+  void _openInvoice(FinancialTransaction item) => context.go(
+      '/cards?card=${item.cardId}&month=${item.cardInvoiceMonth!.toIso8601String()}');
+
+  Future<void> _invoiceAction(String id, Future<void> Function() action) async {
+    if (!mounted || _changingStatus.contains(id)) return;
+    setState(() => _changingStatus.add(id));
+    try {
+      await action();
+      if (mounted) await context.read<TransactionsCubit>().load();
+    } catch (error) {
+      if (mounted) _showError(error);
+    } finally {
+      if (mounted) setState(() => _changingStatus.remove(id));
+    }
+  }
+
+  Future<void> _quickInvoice(FinancialTransaction item) =>
+      _invoiceAction(item.id, () async {
+        final repo = getIt<CardsRepository>();
+        final settlement = await repo.settleInvoice(item.cardInvoiceId!,
+            expectedBalance: item.cardBalanceMinor,
+            expectedScheduled: item.cardScheduledMinor,
+            expectedSignature: item.cardPaymentSignature,
+            expectedAccountId: item.accountId,
+            date: DateUtils.dateOnly(DateTime.now()));
+        if (!mounted) return;
+        showEffectuationFeedback(context,
+            message: 'Fatura paga hoje.',
+            undo: () =>
+                _invoiceAction(item.id, () => repo.undoSettlement(settlement)),
+            adjustDate: () => _invoiceAction(item.id, () async {
+                  final date = await showDatePicker(
+                      context: context,
+                      initialDate: settlement.date,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100, 12, 31));
+                  if (date != null)
+                    await repo.changeSettlementDate(settlement, date);
+                }));
+      });
+
+  Future<void> _undoInvoice(FinancialTransaction item) =>
+      _invoiceAction(item.id, () async {
+        final repo = getIt<CardsRepository>();
+        final bill = await repo.invoice(item.cardInvoiceId!);
+        if (!mounted) return;
+        if (CardsRepository.paymentSignature(bill) !=
+            item.cardPaymentSignature) {
+          throw StateError(
+              'A fatura mudou. Atualize a lista antes de desfazer.');
+        }
+        final payment =
+            bill.payments.firstWhere((p) => p.id == item.cardLastPaymentId);
+        final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (dialog) => AlertDialog(
+                  title: const Text('Desfazer último pagamento?'),
+                  content: Text(
+                      'O pagamento de ${MoneyMinor.display(payment.amountMinor, 'BRL')} em ${_dateLabel(payment.date)}, pela conta ${payment.accountName}, será removido. Os pagamentos anteriores serão preservados.'),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(dialog, false),
+                        child: const Text('Cancelar')),
+                    FilledButton(
+                        onPressed: () => Navigator.pop(dialog, true),
+                        child: const Text('Desfazer')),
+                  ],
+                ));
+        if (confirmed == true) {
+          await repo.undoInvoicePayment(
+              bill.id, payment.id, item.cardPaymentSignature);
+        }
+      });
+
+  Widget _invoiceTile(FinancialTransaction item) {
+    final busy = _changingStatus.contains(item.id);
+    final canUndo = item.isEffective && item.cardLastPaymentId != null;
+    return MovementListRow(
+        id: item.id,
+        description: item.description,
+        account: item.accountName,
+        amount: '-${MoneyMinor.display(item.amountMinor, 'BRL')}',
+        dueDate: item.dueDate!,
+        effectiveDate: item.effectiveDate,
+        effective: item.isEffective,
+        busy: busy,
+        color: SomiaColors.red,
+        effectiveLabel: 'Pagar fatura hoje',
+        pendingLabel: 'Desfazer último pagamento',
+        tags: [
+          'Fatura completa',
+          '${item.cardEntryCount} lançamentos',
+          if (!item.isEffective && item.cardBalanceMinor != item.amountMinor)
+            'Restante ${MoneyMinor.display(item.cardBalanceMinor, 'BRL')}',
+          if (item.cardScheduledMinor > 0)
+            'Agendado ${MoneyMinor.display(item.cardScheduledMinor, 'BRL')}',
+          if (item.cardBalanceMinor < 0)
+            'Crédito ${MoneyMinor.display(-item.cardBalanceMinor, 'BRL')}',
+        ],
+        onEdit: () => _openInvoice(item),
+        onAmount: () => _openInvoice(item),
+        onEffective: () => _quickInvoice(item),
+        onPending: canUndo ? () => _undoInvoice(item) : null,
+        menu: PopupMenuButton<String>(
+            key: ValueKey('movement-menu-${item.id}'),
+            enabled: !busy,
+            tooltip: 'Ações da fatura',
+            icon: const Icon(Icons.more_vert, size: 20),
+            onSelected: (action) {
+              if (action == 'open') _openInvoice(item);
+              if (action == 'pay') _quickInvoice(item);
+              if (action == 'undo') _undoInvoice(item);
+            },
+            itemBuilder: (_) => [
+                  const PopupMenuItem(value: 'open', child: Text('Ver fatura')),
+                  if (!item.isEffective)
+                    const PopupMenuItem(
+                        value: 'pay', child: Text('Pagar fatura hoje')),
+                  if (canUndo)
+                    const PopupMenuItem(
+                        value: 'undo',
+                        child: Text('Desfazer último pagamento')),
+                ]));
+  }
+
   Widget _itemTile(FinancialTransaction item) {
+    if (item.cardInvoiceId != null) return _invoiceTile(item);
     final categories = context.read<TransactionsCubit>().state.categories;
     final category =
         categories.where((c) => c.id == item.categoryId).firstOrNull;

@@ -122,11 +122,12 @@ void main() {
     expect(movement.cardId, cardId);
     expect(await tx.list(const TransactionFilter(type: TransactionType.income)),
         isEmpty);
-    expect(await tx.list(TransactionFilter(accountId: account.id)), isEmpty);
+    expect(
+        await tx.list(TransactionFilter(accountId: account.id)), hasLength(3));
     expect(
         await tx
             .list(const TransactionFilter(status: TransactionStatus.effective)),
-        isEmpty);
+        hasLength(1));
     await expectLater(
         tx.setEffective(movement.id, effective: true), throwsStateError);
   });
@@ -303,5 +304,118 @@ void main() {
         draft(amount: 1500, first: 6, month: DateTime(2026, 9)));
     expect((await cards.entry(last)).label, 'Parcela 6/6');
     expect((await cards.find(cardId)).committedMinor, 10500);
+  });
+  Future<CardSettlement> settle(CardInvoice bill) =>
+      cards.settleInvoice(bill.id,
+          expectedBalance: bill.balanceMinor,
+          expectedScheduled: bill.scheduledMinor,
+          expectedSignature: CardsRepository.paymentSignature(bill),
+          expectedAccountId: account.id,
+          date: DateTime.now());
+
+  test('lista agrupa compras e mantém total após pagamento parcial', () async {
+    final tx = SqliteTransactionsRepository(db);
+    final first = await cards.createPurchase(draft(amount: 10000));
+    await cards.createPurchase(draft(amount: 5000));
+    final e = await cards.entry(first);
+    await cards.pay(e.invoiceId, other.id, 4000, DateTime(2026, 2, 5));
+    final filter =
+        TransactionFilter(from: DateTime(2026, 2), to: DateTime(2026, 2, 28));
+    final row = (await tx.list(filter)).single;
+    expect(row.id, 'invoice:${e.invoiceId}');
+    expect(row.cardEntryCount, 2);
+    expect(row.amountMinor, 15000);
+    expect(row.cardBalanceMinor, 11000);
+    expect(row.isEffective, false);
+    expect((await cards.invoice(e.invoiceId)).entries, hasLength(2));
+    await expectLater(
+        tx.updateAmount(row.id, expectedAmountMinor: 15000, amountMinor: 1),
+        throwsStateError);
+    await expectLater(tx.delete(row.id), throwsStateError);
+    final action = await settle(await cards.invoice(e.invoiceId));
+    expect(action.newAmountMinor, 11000);
+    final paid = (await tx.list(filter)).single;
+    expect(paid.isEffective, true);
+    expect(paid.amountMinor, 15000);
+    expect(
+        (await SqliteDashboardRepository(db).load(DateTime(2026, 2)))
+            .currencies
+            .single
+            .expenseMinor,
+        15000);
+    expect(
+        (await balance(asOf: DateTime.now(), id: other.id)).currentBalanceMinor,
+        96000);
+    expect((await balance(asOf: DateTime.now())).currentBalanceMinor, 89000);
+    await cards.undoSettlement(action);
+    expect((await cards.invoice(e.invoiceId)).balanceMinor, 11000);
+    expect((await cards.invoice(e.invoiceId)).payments, hasLength(1));
+  });
+
+  for (final scheduled in [4000, 10000]) {
+    test('quitar agenda $scheduled sem duplicar e desfazer restaura data',
+        () async {
+      final e = await cards.entry(await cards.createPurchase(draft()));
+      final future = DateTime(2090, 2, 5);
+      await cards.pay(e.invoiceId, other.id, scheduled, future);
+      final bill = await cards.invoice(e.invoiceId);
+      final action = await settle(bill);
+      final paid = await cards.invoice(bill.id);
+      expect(paid.balanceMinor, 0);
+      expect(paid.scheduledMinor, 0);
+      expect(paid.payments, hasLength(scheduled == 10000 ? 1 : 2));
+      expect(action.newAmountMinor, 10000 - scheduled);
+      await expectLater(settle(bill), throwsStateError);
+      await cards.undoSettlement(action);
+      final undone = await cards.invoice(bill.id);
+      expect(undone.balanceMinor, 10000);
+      expect(undone.scheduledMinor, scheduled);
+      expect(undone.payments.single.date, DateTime.utc(2090, 2, 5));
+      await expectLater(cards.undoSettlement(action), throwsStateError);
+    });
+  }
+
+  test('ajustar data agenda a quitação e rejeita desfazer obsoleto', () async {
+    final e = await cards.entry(await cards.createPurchase(draft()));
+    final action = await settle(await cards.invoice(e.invoiceId));
+    await cards.changeSettlementDate(action, DateTime(2090, 2, 5));
+    final bill = await cards.invoice(e.invoiceId);
+    expect(bill.balanceMinor, 10000);
+    expect(bill.scheduledMinor, 10000);
+    await expectLater(cards.undoSettlement(action), throwsStateError);
+  });
+
+  test('conta arquivada falha atomicamente e saldo trazido aparece no mês',
+      () async {
+    final e = await cards.entry(await cards.createPurchase(draft()));
+    await cards.pay(e.invoiceId, other.id, 4000, DateTime(2090, 2, 5));
+    await db.customStatement(
+        'UPDATE accounts SET is_archived=1 WHERE id=?', [account.id]);
+    await expectLater(
+        settle(await cards.invoice(e.invoiceId)), throwsStateError);
+    final bill = await cards.invoice(e.invoiceId);
+    expect(bill.payments.single.date, DateTime.utc(2090, 2, 5));
+    expect(bill.balanceMinor, 10000);
+    final rows = await SqliteTransactionsRepository(db).list(TransactionFilter(
+        from: DateTime(2026, 10), to: DateTime(2026, 10, 31)));
+    expect(rows.single.amountMinor, 10000);
+    expect(rows.single.cardEntryCount, 0);
+  });
+
+  test(
+      'desfazer último pagamento preserva anteriores e rejeita assinatura antiga',
+      () async {
+    final e = await cards.entry(await cards.createPurchase(draft()));
+    await cards.pay(e.invoiceId, other.id, 4000, DateTime(2026, 2, 5));
+    final action = await settle(await cards.invoice(e.invoiceId));
+    final bill = await cards.invoice(e.invoiceId);
+    await cards.undoInvoicePayment(
+        bill.id, action.newPaymentId!, CardsRepository.paymentSignature(bill));
+    expect((await cards.invoice(bill.id)).balanceMinor, 6000);
+    expect((await cards.invoice(bill.id)).payments.single.amountMinor, 4000);
+    await expectLater(
+        cards.undoInvoicePayment(bill.id, action.newPaymentId!,
+            CardsRepository.paymentSignature(bill)),
+        throwsStateError);
   });
 }

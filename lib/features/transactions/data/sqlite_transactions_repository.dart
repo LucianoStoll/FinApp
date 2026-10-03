@@ -121,6 +121,8 @@ class SqliteTransactionsRepository implements TransactionsRepository {
   @override
   Future<FinancialTransaction> update(String id, TransactionDraft draft) =>
       _db.transaction(() async {
+        if (id.startsWith('invoice:'))
+          throw StateError('Abra a fatura para alterar seus lançamentos.');
         if (id.startsWith('card:')) {
           final repo = CardsRepository(_db);
           await repo.editPurchase(id.substring(5), draft);
@@ -257,6 +259,8 @@ class SqliteTransactionsRepository implements TransactionsRepository {
           required int amountMinor,
           SeriesScope scope = SeriesScope.onlyThis}) =>
       _db.transaction(() async {
+        if (id.startsWith('invoice:'))
+          throw StateError('Abra a fatura para alterar seus lançamentos.');
         if (id.startsWith('card:')) {
           return CardsRepository(_db).updateAmount(
               id.substring(5), expectedAmountMinor, amountMinor, scope);
@@ -300,13 +304,18 @@ class SqliteTransactionsRepository implements TransactionsRepository {
 
   @override
   Future<void> delete(String id, {SeriesScope scope = SeriesScope.onlyThis}) =>
-      id.startsWith('card:')
-          ? CardsRepository(_db).deletePurchase(id.substring(5), scope)
-          : SeriesStore(_db, 'transactions').delete(id, scope);
+      id.startsWith('invoice:')
+          ? Future.error(
+              StateError('Abra a fatura para alterar seus lançamentos.'))
+          : id.startsWith('card:')
+              ? CardsRepository(_db).deletePurchase(id.substring(5), scope)
+              : SeriesStore(_db, 'transactions').delete(id, scope);
 
   @override
   Future<void> setEffective(String id,
       {required bool effective, DateTime? effectiveDate}) async {
+    if (id.startsWith('invoice:'))
+      throw StateError('Pague pela ação da fatura.');
     if (id.startsWith('card:')) {
       throw StateError('Pague pela fatura do cartão.');
     }
@@ -333,6 +342,8 @@ class SqliteTransactionsRepository implements TransactionsRepository {
   @override
   Future<void> changeEffectiveDate(String id,
       {required DateTime expectedDate, DateTime? effectiveDate}) async {
+    if (id.startsWith('invoice:'))
+      throw StateError('Pague pela ação da fatura.');
     if (id.startsWith('card:')) {
       throw StateError('Pague pela fatura do cartão.');
     }

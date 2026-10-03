@@ -132,3 +132,18 @@ class CardInvoice {
     return cardDay(closingAt) <= cardDay(DateTime.now()) ? 'Fechada' : 'Aberta';
   }
 }
+
+/// Desfazer restaura apenas os pagamentos tocados por esta ação.
+class CardSettlement {
+  const CardSettlement(
+      {required this.invoiceId,
+      required this.date,
+      required this.shifted,
+      this.newPaymentId,
+      this.newAmountMinor = 0});
+  final String invoiceId;
+  final DateTime date;
+  final List<(String, DateTime, int)> shifted;
+  final String? newPaymentId;
+  final int newAmountMinor;
+}

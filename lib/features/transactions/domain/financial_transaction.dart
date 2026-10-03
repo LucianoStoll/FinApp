@@ -18,6 +18,12 @@ class FinancialTransaction {
     this.series,
     this.cardId,
     this.cardInvoiceMonth,
+    this.cardInvoiceId,
+    this.cardBalanceMinor = 0,
+    this.cardScheduledMinor = 0,
+    this.cardEntryCount = 0,
+    this.cardLastPaymentId,
+    this.cardPaymentSignature = '',
     required this.description,
     required this.type,
     required this.amountMinor,
@@ -36,6 +42,9 @@ class FinancialTransaction {
   final SeriesInfo? series;
   final String? cardId;
   final DateTime? cardInvoiceMonth;
+  final String? cardInvoiceId, cardLastPaymentId;
+  final int cardBalanceMinor, cardScheduledMinor, cardEntryCount;
+  final String cardPaymentSignature;
   final String description;
   final TransactionType type;
   final int amountMinor;

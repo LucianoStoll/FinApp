@@ -2,6 +2,7 @@
 
 ## v0.2.0-alpha — em desenvolvimento (pós-MVP)
 
+- #47: Despesas agrupa por fatura, abre detalhes no cartão e permite pagar o saldo restante pelo ícone, com desfazer/ajustar data e preservação de pagamentos parciais e agendados.
 - #47: cartões e faturas offline, compras integradas às despesas, parcelamentos e limite total comprometido, liquidações parciais/antecipadas com encargos/desconto, carry-over derivado sem duplicação, estornos e saldo credor. Migration v10 e histórico de mudanças.
 - #46 validada pelo usuário em 02/10/2026.
 

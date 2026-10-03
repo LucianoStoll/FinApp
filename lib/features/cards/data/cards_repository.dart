@@ -718,32 +718,226 @@ class CardsRepository {
     return movement(e, await find(e.cardId));
   }
 
-  Future<List<FinancialTransaction>> movements(TransactionFilter filter) async {
-    if (filter.type == TransactionType.income ||
-        filter.accountId != null ||
-        filter.status == TransactionStatus.effective ||
-        filter.dateField == TransactionDateField.effective) {
-      return [];
-    }
-    final cards = {for (final c in await list()) c.id: c};
-    final result = <FinancialTransaction>[];
-    for (final e in await entries()) {
-      if (e.kind != 'purchase') continue;
-      if (filter.categoryId != null && e.categoryId != filter.categoryId) {
-        final rows = await _rows(
-            'SELECT id FROM categories WHERE id=? AND parent_id=?',
-            [e.categoryId ?? '', filter.categoryId!]);
-        if (rows.isEmpty) continue;
+  static String paymentSignature(CardInvoice invoice) => invoice.payments
+      .map((p) => '${p.id}:${cardDay(p.date)}:${p.amountMinor}')
+      .join('|');
+
+  /// Completa só o saldo em aberto. Agendamentos são contabilizados hoje,
+  /// preservando os registros; não cria um segundo débito para eles.
+  Future<CardSettlement> settleInvoice(String id,
+          {required int expectedBalance,
+          required int expectedScheduled,
+          required String expectedSignature,
+          required String expectedAccountId,
+          required DateTime date}) =>
+      db.transaction(() async {
+        _date(date);
+        final bill = await invoice(id);
+        final card = await find(bill.cardId);
+        if (bill.balanceMinor != expectedBalance ||
+            bill.scheduledMinor != expectedScheduled ||
+            paymentSignature(bill) != expectedSignature ||
+            card.paymentAccountId != expectedAccountId) {
+          throw StateError('A fatura mudou. Atualize a lista antes de pagar.');
+        }
+        if (bill.balanceMinor <= 0)
+          throw StateError('Esta fatura já está quitada.');
+        final todayEnd = cardDay(DateTime.now().add(const Duration(days: 1)));
+        final shifted = <(String, DateTime, int)>[];
+        final now = EntityMetadata.nowUtcMillis();
+        for (final p
+            in bill.payments.where((p) => cardDay(p.date) >= todayEnd)) {
+          final row = await _one('card_payments', p.id);
+          await _account(row.read<String>('account_id'));
+          shifted.add((p.id, p.date, p.amountMinor));
+          await db.customStatement(
+              'UPDATE card_payments SET effective_at=?,updated_at=?,sync_version=sync_version+1 WHERE id=?',
+              [cardDay(date), now, p.id]);
+        }
+        final amount = math.max(0, bill.balanceMinor - bill.scheduledMinor);
+        String? newId;
+        if (amount > 0) {
+          _money(amount);
+          await _account(card.paymentAccountId);
+          newId = EntityMetadata.newId();
+          await db.customStatement(
+              'INSERT INTO card_payments(id,invoice_id,account_id,amount_minor,effective_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?)',
+              [
+                newId,
+                id,
+                card.paymentAccountId,
+                amount,
+                cardDay(date),
+                now,
+                now
+              ]);
+        }
+        return CardSettlement(
+            invoiceId: id,
+            date: date,
+            shifted: List.unmodifiable(shifted),
+            newPaymentId: newId,
+            newAmountMinor: amount);
+      });
+  Future<void> _checkSettlement(CardSettlement action) async {
+    for (final (id, amount) in [
+      if (action.newPaymentId != null)
+        (action.newPaymentId!, action.newAmountMinor),
+      for (final s in action.shifted) (s.$1, s.$3)
+    ]) {
+      final p = await _one('card_payments', id);
+      if (p.readNullable<int>('deleted_at') != null ||
+          p.read<String>('invoice_id') != action.invoiceId ||
+          p.read<int>('effective_at') != cardDay(action.date) ||
+          p.read<int>('amount_minor') != amount) {
+        throw StateError(
+            'O pagamento mudou. Atualize a fatura antes de desfazer ou ajustar.');
       }
-      final date = filter.dateField == TransactionDateField.posted
-          ? e.postedAt
-          : e.dueAt;
-      if (filter.from != null && cardDay(date) < cardDay(filter.from!)) {
-        continue;
-      }
-      if (filter.to != null && cardDay(date) > cardDay(filter.to!)) continue;
-      result.add(movement(e, cards[e.cardId]!));
     }
-    return result;
   }
+
+  Future<void> undoSettlement(CardSettlement action) =>
+      db.transaction(() async {
+        await _checkSettlement(action);
+        if (action.newPaymentId != null)
+          await undoPayment(action.newPaymentId!);
+        final now = EntityMetadata.nowUtcMillis();
+        for (final s in action.shifted) {
+          await db.customStatement(
+              'UPDATE card_payments SET effective_at=?,updated_at=?,sync_version=sync_version+1 WHERE id=?',
+              [cardDay(s.$2), now, s.$1]);
+        }
+      });
+  Future<void> changeSettlementDate(CardSettlement action, DateTime date) =>
+      db.transaction(() async {
+        _date(date);
+        await _checkSettlement(action);
+        final now = EntityMetadata.nowUtcMillis();
+        for (final id in [
+          if (action.newPaymentId != null) action.newPaymentId!,
+          for (final s in action.shifted) s.$1
+        ]) {
+          await db.customStatement(
+              'UPDATE card_payments SET effective_at=?,updated_at=?,sync_version=sync_version+1 WHERE id=?',
+              [cardDay(date), now, id]);
+        }
+      });
+  Future<void> undoInvoicePayment(
+          String invoiceId, String paymentId, String signature) =>
+      db.transaction(() async {
+        final bill = await invoice(invoiceId);
+        if (paymentSignature(bill) != signature ||
+            !bill.payments.any((p) =>
+                p.id == paymentId &&
+                cardDay(p.date) <= cardDay(DateTime.now()))) {
+          throw StateError(
+              'A fatura mudou. Atualize a lista antes de desfazer.');
+        }
+        await undoPayment(paymentId);
+      });
+
+  Future<List<FinancialTransaction>> movements(TransactionFilter filter) =>
+      db.transaction(() async {
+        if (filter.type == TransactionType.income) return [];
+        final result = <FinancialTransaction>[];
+        final accountRows = await _rows(
+            'SELECT id,name FROM accounts WHERE deleted_at IS NULL');
+        final names = {
+          for (final a in accountRows)
+            a.read<String>('id'): a.read<String>('name')
+        };
+        final categoryRows = filter.categoryId == null
+            ? <QueryRow>[]
+            : await _rows('SELECT id FROM categories WHERE id=? OR parent_id=?',
+                [filter.categoryId!, filter.categoryId!]);
+        final categories =
+            categoryRows.map((r) => r.read<String>('id')).toSet();
+        final today = cardDay(DateTime.now());
+        for (final c in await list()) {
+          if (filter.accountId != null &&
+              filter.accountId != c.paymentAccountId) continue;
+          // A lista mensal mostra também dívida trazida de ciclos anteriores,
+          // mesmo quando não há uma nova compra naquele mês.
+          if (filter.dateField != TransactionDateField.effective &&
+              filter.from != null &&
+              filter.to != null) {
+            var month = DateTime.utc(filter.from!.year, filter.from!.month);
+            final last = DateTime.utc(
+                filter.to!.year,
+                filter.to!.month +
+                    (filter.dateField == TransactionDateField.posted ? 1 : 0));
+            while (!month.isAfter(last) &&
+                month.year >= 2000 &&
+                month.year <= 2100) {
+              final key = cardDay(month), now = EntityMetadata.nowUtcMillis();
+              await db.customStatement(
+                  'INSERT OR IGNORE INTO card_invoices(id,card_id,month_at,closing_at,due_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?)',
+                  [
+                    EntityMetadata.newId(),
+                    c.id,
+                    key,
+                    cardDay(c.closingFor(month)),
+                    cardDay(c.dueFor(month)),
+                    now,
+                    now
+                  ]);
+              month = DateTime.utc(month.year, month.month + 1);
+            }
+          }
+          for (final bill in await invoices(c.id)) {
+            if (bill.entries.isEmpty &&
+                bill.payments.isEmpty &&
+                bill.previousMinor <= 0) continue;
+            if (filter.categoryId != null &&
+                !bill.entries.any((e) => categories.contains(e.categoryId)))
+              continue;
+            final effective = bill.balanceMinor <= 0;
+            if (filter.status == TransactionStatus.effective && !effective)
+              continue;
+            if (filter.status == TransactionStatus.pending && effective)
+              continue;
+            final actual =
+                bill.payments.where((p) => cardDay(p.date) <= today).toList();
+            final scheduled =
+                bill.payments.where((p) => cardDay(p.date) > today).toList();
+            final date = effective
+                ? actual.lastOrNull?.date
+                : scheduled.lastOrNull?.date;
+            final filterDate = switch (filter.dateField) {
+              TransactionDateField.posted => bill.closingAt,
+              TransactionDateField.due => bill.dueAt,
+              TransactionDateField.effective => effective ? date : null,
+            };
+            if (filterDate == null ||
+                (filter.from != null &&
+                    cardDay(filterDate) < cardDay(filter.from!)) ||
+                (filter.to != null &&
+                    cardDay(filterDate) > cardDay(filter.to!))) continue;
+            result.add(FinancialTransaction(
+                id: 'invoice:${bill.id}',
+                cardId: c.id,
+                cardInvoiceId: bill.id,
+                cardInvoiceMonth: bill.month,
+                cardBalanceMinor: bill.balanceMinor,
+                cardScheduledMinor: bill.scheduledMinor,
+                cardEntryCount: bill.entries.length,
+                cardLastPaymentId: actual.lastOrNull?.id,
+                cardPaymentSignature: paymentSignature(bill),
+                description: 'Fatura ${c.name}',
+                type: TransactionType.expense,
+                amountMinor:
+                    math.max(0, bill.previousMinor + bill.chargesMinor),
+                date: bill.closingAt,
+                dueDate: bill.dueAt,
+                effectiveDate: date,
+                isEffective: effective,
+                accountId: c.paymentAccountId,
+                accountName: names[c.paymentAccountId] ?? 'Conta do cartão',
+                categoryId: null,
+                categoryName: null,
+                currencyCode: 'BRL'));
+          }
+        }
+        return result;
+      });
 }

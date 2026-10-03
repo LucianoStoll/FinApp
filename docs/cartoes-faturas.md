@@ -16,6 +16,14 @@ Fatura é identificada pelo **mês do vencimento**. Fechamento anterior ao venci
 
 Editar/excluir somente esta ou esta e próximas preserva anteriores e faturas com pagamentos, inclusive agendados. Para corrigir compra numa fatura paga/parcial, use estorno. Compras com estorno ou antecipação registrada também preservam o histórico na exclusão; cancele seu saldo restante por estorno. Não converter um lançamento de conta existente em compra de cartão; crie a compra correta para manter histórico. Alterar dias do cadastro vale para faturas ainda não materializadas; existentes conservam datas reais.
 
+## Fatura na lista de despesas
+
+Despesas mostra uma linha por cartão e fatura, com o total completo e o saldo restante após pagamentos parciais. Tocar no nome ou valor abre o cartão no mês correspondente; os lançamentos ficam separados nessa tela. O filtro de categoria encontra faturas com aquela categoria e mantém o total completo, indicado na etiqueta. Conta filtra pela conta padrão de pagamento.
+
+O ícone pendente paga o saldo restante hoje pela conta padrão. Pagamentos futuros da mesma fatura são antecipados para hoje, sem criar débito duplicado. O feedback de 5 segundos permite desfazer exatamente essa ação (restaurando os agendamentos) ou ajustar a data. Uma fatura efetivada permite desfazer seu último pagamento com confirmação; os pagamentos anteriores ficam preservados. Crédito sem pagamento não oferece desfazer. Totais derivados da fatura são alterados pelos lançamentos dentro do cartão.
+
+Validar: duas compras no mesmo mês aparecem em uma linha; abrir pelo valor mostra ambas; pagamento parcial mantém total e mostra restante; efetivar quita somente restante; desfazer restaura parcial/agendamentos; após expirar o feedback, desfazer último pagamento pede confirmação. Saldo da conta e relatórios não duplicam gastos.
+
 ## Limite, liquidações, crédito e antecipação
 
 Compromisso = soma de todas as parcelas/encargos/créditos ativos − pagamentos realizados. Comprometido mínimo zero; negativo é saldo credor separado. Disponível = limite − comprometido; crédito não altera o valor cadastrado do limite. Exceder limite avisa e permite continuar. Pagamento futuro não libera limite atual.

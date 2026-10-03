@@ -1,3 +1,8 @@
+import 'package:drift/native.dart';
+import 'package:finapp/core/database/app_database.dart';
+import 'package:finapp/features/cards/data/cards_repository.dart';
+import 'package:finapp/features/cards/domain/credit_card.dart';
+import 'package:go_router/go_router.dart';
 import 'package:finapp/core/series/movement_series.dart';
 import 'package:finapp/core/di/injection.dart';
 import 'package:finapp/core/theme/app_theme.dart';
@@ -140,6 +145,68 @@ class _Transfers implements TransfersRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _InvoiceCards extends CardsRepository {
+  _InvoiceCards() : super(AppDatabase(NativeDatabase.memory()));
+  bool paid = false;
+  int writes = 0;
+  @override
+  Future<CardSettlement> settleInvoice(String id,
+      {required int expectedBalance,
+      required int expectedScheduled,
+      required String expectedSignature,
+      required String expectedAccountId,
+      required DateTime date}) async {
+    expect(expectedBalance, 7000);
+    expect(expectedAccountId, 'bank');
+    writes++;
+    paid = true;
+    return CardSettlement(
+        invoiceId: id,
+        date: date,
+        shifted: const [],
+        newPaymentId: 'p',
+        newAmountMinor: 7000);
+  }
+
+  @override
+  Future<void> undoSettlement(CardSettlement action) async {
+    writes++;
+    paid = false;
+  }
+}
+
+class _InvoiceTransactions implements TransactionsRepository {
+  _InvoiceTransactions(this.cards);
+  final _InvoiceCards cards;
+  @override
+  Future<List<FinancialTransaction>> list(
+          [TransactionFilter filter = const TransactionFilter()]) async =>
+      [
+        FinancialTransaction(
+            id: 'invoice:bill',
+            cardId: 'card',
+            cardInvoiceId: 'bill',
+            cardInvoiceMonth: DateTime(2026, 10),
+            cardBalanceMinor: cards.paid ? 0 : 7000,
+            cardEntryCount: 3,
+            cardLastPaymentId: cards.paid ? 'p' : null,
+            description: 'Fatura Nu',
+            type: TransactionType.expense,
+            amountMinor: 10000,
+            date: DateTime(2026, 9, 25),
+            dueDate: DateTime(2026, 10, 5),
+            isEffective: cards.paid,
+            effectiveDate: cards.paid ? DateTime.now() : null,
+            accountId: 'bank',
+            accountName: 'Banco',
+            categoryId: null,
+            categoryName: null,
+            currencyCode: 'BRL')
+      ];
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 Future<void> open(WidgetTester tester, Widget page) async {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
@@ -158,6 +225,56 @@ void main() {
     getIt.registerSingleton<CategoriesRepository>(_Categories());
   });
   tearDown(() => getIt.reset());
+  testWidgets('fatura única: pagar restante e desfazer sem abrir formulário',
+      (tester) async {
+    final cards = _InvoiceCards();
+    addTearDown(cards.db.close);
+    getIt.registerSingleton<CardsRepository>(cards);
+    getIt
+        .registerSingleton<TransactionsRepository>(_InvoiceTransactions(cards));
+    await open(
+        tester, const TransactionsPage(sectionType: TransactionType.expense));
+    expect(find.text('Fatura Nu'), findsOneWidget);
+    expect(find.text('3 lançamentos'), findsOneWidget);
+    await tester
+        .tap(find.byKey(const ValueKey('movement-status-invoice:bill')));
+    await tester.pumpAndSettle();
+    expect(cards.paid, true);
+    expect(cards.writes, 1);
+    expect(find.byType(TransactionForm), findsNothing);
+    await tester.tap(find.text('Desfazer'));
+    await tester.pumpAndSettle();
+    expect(cards.paid, false);
+    expect(cards.writes, 2);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('tocar valor da fatura abre cartão e mês', (tester) async {
+    final cards = _InvoiceCards();
+    addTearDown(cards.db.close);
+    getIt
+        .registerSingleton<TransactionsRepository>(_InvoiceTransactions(cards));
+    final router = GoRouter(initialLocation: '/expenses', routes: [
+      GoRoute(
+          path: '/expenses',
+          builder: (_, __) =>
+              const TransactionsPage(sectionType: TransactionType.expense)),
+      GoRoute(
+          path: '/cards',
+          builder: (_, state) => Scaffold(
+              body: Text(
+                  '${state.uri.queryParameters['card']} / ${state.uri.queryParameters['month']}'))),
+    ]);
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+        MaterialApp.router(theme: AppTheme.dark, routerConfig: router));
+    await tester.pumpAndSettle();
+    await tester
+        .tap(find.byKey(const ValueKey('movement-amount-invoice:bill')));
+    await tester.pumpAndSettle();
+    expect(find.text('card / 2026-10-01T00:00:00.000'), findsOneWidget);
+    expect(find.text('Calculadora'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
   for (final type in TransactionType.values) {
     for (final scheduled in [false, true]) {
       testWidgets('$type agendado=$scheduled: hoje, desfazer', (tester) async {
