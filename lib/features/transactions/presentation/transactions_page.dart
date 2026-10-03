@@ -820,7 +820,7 @@ class TransactionFormState extends State<TransactionForm> {
           MoneyMinor.parse(_amount.text);
       final extra =
           widget.item == null ? total : total - widget.item!.amountMinor;
-      if (extra > _selectedCard!.availableMinor!) {
+      if (extra > _selectedCard!.availableMinor! + _selectedCard!.creditMinor) {
         final ok = await showDialog<bool>(
             context: context,
             builder: (dialog) => AlertDialog(
@@ -981,9 +981,14 @@ class TransactionFormState extends State<TransactionForm> {
                                       : null;
                                   _cardMonth = null;
                                   _series.change(() {
-                                    _series.kind = SeriesKind.single;
-                                    _series.unit = SeriesUnit.month;
-                                    _series.interval.text = '1';
+                                    if (value == true) {
+                                      if (_series.kind ==
+                                          SeriesKind.recurring) {
+                                        _series.kind = SeriesKind.single;
+                                      }
+                                      _series.unit = SeriesUnit.month;
+                                      _series.interval.text = '1';
+                                    }
                                   });
                                 })),
                       if (_cardId != null) ...[

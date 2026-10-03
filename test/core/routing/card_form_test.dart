@@ -50,8 +50,8 @@ void main() {
       forms.field(tester, 1).controller!.text = '100,01';
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
-      await series.select(tester, 'payment-method', 'Cartão');
       await series.select(tester, 'series-kind', 'Parcelado');
+      await series.select(tester, 'payment-method', 'Cartão');
       await tester.ensureVisible(find.byKey(const ValueKey('series-count')));
       await tester.enterText(find.byKey(const ValueKey('series-count')), '3');
       expect(find.byKey(const ValueKey('series-unit')), findsNothing);
