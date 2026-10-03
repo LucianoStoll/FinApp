@@ -299,5 +299,9 @@ void main() {
         ['Parcela 4/6', 'Parcela 5/6', 'Parcela 6/6']);
     expect(entries.map((e) => e.amountMinor), [3000, 3000, 3000]);
     expect((await cards.find(cardId)).committedMinor, 9000);
+    final last = await cards.createPurchase(
+        draft(amount: 1500, first: 6, month: DateTime(2026, 9)));
+    expect((await cards.entry(last)).label, 'Parcela 6/6');
+    expect((await cards.find(cardId)).committedMinor, 10500);
   });
 }

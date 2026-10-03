@@ -1016,22 +1016,25 @@ class TransactionFormState extends State<TransactionForm> {
                                     setState(() => _cardMonth = null),
                                 icon: const Icon(Icons.restart_alt)),
                             onTap: _pickInvoiceMonth),
-                        if (widget.item == null && _series.active)
+                        if (widget.item == null)
                           TextFormField(
                               controller: _firstInstallment,
                               keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                   labelText: 'Primeira parcela a cadastrar',
-                                  helperText:
-                                      'Ex.: 4 para cadastrar apenas da 4ª em diante. A quantidade acima é a restante.'),
+                                  helperText: _series.active
+                                      ? 'Ex.: 4 para cadastrar apenas da 4ª em diante. A quantidade acima é a restante.'
+                                      : 'Use 1 para compra à vista. Para apenas a última parcela, informe seu número.'),
                               validator: (v) {
                                 final n = int.tryParse(v ?? '');
                                 return n == null ||
                                         n < 1 ||
                                         n +
-                                                (int.tryParse(
-                                                        _series.count.text) ??
-                                                    0) -
+                                                (_series.active
+                                                    ? int.tryParse(_series
+                                                            .count.text) ??
+                                                        0
+                                                    : 1) -
                                                 1 >
                                             1000
                                     ? 'Numeração entre 1 e 1000.'

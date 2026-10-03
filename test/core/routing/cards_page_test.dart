@@ -149,6 +149,7 @@ void main() {
       await tester.tap(find.text('Competência / fatura'));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Pagar fatura'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Pagar fatura'));
       await tester.pumpAndSettle();
       reference.field(tester, 0).controller!.text = '500,00';

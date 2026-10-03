@@ -71,11 +71,12 @@ class CardEntry {
       required this.dueAt,
       required this.invoiceMonth,
       this.categoryId,
-      this.categoryName});
+      this.categoryName,
+      this.sourceId});
   final String id, cardId, invoiceId, purchaseId, description, kind;
   final int index, count, amountMinor;
   final DateTime postedAt, dueAt, invoiceMonth;
-  final String? categoryId, categoryName;
+  final String? categoryId, categoryName, sourceId;
   String get label => count > 1
       ? 'Parcela ${index + 1}/$count'
       : switch (kind) {

@@ -357,7 +357,8 @@ class _CardsPageState extends State<CardsPage> {
                     const PopupMenuItem(
                         value: 'history', child: Text('Histórico')),
                   ],
-                  if (e.kind != 'fee' && e.kind != 'discount')
+                  if (e.kind != 'fee' &&
+                      (e.kind != 'discount' || e.sourceId == null))
                     const PopupMenuItem(
                         value: 'delete', child: Text('Excluir')),
                 ])

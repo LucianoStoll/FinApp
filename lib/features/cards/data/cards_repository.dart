@@ -308,7 +308,8 @@ class CardsRepository {
             dueAt: cardDate(r.read<int>('due_at')),
             invoiceMonth: cardDate(r.read<int>('month_at')),
             categoryId: r.readNullable<String>('category_id'),
-            categoryName: r.readNullable<String>('category_name')))
+            categoryName: r.readNullable<String>('category_name'),
+            sourceId: r.readNullable<String>('source_id')))
         .toList();
   }
 
