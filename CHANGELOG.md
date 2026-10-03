@@ -2,6 +2,9 @@
 
 ## v0.2.0-alpha — em desenvolvimento (pós-MVP)
 
+- #47: cartões e faturas offline, compras integradas às despesas, parcelamentos e limite total comprometido, liquidações parciais/antecipadas com encargos/desconto, carry-over derivado sem duplicação, estornos e saldo credor. Migration v10 e histórico de mudanças.
+- #46 validada pelo usuário em 02/10/2026.
+
 - #46: recorrências e parcelamentos em receitas, despesas e transferências, por quantidade e sempre pendentes; frequências/intervalos, parcelamento por total ou valor individual, centavos exatos, calendário com último dia disponível e ações isoladas/em série protegendo efetivados. Migration v9 e backup compatível.
 - #41 validada pelo usuário em 02/10/2026.
 

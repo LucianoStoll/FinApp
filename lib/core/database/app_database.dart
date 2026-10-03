@@ -14,6 +14,7 @@ import 'schema_v6.dart';
 import 'schema_v7.dart';
 import 'schema_v8.dart';
 import 'schema_v9.dart';
+import 'schema_v10.dart';
 import 'backup_service.dart';
 
 /// Banco local do MVP. As migrations SQL ficam estáveis por versão; as DAOs
@@ -34,7 +35,7 @@ class AppDatabase extends GeneratedDatabase {
   @override
   int get schemaVersion => currentSchemaVersion;
 
-  static const currentSchemaVersion = 9;
+  static const currentSchemaVersion = 10;
 
   @override
   Iterable<TableInfo<Table, dynamic>> get allTables => const [];
@@ -54,7 +55,8 @@ class AppDatabase extends GeneratedDatabase {
             ...schemaV6,
             ...schemaV7,
             ...schemaV8,
-            ...schemaV9
+            ...schemaV9,
+            ...schemaV10
           ]) {
             await customStatement(statement);
           }
@@ -70,6 +72,7 @@ class AppDatabase extends GeneratedDatabase {
               7 => schemaV7,
               8 => schemaV8,
               9 => schemaV9,
+              10 => schemaV10,
               _ => throw StateError('Migration v$version não implementada'),
             };
             for (final statement in statements) {

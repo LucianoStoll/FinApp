@@ -39,12 +39,14 @@ class SeriesFormFields extends StatelessWidget {
       required this.amount,
       required this.dueDate,
       required this.currencyCode,
+      this.cardMode = false,
       this.existing});
   final SeriesFormController controller;
   final TextEditingController amount;
   final DateTime dueDate;
   final String currencyCode;
   final SeriesInfo? existing;
+  final bool cardMode;
 
   String? _integer(String? value, int min) {
     final n = int.tryParse(value ?? '');
@@ -65,34 +67,37 @@ class SeriesFormFields extends StatelessWidget {
         decoration: const InputDecoration(labelText: 'Lançamento'),
         items: [
           for (final kind in SeriesKind.values)
-            DropdownMenuItem(value: kind, child: Text(kind.label))
+            if (!cardMode || kind != SeriesKind.recurring)
+              DropdownMenuItem(value: kind, child: Text(kind.label))
         ],
         onChanged: (kind) {
           if (kind != null) controller.change(() => controller.kind = kind);
         },
       ),
       if (controller.active) ...[
-        DropdownButtonFormField<SeriesUnit>(
-          key: const ValueKey('series-unit'),
-          isExpanded: true,
-          initialValue: controller.unit,
-          decoration: const InputDecoration(labelText: 'Frequência'),
-          items: [
-            for (final unit in SeriesUnit.values)
-              DropdownMenuItem(value: unit, child: Text(unit.label))
-          ],
-          onChanged: (unit) {
-            if (unit != null) controller.change(() => controller.unit = unit);
-          },
-        ),
-        TextFormField(
-            key: const ValueKey('series-interval'),
-            controller: controller.interval,
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
-                labelText: 'A cada (${controller.unit.intervalLabel})'),
-            validator: (value) => _integer(value, 1)),
+        if (!cardMode) ...[
+          DropdownButtonFormField<SeriesUnit>(
+            key: const ValueKey('series-unit'),
+            isExpanded: true,
+            initialValue: controller.unit,
+            decoration: const InputDecoration(labelText: 'Frequência'),
+            items: [
+              for (final unit in SeriesUnit.values)
+                DropdownMenuItem(value: unit, child: Text(unit.label))
+            ],
+            onChanged: (unit) {
+              if (unit != null) controller.change(() => controller.unit = unit);
+            },
+          ),
+          TextFormField(
+              key: const ValueKey('series-interval'),
+              controller: controller.interval,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                  labelText: 'A cada (${controller.unit.intervalLabel})'),
+              validator: (value) => _integer(value, 1)),
+        ],
         TextFormField(
             key: const ValueKey('series-count'),
             controller: controller.count,
@@ -135,8 +140,9 @@ class SeriesFormFields extends StatelessWidget {
                     'Informe valor, quantidade e intervalo para conferir a série.');
               }
             }),
-        const Text(
-            'As ocorrências serão criadas como pendentes. Você efetiva cada uma quando acontecer.'),
+        Text(cardMode
+            ? 'Parcelas mensais. O pagamento será registrado pela fatura.'
+            : 'As ocorrências serão criadas como pendentes. Você efetiva cada uma quando acontecer.'),
       ],
     ]);
   }

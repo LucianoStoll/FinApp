@@ -1,3 +1,4 @@
+import '../../features/cards/presentation/cards_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,6 +14,8 @@ import 'somia_shell.dart';
 abstract final class AppRoutes {
   static const dashboard = 'dashboard';
   static const dashboardPath = '/';
+  static const cards = 'cards';
+  static const cardsPath = '/cards';
   static const accounts = 'accounts';
   static const accountsPath = '/accounts';
   static const categories = 'categories';
@@ -37,6 +40,16 @@ final GoRouter appRouter = GoRouter(
             location: state.uri.path,
             child: SomiaShell(location: state.uri.path, child: child)),
         routes: [
+          GoRoute(
+              path: AppRoutes.cardsPath,
+              name: AppRoutes.cards,
+              builder: (context, state) => SomiaSectionBackScope(
+                  location: state.uri.path,
+                  child: CardsPage(
+                      key: ValueKey(state.uri.toString()),
+                      cardId: state.uri.queryParameters['card'],
+                      month: DateTime.tryParse(
+                          state.uri.queryParameters['month'] ?? '')))),
           GoRoute(
             path: AppRoutes.transfersPath,
             name: AppRoutes.transfers,

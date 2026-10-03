@@ -1,3 +1,4 @@
+import '../../features/cards/data/cards_repository.dart';
 import 'package:get_it/get_it.dart';
 
 import '../config/app_environment.dart';
@@ -55,6 +56,9 @@ Future<void> configureDependencies(AppEnvironment environment) async {
   getIt.registerLazySingleton<DashboardRepository>(
     () => SqliteDashboardRepository(getIt<AppDatabase>()),
   );
+
+  getIt.registerLazySingleton<CardsRepository>(
+      () => CardsRepository(getIt<AppDatabase>()));
 
   // As dependências de cada feature serão registradas aqui por módulo.
 }

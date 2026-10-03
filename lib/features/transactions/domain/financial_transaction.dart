@@ -16,6 +16,8 @@ class FinancialTransaction {
   const FinancialTransaction({
     required this.id,
     this.series,
+    this.cardId,
+    this.cardInvoiceMonth,
     required this.description,
     required this.type,
     required this.amountMinor,
@@ -32,6 +34,8 @@ class FinancialTransaction {
 
   final String id;
   final SeriesInfo? series;
+  final String? cardId;
+  final DateTime? cardInvoiceMonth;
   final String description;
   final TransactionType type;
   final int amountMinor;
@@ -58,6 +62,9 @@ class TransactionDraft {
     this.effectiveDate,
     required this.isEffective,
     this.seriesPlan,
+    this.cardId,
+    this.cardInvoiceMonth,
+    this.cardFirstInstallment = 1,
     this.scope = SeriesScope.onlyThis,
     required this.accountId,
     this.categoryId,
@@ -71,6 +78,9 @@ class TransactionDraft {
   final DateTime? effectiveDate;
   final bool isEffective;
   final SeriesPlan? seriesPlan;
+  final String? cardId;
+  final DateTime? cardInvoiceMonth;
+  final int cardFirstInstallment;
   final SeriesScope scope;
   final String accountId;
   final String? categoryId;

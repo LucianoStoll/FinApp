@@ -78,3 +78,7 @@ Validação manual pelo usuário pendente:
 7. Alterar somente uma ocorrência; conferir que as outras continuam intactas.
 8. Cancelar edição, confirmar/recusar descarte e fechar a calculadora pelo Voltar.
 9. Reiniciar e restaurar backup; conferir série, histórico anterior e logos.
+
+## Validação
+
+Usuário confirmou “Validei” em 02/10/2026; #46 encerrada.

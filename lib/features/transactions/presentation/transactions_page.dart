@@ -1,3 +1,5 @@
+import '../../cards/data/cards_repository.dart';
+import '../../cards/domain/credit_card.dart';
 import '../../../core/series/movement_series.dart';
 import '../../../core/series/series_form.dart';
 import '../../accounts/presentation/account_identity.dart';
@@ -187,6 +189,10 @@ class _TransactionsViewState extends State<_TransactionsView> {
     if (scope == null || !mounted) return;
     final cubit = context.read<TransactionsCubit>();
     final state = cubit.state;
+    final cards = getIt.isRegistered<CardsRepository>()
+        ? await getIt<CardsRepository>().list()
+        : <CreditCard>[];
+    if (!mounted) return;
     final draft = await showMovementForm<TransactionDraft>(
       context,
       (_) => TransactionForm(
@@ -197,6 +203,7 @@ class _TransactionsViewState extends State<_TransactionsView> {
                   widget.initialCreateType == 'income')
               ? TransactionType.income
               : TransactionType.expense,
+          cards: cards,
           accounts: state.accounts,
           categories: state.categories),
     );
@@ -608,14 +615,25 @@ class _TransactionsViewState extends State<_TransactionsView> {
       color: item.type == TransactionType.income
           ? SomiaColors.green
           : SomiaColors.red,
-      effectiveLabel:
-          item.type == TransactionType.income ? 'Receber hoje' : 'Pagar hoje',
+      effectiveLabel: item.cardId != null
+          ? 'Abrir fatura'
+          : item.type == TransactionType.income
+              ? 'Receber hoje'
+              : 'Pagar hoje',
       tags: [
+        if (item.cardId != null) 'Compra no cartão',
         if (item.series != null) item.series!.label,
         if (parent != null) parent.name,
         if (item.categoryName != null) item.categoryName!
       ],
-      onEffective: () => _quickEffective(item),
+      onEffective: () {
+        if (item.cardId != null) {
+          context.go(
+              '/cards?card=${item.cardId}&month=${item.cardInvoiceMonth!.toIso8601String()}');
+        } else {
+          _quickEffective(item);
+        }
+      },
       onPending: () => _markPending(item),
       onAmount: () => _editAmount(item),
       onEdit: () => _edit(item),
@@ -651,6 +669,8 @@ class TransactionForm extends StatefulWidget {
       {super.key,
       required this.accounts,
       required this.categories,
+      this.cards = const [],
+      this.initialCardId,
       this.item,
       this.scope = SeriesScope.onlyThis,
       this.fixedType,
@@ -659,6 +679,8 @@ class TransactionForm extends StatefulWidget {
   final SeriesScope scope;
   final TransactionType? fixedType;
   final TransactionType initialType;
+  final String? initialCardId;
+  final List<CreditCard> cards;
   final List<Account> accounts;
   final List<FinanceCategory> categories;
 
@@ -670,7 +692,9 @@ class TransactionFormState extends State<TransactionForm> {
   final _formKey = GlobalKey<FormState>();
   final _series = SeriesFormController();
   bool get _forcePending =>
-      _series.active || widget.scope == SeriesScope.thisAndNext;
+      _cardId != null ||
+      _series.active ||
+      widget.scope == SeriesScope.thisAndNext;
   void _seriesChanged() {
     if (mounted) setState(() {});
   }
@@ -685,6 +709,9 @@ class TransactionFormState extends State<TransactionForm> {
   DateTime? _effectiveDate;
   late bool _isEffective;
   String? _accountId;
+  String? _cardId;
+  DateTime? _cardMonth;
+  final _firstInstallment = TextEditingController(text: '1');
   String? _categoryId;
   String? _subcategoryId;
 
@@ -701,7 +728,11 @@ class TransactionFormState extends State<TransactionForm> {
     _dueDate = item?.dueDate ?? _date;
     _effectiveDate = item?.effectiveDate;
     _isEffective = item == null || item.effectiveDate != null;
-    _accountId = item?.accountId ?? _availableAccounts.firstOrNull?.id;
+    _cardId = item?.cardId ?? widget.initialCardId;
+    _cardMonth = item?.cardInvoiceMonth;
+    _accountId = item?.cardId == null
+        ? item?.accountId ?? _availableAccounts.firstOrNull?.id
+        : _availableAccounts.firstOrNull?.id;
     final selected = widget.categories
         .where((category) => category.id == item?.categoryId)
         .firstOrNull;
@@ -716,6 +747,7 @@ class TransactionFormState extends State<TransactionForm> {
 
   @override
   void dispose() {
+    _firstInstallment.dispose();
     _descriptionFocus.dispose();
     _amountFocus.dispose();
     _series.dispose();
@@ -747,6 +779,23 @@ class TransactionFormState extends State<TransactionForm> {
     }
   }
 
+  CreditCard? get _selectedCard =>
+      widget.cards.where((c) => c.id == _cardId).firstOrNull;
+  DateTime get _invoiceMonth =>
+      _cardMonth ??
+      _selectedCard?.invoiceMonthFor(_date) ??
+      DateTime(_date.year, _date.month);
+  Future<void> _pickInvoiceMonth() async {
+    final chosen = await showDatePicker(
+        context: context,
+        initialDate: _invoiceMonth,
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2100, 12, 31),
+        helpText: 'Mês da fatura (vencimento)');
+    if (chosen != null && mounted)
+      setState(() => _cardMonth = DateTime(chosen.year, chosen.month));
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_series.active) {
@@ -761,6 +810,31 @@ class TransactionFormState extends State<TransactionForm> {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(error.message)));
         return;
+      }
+    }
+    if (_cardId != null && _selectedCard?.availableMinor != null) {
+      final total = _series.plan
+              ?.amounts(MoneyMinor.parse(_amount.text))
+              .fold(0, (a, b) => a + b) ??
+          MoneyMinor.parse(_amount.text);
+      final extra =
+          widget.item == null ? total : total - widget.item!.amountMinor;
+      if (extra > _selectedCard!.availableMinor!) {
+        final ok = await showDialog<bool>(
+            context: context,
+            builder: (dialog) => AlertDialog(
+                    title: const Text('Limite disponível excedido'),
+                    content: const Text(
+                        'Esta compra ultrapassa o limite cadastrado. Deseja continuar?'),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(dialog, false),
+                          child: const Text('Cancelar')),
+                      FilledButton(
+                          onPressed: () => Navigator.pop(dialog, true),
+                          child: const Text('Continuar'))
+                    ]));
+        if (ok != true || !mounted) return;
       }
     }
     final isEffective = !_forcePending && _isEffective;
@@ -784,7 +858,10 @@ class TransactionFormState extends State<TransactionForm> {
           isEffective: isEffective,
           seriesPlan: _series.plan,
           scope: widget.scope,
-          accountId: _accountId!,
+          cardId: _cardId,
+          cardInvoiceMonth: _cardMonth,
+          cardFirstInstallment: int.tryParse(_firstInstallment.text) ?? 1,
+          accountId: _cardId ?? _accountId!,
           categoryId: _subcategoryId ?? _categoryId,
         ));
   }
@@ -816,7 +893,10 @@ class TransactionFormState extends State<TransactionForm> {
               _accountId,
               _categoryId,
               _subcategoryId,
-              _series.snapshot
+              _series.snapshot,
+              _cardId,
+              _cardMonth,
+              _firstInstallment.text
             ),
         builder: (context, cancel) => MovementFormFrame(
               onCancel: cancel,
@@ -862,29 +942,118 @@ class TransactionFormState extends State<TransactionForm> {
                               'BRL'),
                       if (widget.item == null || widget.item?.series != null)
                         SeriesFormFields(
+                            key: ValueKey('series-card-${_cardId != null}'),
                             controller: _series,
                             amount: _amount,
-                            dueDate: _dueDate,
+                            dueDate: _cardId == null
+                                ? _dueDate
+                                : _selectedCard?.dueFor(_invoiceMonth) ??
+                                    _dueDate,
                             currencyCode: _availableAccounts
                                     .where((a) => a.id == _accountId)
                                     .firstOrNull
                                     ?.currencyCode ??
                                 'BRL',
+                            cardMode: _cardId != null,
                             existing: widget.item?.series),
-                      DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        initialValue: _accountId,
-                        decoration: const InputDecoration(labelText: 'Conta'),
-                        items: _availableAccounts
-                            .map((account) => DropdownMenuItem(
-                                  value: account.id,
-                                  child: AccountOption(account: account),
-                                ))
-                            .toList(),
-                        validator: (value) =>
-                            value == null ? 'Cadastre uma conta ativa.' : null,
-                        onChanged: (id) => setState(() => _accountId = id),
-                      ),
+                      if (_type == TransactionType.expense &&
+                          widget.item == null &&
+                          widget.cards.any((c) => !c.isArchived))
+                        DropdownButtonFormField<bool>(
+                            key: const ValueKey('payment-method'),
+                            initialValue: _cardId != null,
+                            decoration: const InputDecoration(
+                                labelText: 'Forma de pagamento'),
+                            items: const [
+                              DropdownMenuItem(
+                                  value: false, child: Text('Conta')),
+                              DropdownMenuItem(
+                                  value: true, child: Text('Cartão'))
+                            ],
+                            onChanged: (value) => setState(() {
+                                  _cardId = value == true
+                                      ? widget.cards
+                                          .where((c) => !c.isArchived)
+                                          .first
+                                          .id
+                                      : null;
+                                  _cardMonth = null;
+                                  _series.change(() {
+                                    _series.kind = SeriesKind.single;
+                                    _series.unit = SeriesUnit.month;
+                                    _series.interval.text = '1';
+                                  });
+                                })),
+                      if (_cardId != null) ...[
+                        DropdownButtonFormField<String>(
+                            key: ValueKey('card-choice-$_cardId'),
+                            initialValue: _cardId,
+                            isExpanded: true,
+                            decoration:
+                                const InputDecoration(labelText: 'Cartão'),
+                            items: [
+                              for (final card in widget.cards.where(
+                                  (c) => !c.isArchived || c.id == _cardId))
+                                DropdownMenuItem(
+                                    value: card.id, child: Text(card.name))
+                            ],
+                            onChanged: widget.item != null
+                                ? null
+                                : (value) => setState(() {
+                                      _cardId = value;
+                                      _cardMonth = null;
+                                    })),
+                        ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Fatura (mês do vencimento)'),
+                            subtitle: Text(
+                                '${_invoiceMonth.month.toString().padLeft(2, '0')}/${_invoiceMonth.year}${_cardMonth == null ? ' · Automática pelo fechamento' : ''}'),
+                            trailing: IconButton(
+                                tooltip: 'Voltar à fatura automática',
+                                onPressed: () =>
+                                    setState(() => _cardMonth = null),
+                                icon: const Icon(Icons.restart_alt)),
+                            onTap: _pickInvoiceMonth),
+                        if (widget.item == null && _series.active)
+                          TextFormField(
+                              controller: _firstInstallment,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                  labelText: 'Primeira parcela a cadastrar',
+                                  helperText:
+                                      'Ex.: 4 para cadastrar apenas da 4ª em diante. A quantidade acima é a restante.'),
+                              validator: (v) {
+                                final n = int.tryParse(v ?? '');
+                                return n == null ||
+                                        n < 1 ||
+                                        n +
+                                                (int.tryParse(
+                                                        _series.count.text) ??
+                                                    0) -
+                                                1 >
+                                            1000
+                                    ? 'Numeração entre 1 e 1000.'
+                                    : null;
+                              }),
+                        const Text(
+                            'A compra não debita a conta. Registre o pagamento na fatura.'),
+                      ],
+                      if (_cardId == null)
+                        DropdownButtonFormField<String>(
+                          isExpanded: true,
+                          initialValue: _accountId,
+                          decoration: const InputDecoration(labelText: 'Conta'),
+                          items: _availableAccounts
+                              .map((account) => DropdownMenuItem(
+                                    value: account.id,
+                                    child: AccountOption(account: account),
+                                  ))
+                              .toList(),
+                          validator: (value) => value == null
+                              ? 'Cadastre uma conta ativa.'
+                              : null,
+                          onChanged: (id) => setState(() => _accountId = id),
+                        ),
                       DropdownButtonFormField<String>(
                         isExpanded: true,
                         key: ValueKey('category-${_type.name}'),
@@ -931,23 +1100,32 @@ class TransactionFormState extends State<TransactionForm> {
                             : (id) => setState(() => _subcategoryId =
                                 id == null || id.isEmpty ? null : id),
                       ),
-                      MovementDateFields(
-                        posted: _date,
-                        due: _dueDate,
-                        onPosted: () => _pickDate('posted'),
-                        onDue: () => _pickDate('due'),
-                      ),
-                      SwitchListTile(
-                        title: Text(_type == TransactionType.income
-                            ? 'Recebido'
-                            : 'Pago'),
-                        subtitle: const Text(
-                            'A data determina quando entra no saldo atual'),
-                        value: !_forcePending && _isEffective,
-                        onChanged: _forcePending
-                            ? null
-                            : (value) => setState(() => _isEffective = value),
-                      ),
+                      if (_cardId == null)
+                        MovementDateFields(
+                          posted: _date,
+                          due: _dueDate,
+                          onPosted: () => _pickDate('posted'),
+                          onDue: () => _pickDate('due'),
+                        ),
+                      if (_cardId != null)
+                        ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Data da compra'),
+                            subtitle: Text(_dateLabel(_date)),
+                            trailing: const Icon(Icons.calendar_today),
+                            onTap: () => _pickDate('posted')),
+                      if (_cardId == null)
+                        SwitchListTile(
+                          title: Text(_type == TransactionType.income
+                              ? 'Recebido'
+                              : 'Pago'),
+                          subtitle: const Text(
+                              'A data determina quando entra no saldo atual'),
+                          value: !_forcePending && _isEffective,
+                          onChanged: _forcePending
+                              ? null
+                              : (value) => setState(() => _isEffective = value),
+                        ),
                       if (!_forcePending && _isEffective)
                         ListTile(
                             contentPadding: EdgeInsets.zero,
@@ -974,6 +1152,8 @@ class TransactionFormState extends State<TransactionForm> {
                                 if (type != null) {
                                   setState(() {
                                     _type = type;
+                                    if (type == TransactionType.income)
+                                      _cardId = null;
                                     _categoryId = null;
                                     _subcategoryId = null;
                                   });

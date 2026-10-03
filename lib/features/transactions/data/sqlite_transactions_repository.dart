@@ -1,3 +1,4 @@
+import '../../cards/data/cards_repository.dart';
 import '../../../core/series/series_store.dart';
 import '../../../core/series/movement_series.dart';
 import 'package:drift/drift.dart';
@@ -72,11 +73,23 @@ class SqliteTransactionsRepository implements TransactionsRepository {
       $_select WHERE ${where.join(' AND ')}
       ORDER BY CASE WHEN t.effective_at < ? THEN 0 ELSE 1 END, t.due_at DESC, t.created_at DESC, t.id DESC
     ''', variables: variables).get();
-    return rows.map(_map).toList();
+    final items = [
+      ...rows.map(_map),
+      ...await CardsRepository(_db).movements(filter)
+    ];
+    items.sort((a, b) {
+      if (a.isEffective != b.isEffective) return a.isEffective ? -1 : 1;
+      return (b.dueDate ?? b.date).compareTo(a.dueDate ?? a.date);
+    });
+    return items;
   }
 
   @override
   Future<FinancialTransaction> create(TransactionDraft draft) async {
+    if (draft.cardId != null) {
+      final repo = CardsRepository(_db);
+      return repo.findMovement(await repo.createPurchase(draft));
+    }
     final plan = draft.seriesPlan;
     if (plan == null) return _createSingle(draft);
     plan.validate();
@@ -108,6 +121,14 @@ class SqliteTransactionsRepository implements TransactionsRepository {
   @override
   Future<FinancialTransaction> update(String id, TransactionDraft draft) =>
       _db.transaction(() async {
+        if (id.startsWith('card:')) {
+          final repo = CardsRepository(_db);
+          await repo.editPurchase(id.substring(5), draft);
+          return repo.findMovement(id.substring(5));
+        }
+        if (draft.cardId != null)
+          throw StateError(
+              'Crie uma nova compra para mudar a forma de pagamento.');
         final store = SeriesStore(_db, 'transactions');
         final original = await store.row(id);
         if (draft.scope == SeriesScope.onlyThis ||
@@ -235,6 +256,10 @@ class SqliteTransactionsRepository implements TransactionsRepository {
           required int amountMinor,
           SeriesScope scope = SeriesScope.onlyThis}) =>
       _db.transaction(() async {
+        if (id.startsWith('card:')) {
+          return CardsRepository(_db).updateAmount(
+              id.substring(5), expectedAmountMinor, amountMinor, scope);
+        }
         final store = SeriesStore(_db, 'transactions');
         final original = await store.row(id);
         if (original.read<int>('planned_amount_minor') != expectedAmountMinor) {
@@ -274,11 +299,15 @@ class SqliteTransactionsRepository implements TransactionsRepository {
 
   @override
   Future<void> delete(String id, {SeriesScope scope = SeriesScope.onlyThis}) =>
-      SeriesStore(_db, 'transactions').delete(id, scope);
+      id.startsWith('card:')
+          ? CardsRepository(_db).deletePurchase(id.substring(5), scope)
+          : SeriesStore(_db, 'transactions').delete(id, scope);
 
   @override
   Future<void> setEffective(String id,
       {required bool effective, DateTime? effectiveDate}) async {
+    if (id.startsWith('card:'))
+      throw StateError('Pague pela fatura do cartão.');
     final chosen = _dayMillis(effectiveDate ?? DateTime.now());
     final todayEnd = _dayMillis(DateTime.now().add(const Duration(days: 1)));
     final changed = await _db.customUpdate('''
@@ -302,6 +331,8 @@ class SqliteTransactionsRepository implements TransactionsRepository {
   @override
   Future<void> changeEffectiveDate(String id,
       {required DateTime expectedDate, DateTime? effectiveDate}) async {
+    if (id.startsWith('card:'))
+      throw StateError('Pague pela fatura do cartão.');
     final changed = await _db.customUpdate('''
       UPDATE transactions SET effective_at = ?, actual_amount_minor = ${effectiveDate == null ? 'NULL' : 'planned_amount_minor'},
         updated_at = ?, sync_version = sync_version + 1

@@ -130,12 +130,12 @@ O fechamento do ciclo e a PR para `main` acontecem após concluir e validar o es
 - [x] Parcelamento por total ou valor da parcela, centavos exatos e calendário ancorado.
 - [x] Editar/excluir isolado ou próximos, preservando anteriores e efetivados/agendados.
 - [x] Migration v9, atomicidade e backup compatível.
-- [ ] Validação manual — `docs/recorrencias-parcelamentos.md`.
+- [x] Validação manual aprovada em 02/10/2026 — #46 encerrada.
 
 ## Fase 3 — Núcleo financeiro avançado
 - [ ] Competência e regras contábeis avançadas (lançamento/vencimento/efetivação já disponíveis no MVP)
 - [ ] Análises avançadas de previsto x realizado (saldo básico já disponível)
-- [ ] Recorrências e parcelamentos
+- [x] Recorrências e parcelamentos — #46 validada.
 - [ ] Liquidações parciais
 - [ ] Rateio
 - [ ] Reembolsos/pessoas
@@ -146,6 +146,9 @@ O fechamento do ciclo e a PR para `main` acontecem após concluir e validar o es
 - [ ] Agendamentos/projeções
 
 ## Fase 4 — Cartões
+
+Entrega ativa: #47 (epic #12). Cadastro, compras, faturas, limite e liquidações implementados; CI e validação manual pendentes. Regras e roteiro em `docs/cartoes-faturas.md`. Compras internacionais, adicionais e importação ficam para entregas próprias.
+
 - [ ] Cartões/limites
 - [ ] Faturas
 - [ ] Compras parceladas
