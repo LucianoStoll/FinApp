@@ -792,8 +792,9 @@ class TransactionFormState extends State<TransactionForm> {
         firstDate: DateTime(2000),
         lastDate: DateTime(2100, 12, 31),
         helpText: 'Mês da fatura (vencimento)');
-    if (chosen != null && mounted)
+    if (chosen != null && mounted) {
       setState(() => _cardMonth = DateTime(chosen.year, chosen.month));
+    }
   }
 
   Future<void> _submit() async {
@@ -1152,8 +1153,9 @@ class TransactionFormState extends State<TransactionForm> {
                                 if (type != null) {
                                   setState(() {
                                     _type = type;
-                                    if (type == TransactionType.income)
+                                    if (type == TransactionType.income) {
                                       _cardId = null;
+                                    }
                                     _categoryId = null;
                                     _subcategoryId = null;
                                   });

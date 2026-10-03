@@ -150,9 +150,10 @@ class _CardFormState extends State<CardForm> {
                         onTap: () async {
                           final selected =
                               await showBankSelector(context, _bank);
-                          if (selected != null && mounted)
+                          if (selected != null && mounted) {
                             setState(() =>
                                 _bank = selected.isEmpty ? null : selected);
+                          }
                         }),
                     DropdownButtonFormField<String>(
                         initialValue: _account,
@@ -213,9 +214,10 @@ class _CardFormState extends State<CardForm> {
                           onTap: () async {
                             final d = await pickCardDate(context, _month,
                                 help: 'Mês do vencimento');
-                            if (d != null && mounted)
+                            if (d != null && mounted) {
                               setState(
                                   () => _month = DateTime(d.year, d.month));
+                            }
                           }),
                       const Text(
                           'Use o saldo que falta pagar. Crédito pode ser negativo. Este saldo não repete gastos antigos nos relatórios. Cadastre parcelas restantes pelo botão de compra; evite incluir o mesmo valor nos dois lugares.'),
@@ -421,8 +423,9 @@ class _CardAdjustmentFormState extends State<CardAdjustmentForm> {
                         onTap: () async {
                           final d = await pickCardDate(context, _month,
                               help: 'Mês do vencimento');
-                          if (d != null && mounted)
+                          if (d != null && mounted) {
                             setState(() => _month = DateTime(d.year, d.month));
+                          }
                         }),
                     if (!widget.signed)
                       ListTile(
@@ -540,7 +543,7 @@ class _CardAnticipationFormState extends State<CardAnticipationForm> {
   @override
   Widget build(BuildContext context) => UnsavedChangesGuard(
       value: () =>
-          (_selected.toList()..sort()).join('|') + ';${_discount.text}',
+          "${(_selected.toList()..sort()).join('|')};${_discount.text}",
       builder: (context, cancel) => MovementFormFrame(
           title: 'Antecipar para ${cardMonthLabel(widget.invoice.month)}',
           saveLabel: _saving ? 'Salvando…' : 'Antecipar parcelas',

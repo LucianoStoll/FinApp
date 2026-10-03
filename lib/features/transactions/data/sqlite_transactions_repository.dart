@@ -126,9 +126,10 @@ class SqliteTransactionsRepository implements TransactionsRepository {
           await repo.editPurchase(id.substring(5), draft);
           return repo.findMovement(id.substring(5));
         }
-        if (draft.cardId != null)
+        if (draft.cardId != null) {
           throw StateError(
               'Crie uma nova compra para mudar a forma de pagamento.');
+        }
         final store = SeriesStore(_db, 'transactions');
         final original = await store.row(id);
         if (draft.scope == SeriesScope.onlyThis ||
@@ -306,8 +307,9 @@ class SqliteTransactionsRepository implements TransactionsRepository {
   @override
   Future<void> setEffective(String id,
       {required bool effective, DateTime? effectiveDate}) async {
-    if (id.startsWith('card:'))
+    if (id.startsWith('card:')) {
       throw StateError('Pague pela fatura do cartão.');
+    }
     final chosen = _dayMillis(effectiveDate ?? DateTime.now());
     final todayEnd = _dayMillis(DateTime.now().add(const Duration(days: 1)));
     final changed = await _db.customUpdate('''
@@ -331,8 +333,9 @@ class SqliteTransactionsRepository implements TransactionsRepository {
   @override
   Future<void> changeEffectiveDate(String id,
       {required DateTime expectedDate, DateTime? effectiveDate}) async {
-    if (id.startsWith('card:'))
+    if (id.startsWith('card:')) {
       throw StateError('Pague pela fatura do cartão.');
+    }
     final changed = await _db.customUpdate('''
       UPDATE transactions SET effective_at = ?, actual_amount_minor = ${effectiveDate == null ? 'NULL' : 'planned_amount_minor'},
         updated_at = ?, sync_version = sync_version + 1

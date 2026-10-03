@@ -121,10 +121,12 @@ class CardInvoice {
   String get status {
     if (balanceMinor < 0) return 'Crédito';
     if (balanceMinor == 0 &&
-        (paidMinor > 0 || entries.isNotEmpty || previousMinor != 0))
+        (paidMinor > 0 || entries.isNotEmpty || previousMinor != 0)) {
       return 'Paga';
-    if (cardDay(dueAt) < cardDay(DateTime.now()) && balanceMinor > 0)
+    }
+    if (cardDay(dueAt) < cardDay(DateTime.now()) && balanceMinor > 0) {
       return 'Atrasada';
+    }
     if (paidMinor > 0 && balanceMinor > 0) return 'Parcial';
     return cardDay(closingAt) <= cardDay(DateTime.now()) ? 'Fechada' : 'Aberta';
   }

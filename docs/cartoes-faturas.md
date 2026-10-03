@@ -14,7 +14,7 @@ Formulário de Despesas escolhe Conta ou Cartão, mantendo descrição, calculad
 
 Fatura é identificada pelo **mês do vencimento**. Fechamento anterior ao vencimento; quando dia do vencimento <= fechamento, fecha no mês anterior. Dias inexistentes usam último dia disponível. Compra no próprio dia de fechamento entra na próxima fatura. Datas reais podem ser ajustadas por fatura, mantendo a ordem dos ciclos; ajustes não redistribuem automaticamente compras já registradas. Compra pode mudar de fatura manualmente.
 
-Editar/excluir somente esta ou esta e próximas preserva anteriores e faturas com pagamentos, inclusive agendados. Para corrigir compra numa fatura paga/parcial, use estorno. Não converter um lançamento de conta existente em compra de cartão; crie a compra correta para manter histórico. Alterar dias do cadastro vale para faturas ainda não materializadas; existentes conservam datas reais.
+Editar/excluir somente esta ou esta e próximas preserva anteriores e faturas com pagamentos, inclusive agendados. Para corrigir compra numa fatura paga/parcial, use estorno. Compras com estorno ou antecipação registrada também preservam o histórico na exclusão; cancele seu saldo restante por estorno. Não converter um lançamento de conta existente em compra de cartão; crie a compra correta para manter histórico. Alterar dias do cadastro vale para faturas ainda não materializadas; existentes conservam datas reais.
 
 ## Limite, liquidações, crédito e antecipação
 

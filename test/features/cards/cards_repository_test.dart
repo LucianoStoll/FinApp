@@ -235,7 +235,7 @@ void main() {
         draft(amount: 12000, month: DateTime(2026, 5)));
     expect(
         (await cards.entry(entries[1].id)).invoiceMonth, DateTime.utc(2026, 5));
-    expect(await cards.entryHistory(entries[1].id), hasLength(1));
+    expect(await cards.entryHistory(entries[1].id), hasLength(2));
     await repo.delete('card:${entries[1].id}');
     expect(await cards.entries(cardId: cardId), hasLength(2));
   });

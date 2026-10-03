@@ -69,7 +69,7 @@ class _CardsPageState extends State<CardsPage> {
       final invoices = id == null
           ? <CardInvoice>[]
           : await _repo.invoices(id, selected: _month);
-      if (mounted && request == _request)
+      if (mounted && request == _request) {
         setState(() {
           _cards = cards;
           _accounts = accounts;
@@ -79,12 +79,14 @@ class _CardsPageState extends State<CardsPage> {
           _loading = false;
           _error = null;
         });
+      }
     } catch (e) {
-      if (mounted && request == _request)
+      if (mounted && request == _request) {
         setState(() {
           _loading = false;
           _error = 'Não foi possível carregar os cartões.';
         });
+      }
     }
   }
 
@@ -269,7 +271,9 @@ class _CardsPageState extends State<CardsPage> {
     if (scope == null || !mounted) return;
     if (!await _confirm('Excluir registro?',
             'O registro sairá da fatura e dos cálculos. Faturas com pagamentos preservam suas compras; use estorno para corrigi-las.') ||
-        !mounted) return;
+        !mounted) {
+      return;
+    }
     await _run(() => e.kind == 'purchase'
         ? _repo.deletePurchase(e.id, scope)
         : _repo.removeAdjustment(e.id));
@@ -372,7 +376,9 @@ class _CardsPageState extends State<CardsPage> {
               : () async {
                   if (await _confirm('Desfazer pagamento?',
                           'O débito sairá da conta e a dívida voltará à fatura. Encargos e desconto deste pagamento também serão desfeitos.') &&
-                      mounted) await _run(() => _repo.undoPayment(p.id));
+                      mounted) {
+                    await _run(() => _repo.undoPayment(p.id));
+                  }
                 }));
   @override
   Widget build(BuildContext context) {
