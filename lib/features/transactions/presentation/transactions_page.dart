@@ -1,3 +1,4 @@
+import '../data/category_history_repository.dart';
 import '../../cards/data/cards_repository.dart';
 import '../../cards/domain/credit_card.dart';
 import '../../../core/series/movement_series.dart';
@@ -856,6 +857,63 @@ class TransactionFormState extends State<TransactionForm> {
   final _firstInstallment = TextEditingController(text: '1');
   String? _categoryId;
   String? _subcategoryId;
+  bool _categoryChosenManually = false;
+  bool _categoryFromHistory = false;
+  Map<String, String> _categoryHistory = {};
+  int _historyRequest = 0;
+  Future<void>? _historyLoading;
+
+  Future<void> _loadCategoryHistory() async {
+    if (widget.item != null ||
+        !getIt.isRegistered<CategoryHistoryRepository>()) {
+      return;
+    }
+    final request = ++_historyRequest;
+    final type = _type;
+    try {
+      final history = await getIt<CategoryHistoryRepository>().load(type);
+      if (!mounted || request != _historyRequest || type != _type) {
+        return;
+      }
+      _categoryHistory = history;
+      _applyCategoryHistory();
+    } catch (_) {
+      // A sugestão é opcional; o cadastro manual continua disponível.
+    }
+  }
+
+  void _applyCategoryHistory() {
+    if (!mounted || widget.item != null || _categoryChosenManually) {
+      return;
+    }
+    final id = _categoryHistory[
+        CategoryHistoryRepository.normalize(_description.text)];
+    final category = widget.categories
+        .where((c) => c.id == id && !c.isArchived && c.type.name == _type.name)
+        .firstOrNull;
+    final parent = category?.parentId == null
+        ? category
+        : widget.categories
+            .where((c) =>
+                c.id == category!.parentId &&
+                c.parentId == null &&
+                !c.isArchived &&
+                c.type.name == _type.name)
+            .firstOrNull;
+    final rootId = parent?.id;
+    final childId =
+        parent != null && category?.parentId != null ? category?.id : null;
+    if (_categoryId == rootId &&
+        _subcategoryId == childId &&
+        _categoryFromHistory == (rootId != null)) {
+      return;
+    }
+    setState(() {
+      _categoryId = rootId;
+      _subcategoryId = childId;
+      _categoryFromHistory = rootId != null;
+    });
+  }
 
   @override
   void initState() {
@@ -880,6 +938,8 @@ class TransactionFormState extends State<TransactionForm> {
         .firstOrNull;
     _categoryId = selected?.parentId ?? selected?.id;
     _subcategoryId = selected?.parentId == null ? null : selected?.id;
+    _description.addListener(_applyCategoryHistory);
+    _historyLoading = _loadCategoryHistory();
   }
 
   List<Account> get _availableAccounts => widget.accounts
@@ -893,6 +953,7 @@ class TransactionFormState extends State<TransactionForm> {
     _descriptionFocus.dispose();
     _amountFocus.dispose();
     _series.dispose();
+    _description.removeListener(_applyCategoryHistory);
     _description.dispose();
     _amount.dispose();
     super.dispose();
@@ -940,7 +1001,8 @@ class TransactionFormState extends State<TransactionForm> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    await _historyLoading;
+    if (!mounted || !_formKey.currentState!.validate()) return;
     if (_series.active) {
       try {
         _series.plan!.amounts(MoneyMinor.parse(_amount.text));
@@ -1064,8 +1126,11 @@ class TransactionFormState extends State<TransactionForm> {
                                 extentOffset: _amount.text.length);
                           },
                           scrollPadding: const EdgeInsets.all(100),
-                          decoration:
-                              const InputDecoration(labelText: 'Descrição'),
+                          decoration: InputDecoration(
+                              labelText: 'Descrição',
+                              helperText: _categoryFromHistory
+                                  ? 'Categoria preenchida pelo histórico.'
+                                  : null),
                           validator: (value) =>
                               value == null || value.trim().isEmpty
                                   ? 'Informe a descrição.'
@@ -1208,7 +1273,7 @@ class TransactionFormState extends State<TransactionForm> {
                         ),
                       DropdownButtonFormField<String>(
                         isExpanded: true,
-                        key: ValueKey('category-${_type.name}'),
+                        key: ValueKey('category-${_type.name}-$_categoryId'),
                         initialValue: _categoryId,
                         decoration:
                             const InputDecoration(labelText: 'Categoria'),
@@ -1225,13 +1290,16 @@ class TransactionFormState extends State<TransactionForm> {
                                     overflow: TextOverflow.ellipsis))
                         ],
                         onChanged: (id) => setState(() {
+                          _categoryChosenManually = true;
+                          _categoryFromHistory = false;
                           _categoryId = id == null || id.isEmpty ? null : id;
                           _subcategoryId = null;
                         }),
                       ),
                       DropdownButtonFormField<String>(
                         isExpanded: true,
-                        key: ValueKey('subcategory-${_type.name}-$_categoryId'),
+                        key: ValueKey(
+                            'subcategory-${_type.name}-$_categoryId-$_subcategoryId'),
                         initialValue: _subcategoryId,
                         decoration:
                             const InputDecoration(labelText: 'Subcategoria'),
@@ -1249,8 +1317,12 @@ class TransactionFormState extends State<TransactionForm> {
                         ],
                         onChanged: _categoryId == null
                             ? null
-                            : (id) => setState(() => _subcategoryId =
-                                id == null || id.isEmpty ? null : id),
+                            : (id) => setState(() {
+                                  _categoryChosenManually = true;
+                                  _categoryFromHistory = false;
+                                  _subcategoryId =
+                                      id == null || id.isEmpty ? null : id;
+                                }),
                       ),
                       if (_cardId == null)
                         MovementDateFields(
@@ -1309,7 +1381,11 @@ class TransactionFormState extends State<TransactionForm> {
                                     }
                                     _categoryId = null;
                                     _subcategoryId = null;
+                                    _categoryChosenManually = false;
+                                    _categoryFromHistory = false;
+                                    _categoryHistory = {};
                                   });
+                                  _historyLoading = _loadCategoryHistory();
                                 }
                               },
                             ),

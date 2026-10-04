@@ -2,6 +2,7 @@
 
 ## v0.2.0-alpha — em desenvolvimento (pós-MVP)
 
+- #48: categoria/subcategoria preenchidas pela descrição de lançamentos anteriores ao criar receitas/despesas e compras no cartão; escolha manual e edição preservadas. Histórico offline, classificação válida mais recente e separação por tipo.
 - #47: linha de fatura no estilo da referência, com nome “Cartão - nome”, total, vencimento e etiqueta azul de fechamento.
 - #47: Despesas agrupa por fatura, abre detalhes no cartão e permite pagar o saldo restante pelo ícone, com desfazer/ajustar data e preservação de pagamentos parciais e agendados.
 - #47: cartões e faturas offline, compras integradas às despesas, parcelamentos e limite total comprometido, liquidações parciais/antecipadas com encargos/desconto, carry-over derivado sem duplicação, estornos e saldo credor. Migration v10 e histórico de mudanças.

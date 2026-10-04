@@ -1,3 +1,4 @@
+import '../../features/transactions/data/category_history_repository.dart';
 import '../../features/cards/data/cards_repository.dart';
 import 'package:get_it/get_it.dart';
 
@@ -39,6 +40,10 @@ Future<void> configureDependencies(AppEnvironment environment) async {
 
   getIt.registerLazySingleton<CategoriesRepository>(
     () => SqliteCategoriesRepository(getIt<AppDatabase>()),
+  );
+
+  getIt.registerLazySingleton<CategoryHistoryRepository>(
+    () => CategoryHistoryRepository(getIt<AppDatabase>()),
   );
 
   getIt.registerLazySingleton<TransactionsRepository>(
